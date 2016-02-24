@@ -4,6 +4,7 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,6 +14,8 @@ import java.util.stream.Collectors;
 
 public class MinimaxAlphaBeta extends Agent {
 	private static final long serialVersionUID = 3799985942000030012L;
+	
+	private static Agent myAgent;
 	
 	private final int numPlys;
 
@@ -27,6 +30,12 @@ public class MinimaxAlphaBeta extends Agent {
         }
 
         numPlys = Integer.parseInt(args[0]);
+        
+        myAgent = this;
+    }
+    
+    public static Agent getPlayerAgent() {
+    	return myAgent;
     }
 
     @Override
@@ -74,9 +83,18 @@ public class MinimaxAlphaBeta extends Agent {
     		return node;
     	}
     	
+    	GameStateChild best = null;
+    	GameStateChild temp;
+    	
+    	UnitView view = new UnitView(null);
+    	
     	if ((depth + numPlys) % 2 == 0) {
     		//maximizing player
     		
+    		for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+    			temp = alphaBetaSearch(child, depth - 1, alpha, beta);
+    			
+    		}
     	} else {
     		//minimizing player
     		
