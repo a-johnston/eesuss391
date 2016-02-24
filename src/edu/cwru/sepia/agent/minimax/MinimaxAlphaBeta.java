@@ -9,10 +9,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MinimaxAlphaBeta extends Agent {
-
-    private final int numPlys;
+	private static final long serialVersionUID = 3799985942000030012L;
+	
+	private final int numPlys;
 
     public MinimaxAlphaBeta(int playernum, String[] args)
     {
@@ -38,24 +40,18 @@ public class MinimaxAlphaBeta extends Agent {
                 numPlys,
                 Double.NEGATIVE_INFINITY,
                 Double.POSITIVE_INFINITY);
-
+        
         return bestChild.action;
     }
 
     @Override
-    public void terminalStep(State.StateView newstate, History.HistoryView statehistory) {
-
-    }
+    public void terminalStep(State.StateView newstate, History.HistoryView statehistory) {}
 
     @Override
-    public void savePlayerData(OutputStream os) {
-
-    }
+    public void savePlayerData(OutputStream os) {}
 
     @Override
-    public void loadPlayerData(InputStream is) {
-
-    }
+    public void loadPlayerData(InputStream is) {}
 
     /**
      * You will implement this.
@@ -74,6 +70,18 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta)
     {
+    	if (depth == 0) {
+    		return node;
+    	}
+    	
+    	if ((depth + numPlys) % 2 == 0) {
+    		//maximizing player
+    		
+    	} else {
+    		//minimizing player
+    		
+    	}
+    	
         return node;
     }
 
@@ -92,6 +100,8 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children)
     {
-        return children;
+        return children.stream().sorted((a, b) -> {
+        	return Double.compare(a.state.getUtility(), b.state.getUtility()); //might need to get flipped
+        }).collect(Collectors.toList());
     }
 }
