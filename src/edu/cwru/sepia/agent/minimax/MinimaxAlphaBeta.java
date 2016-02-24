@@ -8,9 +8,12 @@ import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.swing.event.ListSelectionEvent;
 
 public class MinimaxAlphaBeta extends Agent {
 	private static final long serialVersionUID = 3799985942000030012L;
@@ -83,24 +86,52 @@ public class MinimaxAlphaBeta extends Agent {
     		return node;
     	}
     	
-    	GameStateChild best = null;
-    	GameStateChild temp;
+    	GameStateChild temp, best = null;
     	
-    	UnitView view = new UnitView(null);
+    	List<GameStateChild> sortedChildren;
+    	sortedChildren = orderChildrenWithHeuristics(node.state.getChildren());
     	
     	if ((depth + numPlys) % 2 == 0) {
     		//maximizing player
     		
-    		for (GameStateChild child : orderChildrenWithHeuristics(node.state.getChildren())) {
+    		double v = Double.NEGATIVE_INFINITY;
+    		
+    		for (GameStateChild child : sortedChildren) {
     			temp = alphaBetaSearch(child, depth - 1, alpha, beta);
     			
+    			if (v < temp.state.getUtility()) {
+    				v = temp.state.getUtility();
+    				best = temp;
+    			}
+    			alpha = Math.max(v, alpha);
+    			
+    			if (beta <= alpha) {
+    				break;
+    			}
     		}
     	} else {
     		//minimizing player
     		
+    		double v = Double.POSITIVE_INFINITY;
+    		
+    		Collections.reverse(sortedChildren);
+    		
+    		for (GameStateChild child : sortedChildren) {
+    			temp = alphaBetaSearch(child, depth - 1, alpha, beta);
+    			
+    			if (v > temp.state.getUtility()) {
+    				v = temp.state.getUtility();
+    				best = temp;
+    			}
+    			beta = Math.min(v, alpha);
+    			
+    			if (beta <= alpha) {
+    				break;
+    			}
+    		}
     	}
     	
-        return node;
+        return best;
     }
 
     /**
