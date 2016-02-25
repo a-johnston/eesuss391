@@ -9,6 +9,7 @@ import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 import edu.cwru.sepia.util.Direction;
+import edu.cwru.sepia.util.Pair;
 
 import java.util.*;
 
@@ -22,16 +23,16 @@ import java.util.*;
  */
 public class GameState {
 	private class DummyUnit {
-		int x;
-		int y;
-		int hp;
-		int id;
+		final int x;
+		final int y;
+		final int hp;
+		final int id;
 		
-		public DummyUnit(int x, int y, int hp, int id) {
+		public DummyUnit(int x, int y, DummyUnit parent) {
 			this.x  = x;
 			this.y  = y;
-			this.hp = hp;
-			this.id = id;
+			this.hp = parent.hp;
+			this.id = parent.id;
 		}
 		
 		public DummyUnit(UnitView view) {
@@ -79,8 +80,9 @@ public class GameState {
         buildDummyUnits();
     }
     
-    private GameState() {
-    	
+    private GameState(GameState parent) {
+    	this.game   = parent.game;
+    	this.player = parent.player;
     }
 
     /**
@@ -119,6 +121,10 @@ public class GameState {
                 archers.add(new DummyUnit(view));
             }
         }
+    }
+    
+    public void copyDummyUnits(GameState parent) {
+    	
     }
 
     /**
@@ -193,7 +199,7 @@ public class GameState {
         double distanceUtility = 0;
         for(DummyUnit footman: footmen) {
             for(DummyUnit archer: archers) {
-                distanceUtility -= calculateDistance(footman, archer);
+                distanceUtility -= getDistance(footman, archer);
             }
         }
         return distanceUtility;
@@ -202,7 +208,7 @@ public class GameState {
     /*
      * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
      */
-    public double calculateDistance(DummyUnit from, DummyUnit to) {
+    public double getDistance(DummyUnit from, DummyUnit to) {
         return Math.max(
         		Math.abs(from.x - to.x),
         		Math.abs(from.y - to.y));
@@ -238,7 +244,6 @@ public class GameState {
 
     public List<GameStateChild> doPlayerTurn() {
         List<GameStateChild> children = new ArrayList<GameStateChild>();
-        List<UnitView> footmen = this.game.getUnits(this.player);
         if(footmen.size() == 2) {
         	
         } else {
@@ -248,25 +253,24 @@ public class GameState {
         return children;
     }
 
-    public List<Action> playerUnitsActions(UnitView unit) {
-        List<Action> actions = new ArrayList<Action>();
-        boolean addedAttack = false;
+    public List<Pair<DummyUnit, Action>> getPossibleFutures(DummyUnit unit, List<DummyUnit> targets, int range) {
+        List<Pair<DummyUnit, Action>> actions = new ArrayList<>();
+        
+        for(DummyUnit enemy: targets) {
+            if (getDistance(unit, enemy) <= range) {
+                actions.add(new Pair<>(unit, Action.createPrimitiveAttack(unit.id, enemy.id)));
+                return actions;
+            }
+        }
+        
         for (Direction direction: Direction.values()) {
-            int newX = unit.getXPosition() + direction.xComponent();
-            int newY = unit.getYPosition() + direction.yComponent();
+            int newX = unit.x + direction.xComponent();
+            int newY = unit.y + direction.yComponent();
             if (this.game.inBounds(newX, newY)) {
-                for(DummyUnit archer: archers) {
-                    if(newX == archer.x && newY == archer.y){
-                        actions.add(Action.createPrimitiveAttack(unit.getID(), archer.id));
-                        addedAttack = true;
-                        break;
-                    }
-                }
-                if(!addedAttack) {
-                    actions.add(Action.createPrimitiveMove(unit.getID(), direction));
-                }
-
-                addedAttack = false;
+                actions.add(new Pair<>(
+                		new DummyUnit(newX, newY, unit),
+                		Action.createPrimitiveMove(unit.id, direction)
+                ));
             }
         }
 
