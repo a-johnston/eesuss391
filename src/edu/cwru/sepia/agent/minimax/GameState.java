@@ -4,8 +4,11 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
+import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
+import edu.cwru.sepia.environment.model.state.Unit.UnitView;
+
 import edu.cwru.sepia.util.Direction;
 
 import java.util.*;
@@ -20,6 +23,10 @@ import java.util.*;
  */
 public class GameState {
 
+    private State.StateView game;
+    private int player;
+    private double utility = 0;
+    private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
     /**
      * You will implement this constructor. It will
      * extract all of the needed state information from the built in
@@ -42,6 +49,42 @@ public class GameState {
      * @param state Current state of the episode
      */
     public GameState(State.StateView state) {
+        this.game = state;
+        this.player = MinimaxAlphaBeta.getPlayerAgent().getPlayerNumber();
+    }
+
+    /**
+     * gets a specific unit's health
+     * @param id
+     * @return
+     */
+    public int getUnitHealth(int id) {
+        return this.game.getUnit(id).getHP();
+    }
+
+    /**
+     * Returns all of the healths of the units in the game
+     * @return
+     */
+    public Map<Integer, Integer> getAllUnitsAndHealth() {
+        Map<Integer, Integer> unitHealthMap = new HashMap<Integer, Integer>();
+        for (UnitView unit : this.game.getAllUnits()) {
+            unitHealthMap.put(unit.getID(), unit.getHP());
+        }
+
+        return unitHealthMap;
+    }
+
+    public List<UnitView> getArcherUnits() {
+        List<UnitView> footmen = this.game.getUnits(this.player);
+        List<UnitView> archers = new ArrayList<UnitView>();
+        for (UnitView unit: this.game.getAllUnits()) {
+            if (!footmen.contains(unit)) {
+                archers.add(unit);
+            }
+        }
+
+        return archers;
     }
 
     /**
@@ -63,7 +106,77 @@ public class GameState {
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
-        return 0.0;
+        // Cache poke.
+        if (!(this.utility == 0)) {
+            return this.utility;
+        }
+
+        double utility = 0;
+        utility += getArcherHealthUtility();
+        utility += getFootmenHealthUtility();
+        utility += getDistanceUtility();
+        this.utility = utility; // Cache the value of the state
+        return utility;
+    }
+
+    public double getArcherHealthUtility() {
+        double archerHealthUtility = 0;
+        int unitCount = 0;
+        Map<Integer, Integer> map = getAllUnitsAndHealth();
+        for (UnitView archer: getArcherUnits()) {
+            archerHealthUtility -= archer.getHP();
+            unitCount++;
+        }
+
+        // Archers are ded.
+        if (archerHealthUtility == 0) {
+            return Double.MAX_VALUE;
+        } else if (unitCount == 1) {
+            archerHealthUtility += Double.MAX_VALUE/4;
+        }
+
+        return archerHealthUtility;
+    }
+
+    public double getFootmenHealthUtility() {
+        double footmenHealthUtility = 0;
+        int unitCount = 0;
+        for (UnitView footman: this.game.getUnits(this.player)) {
+            footmenHealthUtility += footman.getHP();
+            unitCount++;
+        }
+
+        // Footmen are ded
+        if (unitCount == 0) {
+            return Double.MIN_VALUE;
+        } else if (unitCount == 1) {
+            footmenHealthUtility -= Double.MIN_VALUE/4;
+        }
+
+        return footmenHealthUtility;
+    }
+
+    public double getDistanceUtility() {
+        double distanceUtility = 0;
+        for(UnitView footman: this.game.getUnits(this.player)) {
+            for(UnitView archer: this.getArcherUnits()) {
+                distanceUtility -= calculateDistance(footman.getXPosition(),
+                        footman.getYPosition(),
+                        archer.getXPosition(),
+                        archer.getYPosition());
+            }
+        }
+        return distanceUtility;
+    }
+
+    public double calculateDistance(int playerX, int playerY, int archerX, int archerY) {
+        int xDist = Math.abs(playerX - archerX);
+        int yDist = Math.abs(playerY - archerY);
+        if (xDist > yDist){
+            return xDist;
+        } else {
+            return yDist;
+        }
     }
 
     /**
@@ -83,6 +196,54 @@ public class GameState {
      * @return All possible actions and their associated resulting game state
      */
     public List<GameStateChild> getChildren() {
-        return null;
+        List<GameStateChild> children = new ArrayList<GameStateChild>();
+
+        if (this.game.getTurnNumber() % 2 == 0) {
+            children = doPlayerTurn();
+        } else {
+            children = doArcherTurn();
+        }
+
+        return children;
+    }
+
+    public List<GameStateChild> doPlayerTurn() {
+        List<GameStateChild> children = new ArrayList<GameStateChild>();
+        List<UnitView> footmen = this.game.getUnits(this.player);
+        if(footmen.size() == 2) {
+
+        } else {
+
+        }
+
+    }
+
+    public List<Action> playerUnitsActions(UnitView unit) {
+        List<Action> actions = new ArrayList<Action>();
+        boolean addedAttack = false;
+        for (Direction direction: Direction.values()) {
+            int newX = unit.getXPosition() + direction.xComponent();
+            int newY = unit.getYPosition() + direction.yComponent();
+            if (this.game.inBounds(newX, newY)) {
+                for(UnitView archer: getArcherUnits()) {
+                    if(newX==archer.getXPosition() && newY==archer.getYPosition()){
+                        actions.add(Action.createPrimitiveAttack(unit.getID(), archer.getID()));
+                        addedAttack = true;
+                        break;
+                    }
+                }
+                if(!addedAttack) {
+                    actions.add(Action.createPrimitiveMove(unit.getID(), direction));
+                }
+
+                addedAttack = false;
+            }
+        }
+
+        return actions;
+    }
+
+    public List<GameStateChild> doArcherTurn() {
+
     }
 }
