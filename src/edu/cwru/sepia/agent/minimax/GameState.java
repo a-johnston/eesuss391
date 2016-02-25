@@ -22,11 +22,16 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
-
+	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
+	private static final double MAGIC_UNKNOWN_UTILITY = Double.NEGATIVE_INFINITY + Math.PI;
+	
     private State.StateView game;
     private int player;
-    private double utility = 0;
-    private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
+    private double utility = MAGIC_UNKNOWN_UTILITY;
+    
+    private List<UnitView> footmen;
+    private List<UnitView> archers;
+
     /**
      * You will implement this constructor. It will
      * extract all of the needed state information from the built in
@@ -51,6 +56,8 @@ public class GameState {
     public GameState(State.StateView state) {
         this.game = state;
         this.player = MinimaxAlphaBeta.getPlayerAgent().getPlayerNumber();
+        
+        getUnitLists();
     }
 
     /**
@@ -74,10 +81,10 @@ public class GameState {
 
         return unitHealthMap;
     }
-
-    public List<UnitView> getArcherUnits() {
-        List<UnitView> footmen = this.game.getUnits(this.player);
-        List<UnitView> archers = new ArrayList<UnitView>();
+    
+    public List<UnitView> getUnitLists() {
+        footmen = this.game.getUnits(this.player);
+        archers = new ArrayList<UnitView>();
         for (UnitView unit: this.game.getAllUnits()) {
             if (!footmen.contains(unit)) {
                 archers.add(unit);
@@ -107,30 +114,29 @@ public class GameState {
      */
     public double getUtility() {
         // Cache poke.
-        if (!(this.utility == 0)) {
+        if (this.utility != MAGIC_UNKNOWN_UTILITY) {
             return this.utility;
         }
 
-        double utility = 0;
+        utility  = 0;
         utility += getArcherHealthUtility();
         utility += getFootmenHealthUtility();
         utility += getDistanceUtility();
-        this.utility = utility; // Cache the value of the state
+        
         return utility;
     }
 
     public double getArcherHealthUtility() {
         double archerHealthUtility = 0;
         int unitCount = 0;
-        Map<Integer, Integer> map = getAllUnitsAndHealth();
-        for (UnitView archer: getArcherUnits()) {
+        for (UnitView archer: archers) {
             archerHealthUtility -= archer.getHP();
             unitCount++;
         }
 
         // Archers are ded.
         if (archerHealthUtility == 0) {
-            return Double.MAX_VALUE;
+            return Double.POSITIVE_INFINITY;
         } else if (unitCount == 1) {
             archerHealthUtility += Double.MAX_VALUE/4;
         }
@@ -148,7 +154,7 @@ public class GameState {
 
         // Footmen are ded
         if (unitCount == 0) {
-            return Double.MIN_VALUE;
+            return Double.NEGATIVE_INFINITY;
         } else if (unitCount == 1) {
             footmenHealthUtility -= Double.MIN_VALUE/4;
         }
@@ -159,24 +165,20 @@ public class GameState {
     public double getDistanceUtility() {
         double distanceUtility = 0;
         for(UnitView footman: this.game.getUnits(this.player)) {
-            for(UnitView archer: this.getArcherUnits()) {
-                distanceUtility -= calculateDistance(footman.getXPosition(),
-                        footman.getYPosition(),
-                        archer.getXPosition(),
-                        archer.getYPosition());
+            for(UnitView archer: archers) {
+                distanceUtility -= calculateDistance(footman, archer);
             }
         }
         return distanceUtility;
     }
 
-    public double calculateDistance(int playerX, int playerY, int archerX, int archerY) {
-        int xDist = Math.abs(playerX - archerX);
-        int yDist = Math.abs(playerY - archerY);
-        if (xDist > yDist){
-            return xDist;
-        } else {
-            return yDist;
-        }
+    /*
+     * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
+     */
+    public double calculateDistance(UnitView from, UnitView to) {
+        return Math.max(
+        		Math.abs(from.getXPosition() - to.getXPosition()),
+        		Math.abs(from.getYPosition() - to.getYPosition()));
     }
 
     /**
@@ -215,7 +217,8 @@ public class GameState {
         } else {
 
         }
-
+        
+        return children;
     }
 
     public List<Action> playerUnitsActions(UnitView unit) {
@@ -225,7 +228,7 @@ public class GameState {
             int newX = unit.getXPosition() + direction.xComponent();
             int newY = unit.getYPosition() + direction.yComponent();
             if (this.game.inBounds(newX, newY)) {
-                for(UnitView archer: getArcherUnits()) {
+                for(UnitView archer: archers) {
                     if(newX==archer.getXPosition() && newY==archer.getYPosition()){
                         actions.add(Action.createPrimitiveAttack(unit.getID(), archer.getID()));
                         addedAttack = true;
@@ -244,6 +247,6 @@ public class GameState {
     }
 
     public List<GameStateChild> doArcherTurn() {
-
+    	return null;
     }
 }
