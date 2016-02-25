@@ -8,7 +8,6 @@ import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
-
 import edu.cwru.sepia.util.Direction;
 
 import java.util.*;
@@ -22,14 +21,35 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
+	private class DummyUnit {
+		int x;
+		int y;
+		int hp;
+		int id;
+		
+		public DummyUnit(int x, int y, int hp, int id) {
+			this.x  = x;
+			this.y  = y;
+			this.hp = hp;
+			this.id = id;
+		}
+		
+		public DummyUnit(UnitView view) {
+			this.x  = view.getXPosition();
+			this.y  = view.getYPosition();
+			this.hp = view.getHP();
+			this.id = view.getID();
+		}
+	}
+	
 	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
 	
     private State.StateView game;
     private int player;
     private Double utility = null;
     
-    private List<UnitView> footmen;
-    private List<UnitView> archers;
+    private List<DummyUnit> footmen;
+    private List<DummyUnit> archers;
 
     /**
      * You will implement this constructor. It will
@@ -56,7 +76,11 @@ public class GameState {
         this.game = state;
         this.player = MinimaxAlphaBeta.getPlayerAgent().getPlayerNumber();
         
-        getUnitLists();
+        buildDummyUnits();
+    }
+    
+    private GameState() {
+    	
     }
 
     /**
@@ -81,16 +105,20 @@ public class GameState {
         return unitHealthMap;
     }
     
-    public List<UnitView> getUnitLists() {
-        footmen = this.game.getUnits(this.player);
-        archers = new ArrayList<UnitView>();
-        for (UnitView unit: this.game.getAllUnits()) {
-            if (!footmen.contains(unit)) {
-                archers.add(unit);
+    public void buildDummyUnits() {
+    	List<UnitView> footmenView = this.game.getUnits(this.player);
+    	
+    	footmen = new ArrayList<>();
+        for (UnitView view : footmenView) {
+        	footmen.add(new DummyUnit(view));
+        }
+        
+        archers = new ArrayList<>();
+        for (UnitView view: this.game.getAllUnits()) {
+            if (!footmenView.contains(view)) {
+                archers.add(new DummyUnit(view));
             }
         }
-
-        return archers;
     }
 
     /**
@@ -128,8 +156,8 @@ public class GameState {
     public double getArcherHealthUtility() {
         double archerHealthUtility = 0;
         int unitCount = 0;
-        for (UnitView archer: archers) {
-            archerHealthUtility -= archer.getHP();
+        for (DummyUnit archer: archers) {
+            archerHealthUtility -= archer.hp;
             unitCount++;
         }
 
@@ -163,8 +191,8 @@ public class GameState {
 
     public double getDistanceUtility() {
         double distanceUtility = 0;
-        for(UnitView footman: this.game.getUnits(this.player)) {
-            for(UnitView archer: archers) {
+        for(DummyUnit footman: footmen) {
+            for(DummyUnit archer: archers) {
                 distanceUtility -= calculateDistance(footman, archer);
             }
         }
@@ -174,10 +202,10 @@ public class GameState {
     /*
      * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
      */
-    public double calculateDistance(UnitView from, UnitView to) {
+    public double calculateDistance(DummyUnit from, DummyUnit to) {
         return Math.max(
-        		Math.abs(from.getXPosition() - to.getXPosition()),
-        		Math.abs(from.getYPosition() - to.getYPosition()));
+        		Math.abs(from.x - to.x),
+        		Math.abs(from.y - to.y));
     }
 
     /**
@@ -212,7 +240,7 @@ public class GameState {
         List<GameStateChild> children = new ArrayList<GameStateChild>();
         List<UnitView> footmen = this.game.getUnits(this.player);
         if(footmen.size() == 2) {
-
+        	
         } else {
 
         }
@@ -227,9 +255,9 @@ public class GameState {
             int newX = unit.getXPosition() + direction.xComponent();
             int newY = unit.getYPosition() + direction.yComponent();
             if (this.game.inBounds(newX, newY)) {
-                for(UnitView archer: archers) {
-                    if(newX==archer.getXPosition() && newY==archer.getYPosition()){
-                        actions.add(Action.createPrimitiveAttack(unit.getID(), archer.getID()));
+                for(DummyUnit archer: archers) {
+                    if(newX == archer.x && newY == archer.y){
+                        actions.add(Action.createPrimitiveAttack(unit.getID(), archer.id));
                         addedAttack = true;
                         break;
                     }
