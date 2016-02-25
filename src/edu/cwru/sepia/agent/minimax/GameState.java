@@ -23,11 +23,10 @@ import java.util.*;
  */
 public class GameState {
 	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
-	private static final double MAGIC_UNKNOWN_UTILITY = Double.NEGATIVE_INFINITY + Math.PI;
 	
     private State.StateView game;
     private int player;
-    private double utility = MAGIC_UNKNOWN_UTILITY;
+    private Double utility = null;
     
     private List<UnitView> footmen;
     private List<UnitView> archers;
@@ -114,11 +113,11 @@ public class GameState {
      */
     public double getUtility() {
         // Cache poke.
-        if (this.utility != MAGIC_UNKNOWN_UTILITY) {
+        if (this.utility != null) {
             return this.utility;
         }
 
-        utility  = 0;
+        utility  = 0.0;
         utility += getArcherHealthUtility();
         utility += getFootmenHealthUtility();
         utility += getDistanceUtility();
