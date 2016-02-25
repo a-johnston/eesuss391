@@ -209,9 +209,7 @@ public class GameState {
      * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
      */
     public double getDistance(DummyUnit from, DummyUnit to) {
-        return Math.max(
-        		Math.abs(from.x - to.x),
-        		Math.abs(from.y - to.y));
+        return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
     }
 
     /**
