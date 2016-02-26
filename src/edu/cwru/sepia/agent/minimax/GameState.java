@@ -45,6 +45,9 @@ public class GameState {
 	
 	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
 	
+	private static final double UTILITY_BASE			= 30.0;
+	private static final double UTILITY_ATTACK_BONUS	= 100.0;
+	
     private State.StateView game;
     private int player;
     private Double utility = null;
@@ -93,19 +96,6 @@ public class GameState {
     public int getUnitHealth(int id) {
         return this.game.getUnit(id).getHP();
     }
-
-    /**
-     * Returns all of the healths of the units in the game
-     * @return
-     */
-    public Map<Integer, Integer> getAllUnitsAndHealth() {
-        Map<Integer, Integer> unitHealthMap = new HashMap<Integer, Integer>();
-        for (UnitView unit : this.game.getAllUnits()) {
-            unitHealthMap.put(unit.getID(), unit.getHP());
-        }
-
-        return unitHealthMap;
-    }
     
     public void buildDummyUnits() {
     	List<UnitView> footmenView = this.game.getUnits(this.player);
@@ -146,69 +136,53 @@ public class GameState {
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
-        // Cache poke.
         if (this.utility != null) {
             return this.utility;
         }
 
-        utility  = 0.0;
-        utility += getArcherHealthUtility();
-        utility += getFootmenHealthUtility();
-        utility += getDistanceUtility();
+        utility = UTILITY_BASE;
+        
+        if (footmen.size() == 0) {
+        	return Double.NEGATIVE_INFINITY;
+        }
+        
+        if (archers.size() == 0) {
+        	return Double.POSITIVE_INFINITY;
+        }
+        
+        int temp;
+        for (DummyUnit footman : footmen) {
+        	temp = getShortestDistance(footman);
+        	
+        	if (temp == 1) {
+        		utility += UTILITY_ATTACK_BONUS;
+        	}
+        	
+        	utility -= temp;
+        }
         
         return utility;
     }
-
-    public double getArcherHealthUtility() {
-        double archerHealthUtility = 0;
-        int unitCount = 0;
-        for (DummyUnit archer: archers) {
-            archerHealthUtility -= archer.hp;
-            unitCount++;
-        }
-
-        // Archers are ded.
-        if (archerHealthUtility == 0) {
-            return Double.POSITIVE_INFINITY;
-        } else if (unitCount == 1) {
-            archerHealthUtility += Double.MAX_VALUE/4;
-        }
-
-        return archerHealthUtility;
+    
+    public int getShortestDistance(DummyUnit footman) {
+    	int best = Integer.MAX_VALUE;
+    	
+    	int temp;
+    	for (DummyUnit archer : archers) {
+    		temp = getDistance(footman, archer);
+    		
+    		if (temp < best) {
+    			best = temp;
+    		}
+    	}
+    	
+    	return best;
     }
-
-    public double getFootmenHealthUtility() {
-        double footmenHealthUtility = 0;
-        int unitCount = 0;
-        for (UnitView footman: this.game.getUnits(this.player)) {
-            footmenHealthUtility += footman.getHP();
-            unitCount++;
-        }
-
-        // Footmen are ded
-        if (unitCount == 0) {
-            return Double.NEGATIVE_INFINITY;
-        } else if (unitCount == 1) {
-            footmenHealthUtility -= Double.MIN_VALUE/4;
-        }
-
-        return footmenHealthUtility;
-    }
-
-    public double getDistanceUtility() {
-        double distanceUtility = 0;
-        for(DummyUnit footman: footmen) {
-            for(DummyUnit archer: archers) {
-                distanceUtility -= getDistance(footman, archer);
-            }
-        }
-        return distanceUtility;
-    }
-
+    
     /*
      * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
      */
-    public double getDistance(DummyUnit from, DummyUnit to) {
+    public int getDistance(DummyUnit from, DummyUnit to) {
         return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
     }
 

@@ -150,7 +150,7 @@ public class MinimaxAlphaBeta extends Agent {
     public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children)
     {
         return children.stream().sorted((a, b) -> {
-        	return Double.compare(a.state.getUtility(), b.state.getUtility()); //might need to get flipped
+        	return Double.compare(b.state.getUtility(), a.state.getUtility());
         }).collect(Collectors.toList());
     }
 }
