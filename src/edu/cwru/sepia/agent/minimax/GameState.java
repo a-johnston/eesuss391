@@ -23,11 +23,11 @@ import java.util.*;
  */
 public class GameState {
 	private class DummyUnit {
-		final int x;
-		final int y;
-		final int hp;
-		final int id;
-		final UnitView view;
+        int x;
+		int y;
+		int hp;
+		int id;
+		UnitView view;
 
 		public DummyUnit(int x, int y, DummyUnit parent) {
 			this.x  = x;
@@ -263,7 +263,7 @@ public class GameState {
                     temp.add(actionMap);
                 } else {
                     for(Map<Integer, Action> actionMap: gameStateActions) {
-                        Map<Integer, Action> tempMap = new HashMap<>(actionMap);
+                        Map<Integer, Action> tempMap = new HashMap<>(actionMap); // Create a new map from this map rather than mutate this map.
                         tempMap.put(unitAction.getUnitId(), unitAction);
                         temp.add(actionMap);
                     }
@@ -273,7 +273,45 @@ public class GameState {
             gameStateActions = temp;
         }
 
-        // TODO: Generate new game states now that we have all of the possible hashmaps of actions. 
+        // TODO: Generate new game states now that we have all of the possible hashmaps of actions.
+
+        for (Map<Integer, Action> gameStateAction: gameStateActions) {
+            GameState state = new GameState(this);
+            List<DummyUnit> newControlledUnits = new ArrayList<DummyUnit>(controlled);
+            List<DummyUnit> newTargetUnits = new ArrayList<DummyUnit>(targets);
+
+            for (Integer key: gameStateAction.keySet()) {
+                Action action = gameStateAction.get(key);
+                if (action instanceof TargetedAction) {
+                    int target = ((TargetedAction) action).getTargetId();
+                    int attacker = action.getUnitId();
+
+                    for(DummyUnit possibleAttackTarget: newTargetUnits) {
+                        if(possibleAttackTarget.id == target) {
+                            for (DummyUnit possibleAttacker: newControlledUnits) {
+                                if (possibleAttacker.id == attacker) {
+                                    possibleAttackTarget.hp -= possibleAttacker.view.getTemplateView().getBasicAttack();
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+
+                } else if (action instanceof DirectedAction){
+                    for (DummyUnit possibleMoveUnit: newControlledUnits) {
+                        if (possibleMoveUnit.id == key) {
+                            possibleMoveUnit.x += ((DirectedAction) action).getDirection().xComponent();
+                            possibleMoveUnit.y += ((DirectedAction) action).getDirection().yComponent();
+                            break;
+                        }
+                    }
+                }
+            }
+            GameStateChild newChild = new GameStateChild(gameStateAction, state);
+
+            next.add(newChild);
+        }
 
         return next;
     }
