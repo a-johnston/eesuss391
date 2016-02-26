@@ -150,7 +150,11 @@ public class MinimaxAlphaBeta extends Agent {
     		// possibly introduce killer heuristic or other optimizations?
     ) {
         return children.stream().sorted((a, b) -> {
-        	return (ascending ? 1 : -1) * Double.compare(a.state.getUtility(), b.state.getUtility());
-        }).collect(Collectors.toList());
+        	return (ascending ? 1 : -1) * 
+        			Double.compare(
+        					// Random factor added choose equal options randomly
+        					a.state.getUtility() + Math.random(),
+        					b.state.getUtility());
+        }).collect(Collectors.toList()); // Fancy Java 8
     }
 }
