@@ -247,7 +247,7 @@ public class GameState {
         } else {
 
         }
-        
+
         return children;
     }
 
@@ -278,4 +278,28 @@ public class GameState {
     public List<GameStateChild> doArcherTurn() {
     	return null;
     }
+
+    public Action createAttackAction(UnitView attackingUnit, UnitView victimUnit) {
+        return Action.createPrimitiveAttack(attackingUnit.getID(), victimUnit.getID());
+    }
+
+    public Action createMoveAction(UnitView movingUnit,Direction direction) {
+        return Action.createPrimitiveMove(movingUnit.getID(), direction);
+    }
+
+
+
+    public GameState createState(List<UnitView> footmanUnits) {
+        State.StateBuilder builder = new State.StateBuilder();
+        // Step 1: Create all of the UnitTemplate from existing units
+
+        // Step 2: Create Units from UnitTemplate
+
+        // Step 3: Create PlayerState and add the Units
+
+        // Step 4: Add PlayerState and Unit to StateBuilder 
+
+        return new GameState(builder.build().getView(0));
+    }
+
 }
