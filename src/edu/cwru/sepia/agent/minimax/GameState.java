@@ -252,13 +252,29 @@ public class GameState {
         }
 
         List<Map<Integer, Action>> gameStateActions = new ArrayList<>();
-        // TODO: Crossproduct of all lists in controlled actions.
+
         while (!controlledActions.isEmpty()) {
+            List<Map<Integer, Action>> temp = new ArrayList<>();
             List<Action> unitActions = controlledActions.pop();
             for (Action unitAction: unitActions) {
-                
+                if(gameStateActions.isEmpty()) {
+                    Map<Integer, Action> actionMap = new HashMap<>();
+                    actionMap.put(unitAction.getUnitId(), unitAction);
+                    temp.add(actionMap);
+                } else {
+                    for(Map<Integer, Action> actionMap: gameStateActions) {
+                        Map<Integer, Action> tempMap = new HashMap<>(actionMap);
+                        tempMap.put(unitAction.getUnitId(), unitAction);
+                        temp.add(actionMap);
+                    }
+                }
             }
+
+            gameStateActions = temp;
         }
+
+        // TODO: Generate new game states now that we have all of the possible hashmaps of actions. 
+
         return next;
     }
 
