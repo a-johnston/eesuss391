@@ -29,9 +29,9 @@ public class GameState {
 		int id;
 		UnitView view;
 
-		public DummyUnit(int x, int y, DummyUnit parent) {
-			this.x  = x;
-			this.y  = y;
+		public DummyUnit(DummyUnit parent) {
+			this.x  = parent.x;
+			this.y  = parent.y;
 			this.hp = parent.hp;
 			this.id = parent.id;
 			this.view = parent.view;
@@ -44,6 +44,23 @@ public class GameState {
 			this.hp = view.getHP();
 			this.id = view.getID();
 			this.view = view;
+		}
+
+
+		public DummyUnit(DummyUnit parent, Direction direction) {
+			this.x  = parent.x + direction.xComponent();
+			this.y  = parent.y + direction.yComponent();
+			this.hp = parent.hp;
+			this.id = parent.id;
+			this.view = parent.view;
+		}
+		
+		public DummyUnit(DummyUnit parent, int damage) {
+			this.x  = parent.x;
+			this.y  = parent.y;
+			this.hp = parent.hp - damage;
+			this.id = parent.id;
+			this.view = parent.view;
 		}
 	}
 	
@@ -222,7 +239,7 @@ public class GameState {
 
     public List<GameStateChild> getPossibleFutures(List<DummyUnit> controlled, List<DummyUnit> targets, int range) {
         List<GameStateChild> next = new ArrayList<>();
-        Stack<List<Action>> controlledActions = new Stack<>();
+        List<Pair<DummyUnit, List<Action>>> controlledActions = new ArrayList<>();
 
         for (DummyUnit unit : controlled) {
             List<Action> unitActions = new ArrayList<>();
@@ -230,8 +247,6 @@ public class GameState {
         	for(DummyUnit enemy: targets) {
         		if (getDistance(unit, enemy) <= range) {
                     unitActions.add(this.createAttackAction(unit.view, enemy.view));
-        			//                actions.add(new Pair<>(unit, Action.createPrimitiveAttack(unit.id, enemy.id)));
-        			//                return actions;
         		}
         	}
 
@@ -239,74 +254,60 @@ public class GameState {
         		int newX = unit.x + direction.xComponent();
         		int newY = unit.y + direction.yComponent();
         		if (validMove(newX, newY, targets)) {
-
                     unitActions.add(this.createMoveAction(unit.view, direction));
-        			//                actions.add(new Pair<>(
-        			//                		new DummyUnit(newX, newY, unit),
-        			//                		Action.createPrimitiveMove(unit.id, direction)
-        			//                ));
         		}
         	}
 
-            controlledActions.push(unitActions);
+            controlledActions.add(new Pair<>(unit, unitActions));
         }
 
-        List<Map<Integer, Action>> gameStateActions = new ArrayList<>();
+        List<List<Pair<DummyUnit, Action>>> gameStateActions = new ArrayList<>();
 
-        while (!controlledActions.isEmpty()) {
-            List<Map<Integer, Action>> temp = new ArrayList<>();
-            List<Action> unitActions = controlledActions.pop();
-            for (Action unitAction: unitActions) {
-                if(gameStateActions.isEmpty()) {
-                    Map<Integer, Action> actionMap = new HashMap<>();
-                    actionMap.put(unitAction.getUnitId(), unitAction);
-                    temp.add(actionMap);
-                } else {
-                    for(Map<Integer, Action> actionMap: gameStateActions) {
-                        Map<Integer, Action> tempMap = new HashMap<>(actionMap); // Create a new map from this map rather than mutate this map.
-                        tempMap.put(unitAction.getUnitId(), unitAction);
-                        temp.add(actionMap);
-                    }
-                }
-            }
-
-            gameStateActions = temp;
+        for (Pair<DummyUnit, List<Action>> actions : controlledActions) {
+        	if (gameStateActions.size() == 0) {
+        		for (Action action : actions.b) {
+        			List<Pair<DummyUnit, Action>> added = new ArrayList<>();
+        			added.add(new Pair<>(actions.a, action));
+        			gameStateActions.add(added);
+        		}
+        	} else {
+        		for (List<Pair<DummyUnit, Action>> state : gameStateActions) {
+        			for (Action action : actions.b) {
+        				state.add(new Pair<>(actions.a, action));
+        			}
+        		}
+        	}
         }
         
-        for (Map<Integer, Action> gameStateAction: gameStateActions) {
+        for (List<Pair<DummyUnit, Action>> gameStateAction: gameStateActions) {
             GameState state = new GameState(this);
-            List<DummyUnit> newControlledUnits = new ArrayList<DummyUnit>(controlled);
-            List<DummyUnit> newTargetUnits = new ArrayList<DummyUnit>(targets);
+            List<DummyUnit> newControlledUnits	= new ArrayList<>();
+            List<DummyUnit> newTargetUnits		= deepCopyDummies(targets);
+            
+            state.footmen = newControlledUnits;
+            state.archers = newTargetUnits;
 
-            for (Integer key: gameStateAction.keySet()) {
-                Action action = gameStateAction.get(key);
+            Map<Integer, Action> map = new HashMap<>();
+            
+            for (Pair<DummyUnit, Action> pair : gameStateAction) {
+                Action action = pair.b;
                 if (action instanceof TargetedAction) {
-                    int target = ((TargetedAction) action).getTargetId();
-                    int attacker = action.getUnitId();
-
-                    for(DummyUnit possibleAttackTarget: newTargetUnits) {
-                        if(possibleAttackTarget.id == target) {
-                            for (DummyUnit possibleAttacker: newControlledUnits) {
-                                if (possibleAttacker.id == attacker) {
-                                    possibleAttackTarget.hp -= possibleAttacker.view.getTemplateView().getBasicAttack();
-                                    break;
-                                }
-                            }
-                            break;
+                    for(DummyUnit attackTarget: targets) {
+                        if(attackTarget.id == ((TargetedAction) action).getTargetId()) {
+                        	attackTarget.hp -= pair.a.view.getTemplateView().getBasicAttack();
+                        	break;
                         }
                     }
-
+                    
+                    newControlledUnits.add(new DummyUnit(pair.a));
                 } else if (action instanceof DirectedAction){
-                    for (DummyUnit possibleMoveUnit: newControlledUnits) {
-                        if (possibleMoveUnit.id == key) {
-                            possibleMoveUnit.x += ((DirectedAction) action).getDirection().xComponent();
-                            possibleMoveUnit.y += ((DirectedAction) action).getDirection().yComponent();
-                            break;
-                        }
-                    }
+                	newControlledUnits.add(new DummyUnit(pair.a, ((DirectedAction) action).getDirection()));
                 }
+                
+                map.put(pair.a.id, pair.b);
             }
-            GameStateChild newChild = new GameStateChild(gameStateAction, state);
+            
+            GameStateChild newChild = new GameStateChild(map, state);
 
             next.add(newChild);
         }
@@ -329,13 +330,23 @@ public class GameState {
         }
 
         return true;
-
     }
+    
     public Action createAttackAction(UnitView attackingUnit, UnitView victimUnit) {
         return Action.createPrimitiveAttack(attackingUnit.getID(), victimUnit.getID());
     }
 
     public Action createMoveAction(UnitView movingUnit,Direction direction) {
         return Action.createPrimitiveMove(movingUnit.getID(), direction);
+    }
+    
+    public List<DummyUnit> deepCopyDummies(List<DummyUnit> dummies) {
+    	List<DummyUnit> newList = new ArrayList<>();
+    	
+    	for (DummyUnit dummy : dummies) {
+    		newList.add(new DummyUnit(dummy));
+    	}
+    	
+    	return newList;
     }
 }
