@@ -222,7 +222,7 @@ public class GameState {
 
     public List<GameStateChild> getPossibleFutures(List<DummyUnit> controlled, List<DummyUnit> targets, int range) {
         List<GameStateChild> next = new ArrayList<>();
-        List<List<Action>> controlledActions = new ArrayList<>();
+        Stack<List<Action>> controlledActions = new Stack<>();
 
         for (DummyUnit unit : controlled) {
             List<Action> unitActions = new ArrayList<>();
@@ -248,11 +248,17 @@ public class GameState {
         		}
         	}
 
-            controlledActions.add(unitActions);
+            controlledActions.push(unitActions);
         }
 
+        List<Map<Integer, Action>> gameStateActions = new ArrayList<>();
         // TODO: Crossproduct of all lists in controlled actions.
-
+        while (!controlledActions.isEmpty()) {
+            List<Action> unitActions = controlledActions.pop();
+            for (Action unitAction: unitActions) {
+                
+            }
+        }
         return next;
     }
 
