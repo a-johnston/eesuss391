@@ -27,12 +27,15 @@ public class GameState {
 		final int y;
 		final int hp;
 		final int id;
+		final UnitView view;
 		
 		public DummyUnit(int x, int y, DummyUnit parent) {
 			this.x  = x;
 			this.y  = y;
 			this.hp = parent.hp;
 			this.id = parent.id;
+			
+			this.view = parent.view;
 		}
 		
 		public DummyUnit(UnitView view) {
@@ -40,6 +43,8 @@ public class GameState {
 			this.y  = view.getYPosition();
 			this.hp = view.getHP();
 			this.id = view.getID();
+			
+			this.view = view;
 		}
 	}
 	
@@ -49,7 +54,7 @@ public class GameState {
 	private static final double UTILITY_ATTACK_BONUS	= 100.0;
 	
     private State.StateView game;
-    private int player;
+    private boolean maxAgent;
     private Double utility = null;
     
     private List<DummyUnit> footmen;
@@ -78,14 +83,14 @@ public class GameState {
      */
     public GameState(State.StateView state) {
         this.game = state;
-        this.player = MinimaxAlphaBeta.getPlayerAgent().getPlayerNumber();
+        this.maxAgent = true;
         
         buildDummyUnits();
     }
     
     private GameState(GameState parent) {
     	this.game   = parent.game;
-    	this.player = parent.player;
+    	this.maxAgent = !parent.maxAgent; // swap sides
     }
 
     /**
@@ -98,7 +103,7 @@ public class GameState {
     }
     
     public void buildDummyUnits() {
-    	List<UnitView> footmenView = this.game.getUnits(this.player);
+    	List<UnitView> footmenView = this.game.getUnits(0);
     	
     	footmen = new ArrayList<>();
         for (UnitView view : footmenView) {
@@ -136,12 +141,14 @@ public class GameState {
      * @return The weighted linear combination of the features
      */
     public double getUtility() {
+    	// Since we run a sort and then more checks, cache for performance
         if (this.utility != null) {
             return this.utility;
         }
 
         utility = UTILITY_BASE;
         
+        // Handle end-game scenarios
         if (footmen.size() == 0) {
         	return Double.NEGATIVE_INFINITY;
         }
@@ -150,6 +157,7 @@ public class GameState {
         	return Double.POSITIVE_INFINITY;
         }
         
+        // Prioritize being closer, having more footmen, and attacking
         int temp;
         for (DummyUnit footman : footmen) {
         	temp = getShortestDistance(footman);
@@ -180,7 +188,9 @@ public class GameState {
     }
     
     /*
+     * Taxicab norm dx + dy
      * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
+     * Assuming as per instructions we cannot move diagonally
      */
     public int getDistance(DummyUnit from, DummyUnit to) {
         return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
@@ -203,50 +213,45 @@ public class GameState {
      * @return All possible actions and their associated resulting game state
      */
     public List<GameStateChild> getChildren() {
-        List<GameStateChild> children = new ArrayList<GameStateChild>();
-
-        if (this.game.getTurnNumber() % 2 == 0) {
-            children = doPlayerTurn();
+        if (maxAgent) {
+            return getPossibleFutures(footmen, archers, 1);
         } else {
-            children = doArcherTurn();
+        	return getPossibleFutures(archers, footmen, 3); // Guess the range?
         }
-
-        return children;
     }
 
     public List<GameStateChild> doPlayerTurn() {
         List<GameStateChild> children = new ArrayList<GameStateChild>();
-        if(footmen.size() == 2) {
-        	
-        } else {
-
-        }
+        
+        
 
         return children;
     }
 
-    public List<Pair<DummyUnit, Action>> getPossibleFutures(DummyUnit unit, List<DummyUnit> targets, int range) {
-        List<Pair<DummyUnit, Action>> actions = new ArrayList<>();
-        
-        for(DummyUnit enemy: targets) {
-            if (getDistance(unit, enemy) <= range) {
-                actions.add(new Pair<>(unit, Action.createPrimitiveAttack(unit.id, enemy.id)));
-                return actions;
-            }
-        }
-        
-        for (Direction direction: Direction.values()) {
-            int newX = unit.x + direction.xComponent();
-            int newY = unit.y + direction.yComponent();
-            if (this.game.inBounds(newX, newY)) {
-                actions.add(new Pair<>(
-                		new DummyUnit(newX, newY, unit),
-                		Action.createPrimitiveMove(unit.id, direction)
-                ));
-            }
+    public List<GameStateChild> getPossibleFutures(List<DummyUnit> controlled, List<DummyUnit> targets, int range) {
+        List<GameStateChild> next = new ArrayList<>();
+
+        for (DummyUnit unit : controlled) {
+        	for(DummyUnit enemy: targets) {
+        		if (getDistance(unit, enemy) <= range) {
+        			//                actions.add(new Pair<>(unit, Action.createPrimitiveAttack(unit.id, enemy.id)));
+        			//                return actions;
+        		}
+        	}
+
+        	for (Direction direction: Direction.values()) {
+        		int newX = unit.x + direction.xComponent();
+        		int newY = unit.y + direction.yComponent();
+        		if (this.game.inBounds(newX, newY)) {
+        			//                actions.add(new Pair<>(
+        			//                		new DummyUnit(newX, newY, unit),
+        			//                		Action.createPrimitiveMove(unit.id, direction)
+        			//                ));
+        		}
+        	}
         }
 
-        return actions;
+        return next;
     }
 
     public List<GameStateChild> doArcherTurn() {

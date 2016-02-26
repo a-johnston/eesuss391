@@ -4,16 +4,12 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
-import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import javax.swing.event.ListSelectionEvent;
 
 public class MinimaxAlphaBeta extends Agent {
 	private static final long serialVersionUID = 3799985942000030012L;
@@ -89,10 +85,11 @@ public class MinimaxAlphaBeta extends Agent {
     	GameStateChild temp, best = null;
     	
     	List<GameStateChild> sortedChildren;
-    	sortedChildren = orderChildrenWithHeuristics(node.state.getChildren());
     	
     	if ((depth + numPlys) % 2 == 0) {
     		//maximizing player
+    		
+    		sortedChildren = orderChildrenWithHeuristics(node.state.getChildren(), false);
     		
     		double v = Double.NEGATIVE_INFINITY;
     		
@@ -114,7 +111,7 @@ public class MinimaxAlphaBeta extends Agent {
     		
     		double v = Double.POSITIVE_INFINITY;
     		
-    		Collections.reverse(sortedChildren);
+    		sortedChildren = orderChildrenWithHeuristics(node.state.getChildren(), true);
     		
     		for (GameStateChild child : sortedChildren) {
     			temp = alphaBetaSearch(child, depth - 1, alpha, beta);
@@ -147,10 +144,13 @@ public class MinimaxAlphaBeta extends Agent {
      * @param children
      * @return The list of children sorted by your heuristic.
      */
-    public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children)
-    {
+    public List<GameStateChild> orderChildrenWithHeuristics(
+    		List<GameStateChild> children,
+    		boolean ascending
+    		// possibly introduce killer heuristic or other optimizations?
+    ) {
         return children.stream().sorted((a, b) -> {
-        	return Double.compare(b.state.getUtility(), a.state.getUtility());
+        	return (ascending ? 1 : -1) * Double.compare(a.state.getUtility(), b.state.getUtility());
         }).collect(Collectors.toList());
     }
 }
