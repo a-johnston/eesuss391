@@ -272,9 +272,7 @@ public class GameState {
 
             gameStateActions = temp;
         }
-
-        // TODO: Generate new game states now that we have all of the possible hashmaps of actions.
-
+        
         for (Map<Integer, Action> gameStateAction: gameStateActions) {
             GameState state = new GameState(this);
             List<DummyUnit> newControlledUnits = new ArrayList<DummyUnit>(controlled);
