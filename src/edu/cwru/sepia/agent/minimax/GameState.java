@@ -28,31 +28,31 @@ public class GameState {
 		final int hp;
 		final int id;
 		final UnitView view;
-		
+
 		public DummyUnit(int x, int y, DummyUnit parent) {
 			this.x  = x;
 			this.y  = y;
 			this.hp = parent.hp;
 			this.id = parent.id;
-			
 			this.view = parent.view;
 		}
+
 		
 		public DummyUnit(UnitView view) {
 			this.x  = view.getXPosition();
 			this.y  = view.getYPosition();
 			this.hp = view.getHP();
 			this.id = view.getID();
-			
 			this.view = view;
 		}
 	}
 	
 	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
-	
+
 	private static final double UTILITY_BASE			= 30.0;
 	private static final double UTILITY_ATTACK_BONUS	= 100.0;
 	
+
     private State.StateView game;
     private boolean maxAgent;
     private Double utility = null;
@@ -214,26 +214,22 @@ public class GameState {
      */
     public List<GameStateChild> getChildren() {
         if (maxAgent) {
-            return getPossibleFutures(footmen, archers, 1);
+            return getPossibleFutures(footmen, archers, footmen.get(0).view.getTemplateView().getRange());
         } else {
-        	return getPossibleFutures(archers, footmen, 3); // Guess the range?
+        	return getPossibleFutures(archers, footmen, archers.get(0).view.getTemplateView().getRange());
         }
-    }
-
-    public List<GameStateChild> doPlayerTurn() {
-        List<GameStateChild> children = new ArrayList<GameStateChild>();
-        
-        
-
-        return children;
     }
 
     public List<GameStateChild> getPossibleFutures(List<DummyUnit> controlled, List<DummyUnit> targets, int range) {
         List<GameStateChild> next = new ArrayList<>();
+        List<List<Action>> controlledActions = new ArrayList<>();
 
         for (DummyUnit unit : controlled) {
+            List<Action> unitActions = new ArrayList<>();
+
         	for(DummyUnit enemy: targets) {
         		if (getDistance(unit, enemy) <= range) {
+                    unitActions.add(this.createAttackAction(unit.view, enemy.view));
         			//                actions.add(new Pair<>(unit, Action.createPrimitiveAttack(unit.id, enemy.id)));
         			//                return actions;
         		}
@@ -242,22 +238,41 @@ public class GameState {
         	for (Direction direction: Direction.values()) {
         		int newX = unit.x + direction.xComponent();
         		int newY = unit.y + direction.yComponent();
-        		if (this.game.inBounds(newX, newY)) {
+        		if (validMove(newX, newY, targets)) {
+
+                    unitActions.add(this.createMoveAction(unit.view, direction));
         			//                actions.add(new Pair<>(
         			//                		new DummyUnit(newX, newY, unit),
         			//                		Action.createPrimitiveMove(unit.id, direction)
         			//                ));
         		}
         	}
+
+            controlledActions.add(unitActions);
         }
+
+        // TODO: Crossproduct of all lists in controlled actions.
 
         return next;
     }
 
-    public List<GameStateChild> doArcherTurn() {
-    	return null;
-    }
+    public boolean validMove(int newX, int newY, List<DummyUnit> enemies) {
+        if (!this.game.inBounds(newX, newY)) {
+            return false;
+        } else if (this.game.isResourceAt(newX, newY)) {
+            return false;
+        }
 
+        // Enemies don't move on our turn...right...right guys?!?!?!?
+        for (DummyUnit enemy: enemies) {
+            if(enemy.x == newX && enemy.y == newY) {
+                return false;
+            }
+        }
+
+        return true;
+
+    }
     public Action createAttackAction(UnitView attackingUnit, UnitView victimUnit) {
         return Action.createPrimitiveAttack(attackingUnit.getID(), victimUnit.getID());
     }
@@ -265,20 +280,4 @@ public class GameState {
     public Action createMoveAction(UnitView movingUnit,Direction direction) {
         return Action.createPrimitiveMove(movingUnit.getID(), direction);
     }
-
-
-
-    public GameState createState(List<UnitView> footmanUnits) {
-        State.StateBuilder builder = new State.StateBuilder();
-        // Step 1: Create all of the UnitTemplate from existing units
-
-        // Step 2: Create Units from UnitTemplate
-
-        // Step 3: Create PlayerState and add the Units
-
-        // Step 4: Add PlayerState and Unit to StateBuilder 
-
-        return new GameState(builder.build().getView(0));
-    }
-
 }
