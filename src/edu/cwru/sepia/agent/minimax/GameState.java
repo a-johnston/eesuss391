@@ -167,11 +167,11 @@ public class GameState {
         
         // Handle end-game scenarios
         if (footmen.size() == 0) {
-        	return Double.NEGATIVE_INFINITY;
+        	return -10000;
         }
         
         if (archers.size() == 0) {
-        	return Double.POSITIVE_INFINITY;
+        	return 10000;
         }
         
         // Prioritize being closer, having more footmen, and attacking

@@ -152,8 +152,8 @@ public class MinimaxAlphaBeta extends Agent {
         return children.stream().sorted((a, b) -> {
         	return (ascending ? 1 : -1) * 
         			Double.compare(
-        					// Random factor added choose equal options randomly
-        					a.state.getUtility() + Math.random(),
+        					// If there's a tie we pick randomly
+        					a.state.getUtility(),
         					b.state.getUtility());
         }).collect(Collectors.toList()); // Fancy Java 8
     }
