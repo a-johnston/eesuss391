@@ -67,7 +67,7 @@ public class GameState {
 	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
 
 	private static final double UTILITY_BASE			= 30.0;
-	private static final double UTILITY_ATTACK_BONUS	= 100.0;
+	private static final double UTILITY_ATTACK_BONUS	= 1000.0;
 	
 
     private State.StateView game;
@@ -177,15 +177,14 @@ public class GameState {
         // Prioritize being closer, having more footmen, and attacking
         int temp;
         for (DummyUnit footman : footmen) {
-        	temp = getShortestDistance(footman);
-        	
-        	if (temp == 1) {
-        		utility += UTILITY_ATTACK_BONUS;
-        	}
-        	
-        	utility -= temp;
+            temp = getShortestDistance(footman);
+
+            if (temp == 1) {
+                utility += UTILITY_ATTACK_BONUS;
+            }
+
+            utility -= temp;
         }
-        
         return utility;
     }
     
@@ -265,20 +264,25 @@ public class GameState {
 
         for (Pair<DummyUnit, List<Action>> actions : controlledActions) {
         	if (gameStateActions.size() == 0) {
-        		for (Action action : actions.b) {
-        			List<Pair<DummyUnit, Action>> added = new ArrayList<>();
-        			added.add(new Pair<>(actions.a, action));
+                for (Action action : actions.b) {
+                    List<Pair<DummyUnit, Action>> added = new ArrayList<>();
+                    added.add(new Pair<>(actions.a, action));
         			gameStateActions.add(added);
         		}
         	} else {
+                List<List<Pair<DummyUnit, Action>>> temp = new ArrayList<>();
+                // This cannot be algorithmically correct.
         		for (List<Pair<DummyUnit, Action>> state : gameStateActions) {
         			for (Action action : actions.b) {
-        				state.add(new Pair<>(actions.a, action));
-        			}
+                        List<Pair<DummyUnit, Action>> tempState = new ArrayList<Pair<DummyUnit, Action>>(state);
+                        tempState.add(new Pair<>(actions.a, action));
+                        temp.add(tempState);
+                    }
         		}
+                gameStateActions = temp;
         	}
         }
-        
+
         for (List<Pair<DummyUnit, Action>> gameStateAction: gameStateActions) {
             GameState state = new GameState(this);
             List<DummyUnit> newControlledUnits	= new ArrayList<>();
