@@ -66,9 +66,13 @@ public class GameState {
 	
 	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
 
-	private static final double UTILITY_BASE			= 30.0;
-	private static final double UTILITY_ATTACK_BONUS	= 1000.0;
-	
+    private static final double ARCHER_WIN_BONUS        = -1000.0;
+    private static final double FOOTMEN_WIN_BONUS       = 1000.0;
+    private static final double LIVING_ARCHER_BONUS     = -10.0;
+    private static final double LIVING_FOOTMAN_BONUS    = 10.0;
+	private static final double UTILITY_BASE			= 0;
+	private static final double UTILITY_ATTACK_BONUS	= 5.0;
+	private static final double UTILITY_NO_PATH         = -30.0;
 
     private State.StateView game;
     private boolean maxAgent;
@@ -128,10 +132,8 @@ public class GameState {
         }
         
         archers = new ArrayList<>();
-        for (UnitView view: this.game.getAllUnits()) {
-            if (!footmenView.contains(view)) {
-                archers.add(new DummyUnit(view));
-            }
+        for (UnitView view: this.game.getUnits(1)) {
+            archers.add(new DummyUnit(view));
         }
     }
     
@@ -167,12 +169,16 @@ public class GameState {
         
         // Handle end-game scenarios
         if (footmen.size() == 0) {
-        	return -10000;
+        	return ARCHER_WIN_BONUS;
         }
         
         if (archers.size() == 0) {
-        	return 10000;
+        	return FOOTMEN_WIN_BONUS;
         }
+
+        utility += footmen.size()*LIVING_FOOTMAN_BONUS;
+        utility += archers.size()*LIVING_ARCHER_BONUS;
+
         
         // Prioritize being closer, having more footmen, and attacking
         int temp;
@@ -187,7 +193,16 @@ public class GameState {
         }
         return utility;
     }
-    
+
+    /**
+     * Logically, if the "moving towards" path is blocked, the utility is flipped.
+     * @return
+     */
+    public boolean blockedPath() {
+        return -1;
+
+    }
+
     public int getShortestDistance(DummyUnit footman) {
     	int best = Integer.MAX_VALUE;
     	
@@ -207,6 +222,7 @@ public class GameState {
      * Taxicab norm dx + dy
      * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
      * Assuming as per instructions we cannot move diagonally
+     * TODO: We can move diagnoally apparently??!
      */
     public int getDistance(DummyUnit from, DummyUnit to) {
         return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
