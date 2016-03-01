@@ -73,6 +73,8 @@ public class GameState {
 	private static final double UTILITY_BASE			= 0;
 	private static final double UTILITY_ATTACK_BONUS	= 5.0;
 	private static final double UTILITY_NO_PATH         = -30.0;
+    private static final double ROOK_CHECKMATE_BONUS    = 10.0;
+    private static final double UNCHASED_ARCHER_BONUS   = -20.0; // It's really bad to leave an archer "unchased"
 
     private State.StateView game;
     private boolean maxAgent;
@@ -178,8 +180,8 @@ public class GameState {
 
         utility += footmen.size()*LIVING_FOOTMAN_BONUS;
         utility += archers.size()*LIVING_ARCHER_BONUS;
+        utility += rookCheckmatePositionUtility();
 
-        
         // Prioritize being closer, having more footmen, and attacking
         int temp;
         for (DummyUnit footman : footmen) {
@@ -191,7 +193,78 @@ public class GameState {
 
             utility -= temp;
         }
+        utility += Math.random(); // Break ties randomly
         return utility;
+    }
+
+    /**
+     * Determines if the footment are in a "rook checkmate" like position.
+     * Such a position is nice because it allows for the archer to be trapped and subsequently killed.
+     * @return
+     */
+    public double rookCheckmatePositionUtility() {
+        double utility = 0.0;
+
+        List<Pair<DummyUnit, Direction>> edgeArchers = new ArrayList();
+        for (DummyUnit archer : archers) {
+            // Not else if because of corner case...like a literal corner case.
+            if(archer.x == 0) {
+                edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.WEST));
+            }
+
+            if (archer.y == 0) {
+                edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.NORTH));
+            }
+            if (archer.x == game.getXExtent() - 1) {
+                edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.EAST));
+
+            }
+            if (archer.y == game.getYExtent() - 1) {
+                edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.SOUTH));
+            }
+        }
+
+        for(Pair<DummyUnit, Direction> edgeArcherPair: edgeArchers) {
+            if(isRookCheckmatePosition( edgeArcherPair)) {
+                utility += ROOK_CHECKMATE_BONUS;
+            }
+        }
+
+        return utility;
+    }
+
+    public boolean isRookCheckmatePosition(Pair<DummyUnit, Direction> edgeArcherPair) {
+        boolean firstRankCovered = false;
+        boolean secondRankCovered = false;
+
+        for (DummyUnit footman: footmen) {
+            if(edgeArcherPair.b == Direction.EAST) {
+                if (footman.x == game.getXExtent() - 1) {
+                    firstRankCovered = true;
+                } else if (footman.x == game.getXExtent() - 2) {
+                    secondRankCovered = true;
+                }
+            } else if (edgeArcherPair.b == Direction.WEST) {
+                if (footman.x == 0) {
+                    firstRankCovered = true;
+                } else if (footman.x == 1) {
+                    secondRankCovered = true;
+                }
+            } else if (edgeArcherPair.b == Direction.NORTH) {
+                if (footman.y == 0) {
+                    firstRankCovered = true;
+                } else if (footman.y == 1) {
+                    secondRankCovered = true;
+                }
+            } else if (edgeArcherPair.b == Direction.SOUTH) {
+                if (footman.y == game.getYExtent() - 1 ) {
+                    firstRankCovered = true;
+                } else if (footman.y == game.getYExtent() - 2) {
+                    secondRankCovered = true;
+                }
+            }
+        }
+        return firstRankCovered && secondRankCovered;
     }
 
     /**
@@ -199,10 +272,16 @@ public class GameState {
      * @return
      */
     public boolean blockedPath() {
-        return -1;
+
+        return false;
 
     }
 
+    /**
+     *
+     * @param footman
+     * @return
+     */
     public int getShortestDistance(DummyUnit footman) {
     	int best = Integer.MAX_VALUE;
     	
@@ -266,6 +345,13 @@ public class GameState {
         	}
 
         	for (Direction direction: Direction.values()) {
+                // Ignore diagonal directional movement
+                if (direction == Direction.SOUTHEAST ||
+                        direction == Direction.SOUTHWEST ||
+                        direction == Direction.NORTHEAST ||
+                        direction == Direction.NORTHWEST){
+                    continue;
+                }
         		int newX = unit.x + direction.xComponent();
         		int newY = unit.y + direction.yComponent();
         		if (validMove(newX, newY, targets)) {
@@ -287,7 +373,6 @@ public class GameState {
         		}
         	} else {
                 List<List<Pair<DummyUnit, Action>>> temp = new ArrayList<>();
-                // This cannot be algorithmically correct.
         		for (List<Pair<DummyUnit, Action>> state : gameStateActions) {
         			for (Action action : actions.b) {
                         List<Pair<DummyUnit, Action>> tempState = new ArrayList<Pair<DummyUnit, Action>>(state);
