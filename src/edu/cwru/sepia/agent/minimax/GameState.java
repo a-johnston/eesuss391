@@ -1,12 +1,9 @@
 package edu.cwru.sepia.agent.minimax;
 
 import edu.cwru.sepia.action.Action;
-import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
-import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.state.State;
-import edu.cwru.sepia.environment.model.state.Unit;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
@@ -205,7 +202,7 @@ public class GameState {
     public double rookCheckmatePositionUtility() {
         double utility = 0.0;
 
-        List<Pair<DummyUnit, Direction>> edgeArchers = new ArrayList();
+        List<Pair<DummyUnit, Direction>> edgeArchers = new ArrayList<>();
         for (DummyUnit archer : archers) {
             // Not else if because of corner case...like a literal corner case.
             if(archer.x == 0) {
@@ -297,50 +294,60 @@ public class GameState {
     	return best;
     }
     
-    /*
-     * Taxicab norm dx + dy
-     * Minimum number of moves to reach (to.x, to.y) from (from.x, from.y)
-     * Assuming as per instructions we cannot move diagonally
-     * TODO: We can move diagnoally apparently??!
+    /**
+     * Computes the taxicab norm dx + dy. In this assignment, the minimum
+     * number of moves to reach a given destination. Unlike Chebychev, accounts
+     * for not being able to move diagonally.
+     * 
+     * @param from
+     * @param to
+     * @return
      */
     public int getDistance(DummyUnit from, DummyUnit to) {
         return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
     }
 
     /**
-     * You will implement this function.
-     *
-     * This will return a list of GameStateChild objects. You will generate all of the possible
-     * actions in a step and then determine the resulting game state from that action. These are your GameStateChildren.
-     *
-     * You may find it useful to iterate over all the different directions in SEPIA.
-     *
-     * for(Direction direction : Directions.values())
-     *
-     * To get the resulting position from a move in that direction you can do the following
-     * x += direction.xComponent()
-     * y += direction.yComponent()
-     *
-     * @return All possible actions and their associated resulting game state
+     * Generates all possible children of the current state. Makes moves for both
+     * the footmen and the archers depending on which turn it is.
+     * @return list of game states that are one step from this step
      */
     public List<GameStateChild> getChildren() {
         if (maxAgent) {
-            return getPossibleFutures(footmen, archers, footmen.get(0).view.getTemplateView().getRange());
+            return getPossibleFutures(footmen, archers);
         } else {
-        	return getPossibleFutures(archers, footmen, archers.get(0).view.getTemplateView().getRange());
+        	return getPossibleFutures(archers, footmen);
         }
     }
 
-    public List<GameStateChild> getPossibleFutures(List<DummyUnit> controlled, List<DummyUnit> targets, int range) {
-        List<GameStateChild> next = new ArrayList<>();
-        List<Pair<DummyUnit, List<Action>>> controlledActions = new ArrayList<>();
-
-        for (DummyUnit unit : controlled) {
+    /**
+     * Given controlled units and their possible targets, returns possible moves
+     * with a computed heuristic.
+     * @param controlled units that are controlled on the current turn
+     * @param targets units that are targetted on the current turn
+     * @return list if this state's children 
+     */
+    private List<GameStateChild> getPossibleFutures(List<DummyUnit> controlled, List<DummyUnit> targets) {
+        List<Pair<DummyUnit, List<Action>>> controlledActions = generateUnitActions(controlled, targets);
+        List<List<Pair<DummyUnit, Action>>> gameStateActions = generateActionCombinations(controlledActions);
+        return buildGameStateChildren(gameStateActions, targets);
+    }
+    
+    /**
+     * Generates all possible actions for all controlled units. Does not return invalid moves.
+     * @param controlled
+     * @param targets
+     * @return
+     */
+    private List<Pair<DummyUnit, List<Action>>> generateUnitActions(List<DummyUnit> controlled, List<DummyUnit> targets) {
+    	List<Pair<DummyUnit, List<Action>>> controlledActions = new ArrayList<>();
+    	
+    	for (DummyUnit unit : controlled) {
             List<Action> unitActions = new ArrayList<>();
 
         	for(DummyUnit enemy: targets) {
-        		if (getDistance(unit, enemy) <= range) {
-                    unitActions.add(this.createAttackAction(unit.view, enemy.view));
+        		if (getDistance(unit, enemy) <= unit.view.getTemplateView().getRange()) {
+                    unitActions.add(this.createAttackAction(unit, enemy));
         		}
         	}
 
@@ -355,16 +362,27 @@ public class GameState {
         		int newX = unit.x + direction.xComponent();
         		int newY = unit.y + direction.yComponent();
         		if (validMove(newX, newY, targets)) {
-                    unitActions.add(this.createMoveAction(unit.view, direction));
+                    unitActions.add(this.createMoveAction(unit, direction));
         		}
         	}
 
             controlledActions.add(new Pair<>(unit, unitActions));
         }
-
-        List<List<Pair<DummyUnit, Action>>> gameStateActions = new ArrayList<>();
-
-        for (Pair<DummyUnit, List<Action>> actions : controlledActions) {
+    	
+    	return controlledActions;
+    }
+    
+    /**
+     * Given all possible actions, generates all unique combinations of moves
+     * on a given turn.
+     * 
+     * @param controlledActions
+     * @return
+     */
+    private List<List<Pair<DummyUnit, Action>>> generateActionCombinations(List<Pair<DummyUnit, List<Action>>> controlledActions) {
+    	List<List<Pair<DummyUnit, Action>>> gameStateActions = new ArrayList<>();
+    	
+    	for (Pair<DummyUnit, List<Action>> actions : controlledActions) {
         	if (gameStateActions.size() == 0) {
                 for (Action action : actions.b) {
                     List<Pair<DummyUnit, Action>> added = new ArrayList<>();
@@ -383,13 +401,27 @@ public class GameState {
                 gameStateActions = temp;
         	}
         }
-
-        for (List<Pair<DummyUnit, Action>> gameStateAction: gameStateActions) {
+    	return gameStateActions;
+    }
+    
+    /**
+     * Given all possible combinations of moves for controlled units, creates
+     * a child state where those moves have been taken. Accounts for location
+     * and health.
+     * 
+     * @param gameStateActions
+     * @param targets
+     * @return
+     */
+    private List<GameStateChild> buildGameStateChildren(List<List<Pair<DummyUnit, Action>>> gameStateActions, List<DummyUnit> targets) {
+    	List<GameStateChild> next = new ArrayList<>();
+    	
+    	for (List<Pair<DummyUnit, Action>> gameStateAction: gameStateActions) {
             GameState state = new GameState(this);
             List<DummyUnit> newControlledUnits	= new ArrayList<>();
             List<DummyUnit> newTargetUnits		= deepCopyDummies(targets);
             
-            state.footmen = newControlledUnits;
+            state.footmen = newControlledUnits; // TODO : look at this more closely
             state.archers = newTargetUnits;
 
             Map<Integer, Action> map = new HashMap<>();
@@ -416,11 +448,20 @@ public class GameState {
 
             next.add(newChild);
         }
-
-        return next;
+    	
+    	return next;
     }
 
-    public boolean validMove(int newX, int newY, List<DummyUnit> enemies) {
+    /**
+     * Given a location (newX, newY) and a list of enemies, returns if the move
+     * to that location is valid.
+     * 
+     * @param newX
+     * @param newY
+     * @param enemies
+     * @return
+     */
+    private boolean validMove(int newX, int newY, List<DummyUnit> enemies) {
         if (!this.game.inBounds(newX, newY)) {
             return false;
         } else if (this.game.isResourceAt(newX, newY)) {
@@ -437,15 +478,32 @@ public class GameState {
         return true;
     }
     
-    public Action createAttackAction(UnitView attackingUnit, UnitView victimUnit) {
-        return Action.createPrimitiveAttack(attackingUnit.getID(), victimUnit.getID());
+    /**
+     * Helper method for creating attacks
+     * @param attackingUnit
+     * @param victimUnit
+     * @return
+     */
+    private Action createAttackAction(DummyUnit attackingUnit, DummyUnit victimUnit) {
+        return Action.createPrimitiveAttack(attackingUnit.view.getID(), victimUnit.view.getID());
     }
 
-    public Action createMoveAction(UnitView movingUnit,Direction direction) {
-        return Action.createPrimitiveMove(movingUnit.getID(), direction);
+    /**
+     * Helper method for creating movements
+     * @param movingUnit
+     * @param direction
+     * @return
+     */
+    private Action createMoveAction(DummyUnit movingUnit,Direction direction) {
+        return Action.createPrimitiveMove(movingUnit.view.getID(), direction);
     }
     
-    public List<DummyUnit> deepCopyDummies(List<DummyUnit> dummies) {
+    /**
+     * Helper for generating new dummies for mutating health, location etc
+     * @param dummies
+     * @return
+     */
+    private List<DummyUnit> deepCopyDummies(List<DummyUnit> dummies) {
     	List<DummyUnit> newList = new ArrayList<>();
     	
     	for (DummyUnit dummy : dummies) {
