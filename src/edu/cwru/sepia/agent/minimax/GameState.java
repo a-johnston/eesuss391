@@ -111,9 +111,9 @@ public class GameState {
     private static final double LIVING_FOOTMAN_BONUS    = 10.0;
 	private static final double UTILITY_BASE			= 0;
 	private static final double UTILITY_ATTACK_BONUS	= 5.0;
-	private static final double UTILITY_NO_PATH         = -30.0;
     private static final double ROOK_CHECKMATE_BONUS    = 10.0;
-    private static final double UNCHASED_ARCHER_BONUS   = -20.0; // It's really bad to leave an archer "unchased"
+    private static final double UNCHASED_ARCHER_BONUS   = -5.0; // It's really bad to leave an archer "unchased"
+    private static final double CORNERED_ARCHER_BONUS   = 30.0;
 
     private static List<Coordinate> lastArcherPositions = new ArrayList<>();
     private static Map<Coordinate, Integer> squareUtility = new HashMap<>();
@@ -226,16 +226,26 @@ public class GameState {
 
         // Prioritize being closer, having more footmen, and attacking
         int temp;
-        for (DummyUnit footman : footmen) {
-            temp = getShortestDistance(footman);
+        for (DummyUnit archer : archers) {
+            temp = getShortestDistanceArcher(archer);
 
             if (temp == 1) {
                 utility += UTILITY_ATTACK_BONUS;
             }
 
+            utility += UNCHASED_ARCHER_BONUS*temp;
+            if(this.archerTrapped(archer)) {
+                utility += CORNERED_ARCHER_BONUS;
+            }
+        }
+
+        for (DummyUnit footman : footmen) {
+            temp = getShortestDistanceFootman(footman);
+
             utility -= temp;
         }
-        utility += getPositionUtility();
+
+        //utility += getPositionUtility();
         utility += Math.random(); // Break ties randomly
         return utility;
     }
@@ -404,26 +414,41 @@ public class GameState {
 
     /**
      *
-     * @param footman
+     * @param archer
      * @return
      */
-    public int getShortestDistance(DummyUnit footman) {
+    public int getShortestDistanceArcher(DummyUnit archer) {
     	int best = Integer.MAX_VALUE;
     	
     	int temp;
-        int modifier = 1;
-    	for (DummyUnit archer : archers) {
-    		temp = getDistance(footman, archer);
+    	for (DummyUnit footman : footmen) {
+    		temp = getDistance(archer, footman);
 
     		if (Math.abs(temp) < Math.abs(best)) {
-    			best = modifier*temp;
+    			best = temp;
     		}
     	}
-
-
-    	return modifier*best;
+    	return best;
     }
-    
+
+    /**
+     *
+     * @param footman
+     * @return
+     */
+    public int getShortestDistanceFootman(DummyUnit footman) {
+        int best = Integer.MAX_VALUE;
+
+        int temp;
+        for (DummyUnit archer : archers) {
+            temp = getDistance(archer, footman);
+
+            if (Math.abs(temp) < Math.abs(best)) {
+                best = temp;
+            }
+        }
+        return best;
+    }
     /**
      * Computes the taxicab norm dx + dy. In this assignment, the minimum
      * number of moves to reach a given destination. Unlike Chebychev, accounts
@@ -501,7 +526,39 @@ public class GameState {
     	
     	return controlledActions;
     }
-    
+
+    public boolean archerTrapped(DummyUnit archer) {
+        for (Direction d: Direction.values()) {
+            if (d == Direction.SOUTHEAST ||
+                    d == Direction.SOUTHWEST ||
+                    d == Direction.NORTHEAST ||
+                    d == Direction.NORTHWEST){
+                continue;
+            }
+
+            int newX = archer.x + d.xComponent();
+            int newY = archer.y + d.yComponent();
+            if(!game.inBounds(newX, newY)) {
+                continue;
+            }
+
+            if(game.isResourceAt(newX, newY)) {
+                continue;
+            }
+
+            for(DummyUnit footman: footmen) {
+                if(footman.x == newX && footman.y == newY) {
+                    continue;
+                }
+            }
+
+            return false;
+
+        }
+
+        return true;
+    }
+
     /**
      * Given all possible actions, generates all unique combinations of moves
      * on a given turn.
