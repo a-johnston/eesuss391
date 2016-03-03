@@ -51,20 +51,10 @@ public class GameState {
 			this.id = parent.id;
 			this.view = parent.view;
 		}
-		
-		public DummyUnit(DummyUnit parent, int damage) {
-			this.x  = parent.x;
-			this.y  = parent.y;
-			this.hp = parent.hp - damage;
-			this.id = parent.id;
-			this.view = parent.view;
-		}
 	}
 
-	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
-
-    private static final double ARCHER_WIN_BONUS        = -1000.0;
-    private static final double FOOTMEN_WIN_BONUS       = 1000.0;
+    private static final double ARCHER_WIN_BONUS        = Double.NEGATIVE_INFINITY;
+    private static final double FOOTMEN_WIN_BONUS       = Double.POSITIVE_INFINITY;
     private static final double LIVING_ARCHER_BONUS     = -10.0;
     private static final double LIVING_FOOTMAN_BONUS    = 10.0;
 	private static final double UTILITY_BASE			= 0;
@@ -114,10 +104,8 @@ public class GameState {
     }
     
     public void buildDummyUnits() {
-    	List<UnitView> footmenView = this.game.getUnits(0);
-    	
     	footmen = new ArrayList<>();
-        for (UnitView view : footmenView) {
+        for (UnitView view : this.game.getUnits(0)) {
         	footmen.add(new DummyUnit(view));
         }
         
@@ -458,17 +446,27 @@ public class GameState {
             List<DummyUnit> newControlledUnits	= new ArrayList<>();
             List<DummyUnit> newTargetUnits		= deepCopyDummies(targets);
 
-            state.footmen = newControlledUnits; // TODO : look at this more closely
-            state.archers = newTargetUnits;
+            if (maxAgent) {
+            	state.footmen = newControlledUnits;
+            	state.archers = newTargetUnits;
+            } else {
+            	state.footmen = newTargetUnits;
+            	state.archers = newControlledUnits;
+            }
 
             Map<Integer, Action> map = new HashMap<>();
             
             for (Pair<DummyUnit, Action> pair : gameStateAction) {
                 Action action = pair.b;
                 if (action instanceof TargetedAction) {
-                    for(DummyUnit attackTarget: targets) {
+                	Iterator<DummyUnit> targetIter = newTargetUnits.iterator();
+                    while (targetIter.hasNext()) {
+                    	DummyUnit attackTarget = targetIter.next();
                         if(attackTarget.id == ((TargetedAction) action).getTargetId()) {
                         	attackTarget.hp -= pair.a.view.getTemplateView().getBasicAttack();
+                        	if (attackTarget.hp < 0) {
+                        		targetIter.remove();
+                        	}
                         	break;
                         }
                     }
