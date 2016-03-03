@@ -61,47 +61,6 @@ public class GameState {
 		}
 	}
 
-    private class Coordinate implements Comparable<Coordinate> {
-        private Pair<Integer, Integer> coordinatePair;
-
-        public Coordinate(Pair<Integer, Integer> pair) {
-            this.coordinatePair = pair;
-        }
-
-        public int getX() {
-            return coordinatePair.a;
-        }
-
-        public int getY() {
-            return coordinatePair.b;
-        }
-
-
-        public int compareTo(Coordinate other) {
-            if (this.coordinatePair.a == other.getX() && this.coordinatePair.b == other.getY()) {
-                return 0;
-            } else {
-                return -1;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Coordinate that = (Coordinate) o;
-
-            return coordinatePair != null ? coordinatePair.equals(that.coordinatePair) : that.coordinatePair == null;
-
-        }
-
-        @Override
-        public int hashCode() {
-            return coordinatePair != null ? coordinatePair.hashCode() : 0;
-        }
-    }
-
 	private static final double FOOTMAN_ARCHER_HEALTH_RATIO = 160.0/50.0;
 
     private static final double ARCHER_WIN_BONUS        = -1000.0;
@@ -113,9 +72,6 @@ public class GameState {
     private static final double ROOK_CHECKMATE_BONUS    = 10.0;
     private static final double UNCHASED_ARCHER_BONUS   = -5.0; // It's really bad to leave an archer "unchased"
     private static final double CORNERED_ARCHER_BONUS   = 30.0;
-
-    private static List<Coordinate> lastArcherPositions = new ArrayList<>();
-    private static Map<Coordinate, Integer> squareUtility = new HashMap<>();
 
     private State.StateView game;
     private boolean maxAgent;
@@ -231,92 +187,11 @@ public class GameState {
             utility -= temp;
         }
 
-        //utility += getPositionUtility();
         utility += Math.random(); // Break ties randomly
         return utility;
     }
 
-    /**
-     * Using "sonar"-like system to determine if our path is blocked.
-     * @param xPos
-     * @param yPos
-     * @return
-     */
-    public boolean directPathBlocked(int xPos, int yPos, DummyUnit archer) {
-        if (xPos == archer.x && yPos == archer.y) {
-            return false;
-        } else if (this.game.isResourceAt(xPos, yPos)) {
-            return true;
-        } else {
-            int newX = 0;
-            int newY = 0;
-            if (xPos < archer.x) {
-                newX = 1;
-            } else if (xPos > archer.x) {
-                newX = -1;
-            }
 
-            if (yPos < archer.y) {
-                newY = 1;
-            } else if (yPos > archer.y) {
-                newY = -1 ;
-            }
-
-            return directPathBlocked(xPos + newX, yPos, archer) && directPathBlocked(xPos, yPos + newY, archer);
-        }
-    }
-
-    /**
-     *
-     */
-    public double getPositionUtility() {
-        double overallPositionUtility = 0.0;
-        if(this.squareUtility.isEmpty()) {
-            recalculateMap();
-        }
-
-
-        for (DummyUnit footman: footmen) {
-            overallPositionUtility += this.squareUtility.get(new Coordinate(new Pair<>(footman.x, footman.y)));
-        }
-
-        return overallPositionUtility;
-    }
-
-    /**
-     * Recalculates the position utility of the map
-     */
-    public void recalculateMap() {
-        int utility = 0;
-        this.squareUtility = new HashMap<Coordinate, Integer>();
-        List<Coordinate> nextPositions = new ArrayList<>();
-        for (DummyUnit archer: archers) {
-            nextPositions.add(new Coordinate(new Pair<>(archer.x, archer.y)));
-        }
-
-        while(!nextPositions.isEmpty()) {
-            List<Coordinate> newNext = new ArrayList<>();
-            for (Coordinate coordinates : nextPositions) {
-                squareUtility.put(coordinates, utility);
-                for (Direction d: Direction.values()) {
-                    int newX = d.xComponent() + coordinates.getX();
-                    int newY = d.yComponent() + coordinates.getY();
-                    if(d == Direction.SOUTHEAST ||
-                            d == Direction.SOUTHWEST ||
-                            d == Direction.NORTHEAST ||
-                            d == Direction.NORTHWEST) {
-                        continue;
-                    } else if (!game.isResourceAt(newX, newY) &&
-                            game.inBounds(newX, newY) &&
-                            !squareUtility.keySet().contains(new Coordinate(new Pair<Integer, Integer>(newX, newY)))){
-                        newNext.add(new Coordinate(new Pair<Integer, Integer>(newX, newY)));
-                    }
-                }
-            }
-            utility = utility - 1000;
-            nextPositions = newNext;
-        }
-    }
     /**
      * Determines if the footment are in a "rook checkmate" like position.
      * Such a position is nice because it allows for the archer to be trapped and subsequently killed.
@@ -385,17 +260,6 @@ public class GameState {
             }
         }
         return firstRankCovered && secondRankCovered;
-    }
-
-
-    /**
-     * Logically, if the "moving towards" path is blocked, the utility is flipped.
-     * @return
-     */
-    public boolean blockedPath() {
-
-        return false;
-
     }
 
     /**
