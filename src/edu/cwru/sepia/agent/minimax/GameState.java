@@ -53,15 +53,15 @@ public class GameState {
 		}
 	}
 
-    private static final double ARCHER_WIN_BONUS        = Double.NEGATIVE_INFINITY;
-    private static final double FOOTMEN_WIN_BONUS       = Double.POSITIVE_INFINITY;
+    private static final double ARCHER_WIN_BONUS        = -10000.0;
+    private static final double FOOTMEN_WIN_BONUS       = 10000.0;
     private static final double LIVING_ARCHER_BONUS     = -10.0;
     private static final double LIVING_FOOTMAN_BONUS    = 10.0;
 	private static final double UTILITY_BASE			= 0;
-	private static final double UTILITY_ATTACK_BONUS	= 5.0;
+	private static final double UTILITY_ATTACK_BONUS	= 50.0;
     private static final double ROOK_CHECKMATE_BONUS    = 10.0;
     private static final double UNCHASED_ARCHER_BONUS   = -5.0; // It's really bad to leave an archer "unchased"
-    private static final double CORNERED_ARCHER_BONUS   = 30.0;
+    private static final double CORNERED_ARCHER_BONUS   = 300.0;
 
     private State.StateView game;
     private boolean maxAgent;
@@ -171,10 +171,13 @@ public class GameState {
 
         for (DummyUnit footman : footmen) {
             temp = getShortestDistanceFootman(footman);
-
             utility -= temp;
+            if (footman.x == 0 || footman.x == game.getXExtent() -1) {
+                utility -= 10;
+            } else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
+                utility -= 10;
+            }
         }
-
         utility += Math.random(); // Break ties randomly
         return utility;
     }
@@ -465,7 +468,7 @@ public class GameState {
                         if(attackTarget.id == ((TargetedAction) action).getTargetId()) {
                         	attackTarget.hp -= pair.a.view.getTemplateView().getBasicAttack();
                         	if (attackTarget.hp < 0) {
-                        		targetIter.remove();
+                        		//targetIter.remove();
                         	}
                         	break;
                         }
