@@ -9,7 +9,6 @@ import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class stores all of the information the agent
@@ -157,15 +156,6 @@ public class GameState {
     	this.game   = parent.game;
     	this.maxAgent = !parent.maxAgent; // swap sides
     }
-
-    /**
-     * gets a specific unit's health
-     * @param id
-     * @return
-     */
-    public int getUnitHealth(int id) {
-        return this.game.getUnit(id).getHP();
-    }
     
     public void buildDummyUnits() {
     	List<UnitView> footmenView = this.game.getUnits(0);
@@ -179,10 +169,6 @@ public class GameState {
         for (UnitView view: this.game.getUnits(1)) {
             archers.add(new DummyUnit(view));
         }
-    }
-    
-    public void copyDummyUnits(GameState parent) {
-    	
     }
 
     /**
@@ -318,7 +304,7 @@ public class GameState {
                     if(d == Direction.SOUTHEAST ||
                             d == Direction.SOUTHWEST ||
                             d == Direction.NORTHEAST ||
-                            d == Direction.NORTHWEST){
+                            d == Direction.NORTHWEST) {
                         continue;
                     } else if (!game.isResourceAt(newX, newY) &&
                             game.inBounds(newX, newY) &&
