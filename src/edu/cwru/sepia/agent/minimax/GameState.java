@@ -311,7 +311,7 @@ public class GameState {
 				footman.target = getBestTarget(footman);
 			}
 			
-			if (footman.inherited == null) {
+			if (footman.inherited == null || footman.inherited.size() == 0) {
 				if (footman.parent == null) {
 					footman.inherited = astar(footman.xy, footman.target.xy);;
 				} else {
