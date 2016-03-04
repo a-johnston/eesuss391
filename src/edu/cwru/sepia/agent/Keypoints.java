@@ -3,7 +3,7 @@ package edu.cwru.sepia.agent;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO: We need to integrate this into GameState.java at some point since we can only turn in GameState and MinimaxAlphaBeta 
+// TODO: We need to integrate this into GameState.java at some point since we can only turn in GameState and MinimaxAlphaBeta
 public class Keypoints {
 	static int[] trees = new int[]{4, 3, 4, 4, 4, 5, 4, 6, 4, 7, 4, 8, 4, 9, 4, 10, 5, 10, 6, 10, 7, 10, 8, 10, 9, 10, 10, 10, 10, 6, 10, 7, 10, 8, 10, 9, 12, 6, 12, 7, 12, 8, 12, 9, 12, 10, 13, 10, 14, 10, 15, 10, 16, 10, 17, 10, 18, 10, 19, 10, 19, 9, 19, 8, 19, 7, 19, 6, 19, 5, 19, 4, 19, 3, 4, 12, 4, 13, 4, 14, 5, 14, 6, 14, 7, 15, 8, 16, 9, 17, 10, 18, 13, 18, 14, 17, 15, 16, 16, 15, 17, 14, 19, 13, 19, 14, 18, 14, 19, 12, 10, 12, 10, 13, 10, 14, 10, 15, 12, 12, 12, 13, 12, 14, 12, 15, 12, 16};
 

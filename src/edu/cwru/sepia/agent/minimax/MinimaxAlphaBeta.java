@@ -149,6 +149,7 @@ public class MinimaxAlphaBeta extends Agent {
     		boolean ascending
     		// Ordering is based purely on utility function. Utility handles discerning "good vs bad" game states.
     ) {
+
         return children.stream().sorted((a, b) -> {
         	return (ascending ? 1 : -1) *
         			Double.compare(
@@ -157,4 +158,6 @@ public class MinimaxAlphaBeta extends Agent {
         					b.state.getUtility());
         }).collect(Collectors.toList()); // Fancy Java 8
     }
+
+
 }
