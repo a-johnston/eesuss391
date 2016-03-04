@@ -28,12 +28,12 @@ import java.util.*;
 public class GameState {
 
 	// Weights for the utility function
-	private static final double ARCHER_WIN_BONUS        = -100000.0; // Winning is trivially valuable
-	private static final double FOOTMEN_WIN_BONUS       = 100000.0;
-	private static final double CORRECT_MOVE_BONUS      = 500.0; // "reward" the agent for moving in the correct direction.
+	private static final double ARCHER_WIN_BONUS        = -100000.0;	// Winning is extremely valuable
+	private static final double FOOTMEN_WIN_BONUS       = 100000.0;		// zero sum
+	private static final double CORRECT_MOVE_BONUS      = 500.0;		// "reward" the agent for moving in the correct direction.
 	private static final double UTILITY_BASE			= 0;
-	private static final double LIVING_ARCHER_BONUS     = -1500.0;
-	private static final double LIVING_FOOTMAN_BONUS    = 1500.0;
+	private static final double LIVING_ARCHER_BONUS     = -1500.0;		// increases utility when footmen have more units
+	private static final double LIVING_FOOTMAN_BONUS    = 1500.0;		// large value to mark turning point in game strategy
 	private static final double UTILITY_ATTACK_BONUS	= 200.0;
 	private static final double ROOK_CHECKMATE_BONUS    = 500.0;
 	private static final double CORNERED_ARCHER_BONUS   = 1000.0;
@@ -48,44 +48,43 @@ public class GameState {
 	private List<DummyUnit> archers;
 
 	/**
-	 * Class to represent an XY coordinate pair
+	 * Class to represent an XY coordinate pair.
 	 */
 	private static class XY implements Comparable<XY> {
 		final int x;
 		final int y;
 
+		// additional parameters for A*
 		XY cameFrom;
 		float f;
 		float g; 
 
-		public XY(int x, int y) {
+		private XY(int x, int y) {
 			this.x = x;
 			this.y = y;
 
+			// defaults for A*
 			cameFrom = null;
 			f = Float.POSITIVE_INFINITY;
 			g = Float.POSITIVE_INFINITY;
 		}
 
+		// comparison ONLY for A*. Coordinate comparison doesn't make sense.
 		@Override
 		public int compareTo(XY o) {
 			return Float.compare(this.f, o.f);
-		}
-
-		@Override
-		public String toString() {
-			return "(" + x + ", " + y + ")";
 		}
 	}
 
 
 	/**
-	 * Creates a map from the stateview.
-	 * This is ran every A*
+	 * Creates a default map of XY instances for A* with tree locations nulled
+	 * out.
+	 *  
 	 * @param view
 	 * @return
      */
-	public static XY[][] buildMap(StateView view) {
+	private static XY[][] buildMap(StateView view) {
 		map = new XY[view.getXExtent()][view.getYExtent()];
 
 		for (int x = 0; x < map.length; x++) {
@@ -103,13 +102,14 @@ public class GameState {
 
 
 	/**
-	 * The utility uses A* to determine the best possible move
-	 * We do not always calculate A*, only if we must recalculate it. s
+	 * Returns the A* path between a given set of XY coordinates. Recalculated
+	 * when needed - paths are reused when possible.
+	 * 
 	 * @param from
 	 * @param to
 	 * @return
      */
-	public List<XY> astar(XY from, XY to) {
+	private List<XY> astar(XY from, XY to) {
 		XY[][] map = buildMap(this.game);
 
 		map[from.x][from.y] = from;
@@ -155,12 +155,12 @@ public class GameState {
 	}
 
 	/**
-	 * Returns a list of coordinates which are neighbors to this node
+	 * Returns a list of nodes which are neighbors to this node
 	 * @param current
 	 * @param map
      * @return
      */
-	public List<XY> getNeighbors(XY current, XY[][] map) {
+	private List<XY> getNeighbors(XY current, XY[][] map) {
 		List<XY> neighbors = new ArrayList<>();
 
 		for (int i = -1; i < 2; i++) {
@@ -173,6 +173,7 @@ public class GameState {
 					continue;
 				}
 
+				// only consider cardinal directions
 				if ((Math.abs(i) == 1) ^ (Math.abs(j) == 1)) {
 					if (map[current.x + i][current.y + j] != null) {
 						neighbors.add(map[current.x + i][current.y + j]);
@@ -185,11 +186,11 @@ public class GameState {
 	}
 
 	/**
-	 * Rebuilds the fastest path to get to the archer
+	 * Rebuilds the best path from the A* end node
 	 * @param node
 	 * @return
      */
-	public List<XY> rebuildPath(XY node) {
+	private List<XY> rebuildPath(XY node) {
 		List<XY> path = new ArrayList<>();
 
 		while (node != null) {
@@ -202,7 +203,8 @@ public class GameState {
 
 	/**
 	 * Represents a unit for the GameState to calculate utility
-	 * We keep track of all information we think is pertinent to calculating utility based on a unit in this.
+	 * We keep track of all information we think is pertinent to calculating
+	 * utility based on a unit in this.
 	 */
 	private class DummyUnit {
 		DummyUnit parent;
@@ -213,7 +215,7 @@ public class GameState {
 		int id;
 		UnitView view;
 
-		public DummyUnit(DummyUnit parent) {
+		private DummyUnit(DummyUnit parent) {
 			this.xy = parent.xy;
 			this.hp = parent.hp;
 			this.id = parent.id;
@@ -230,15 +232,14 @@ public class GameState {
 		}
 
 
-		public DummyUnit(UnitView view) {
+		private DummyUnit(UnitView view) {
 			this.xy  = new XY(view.getXPosition(), view.getYPosition());
 			this.hp = view.getHP();
 			this.id = view.getID();
 			this.view = view;
 		}
 
-
-		public DummyUnit(DummyUnit parent, Direction direction) {
+		private DummyUnit(DummyUnit parent, Direction direction) {
 			this.xy   = new XY(parent.xy.x + direction.xComponent(), parent.xy.y + direction.yComponent());
 			this.hp   = parent.hp;
 			this.id	  = parent.id;
@@ -294,7 +295,7 @@ public class GameState {
 	/**
 	 * Constructs the dummy units
 	 */
-	public void buildDummyUnits() {
+	private void buildDummyUnits() {
 		footmen = new ArrayList<>();
 		for (UnitView view : this.game.getUnits(0)) {
 			footmen.add(new DummyUnit(view));
@@ -307,29 +308,27 @@ public class GameState {
 	}
 
 	/**
-	 * You will implement this function.
-	 *
-	 * You should use weighted linear combination of features.
-	 * The features may be primitives from the state (such as hp of a unit)
-	 * or they may be higher level summaries of information from the state such
-	 * as distance to a specific location. Come up with whatever features you think
-	 * are useful and weight them appropriately.
-	 *
-	 * It is recommended that you start simple until you have your algorithm working. Then watch
-	 * your agent play and try to add features that correct mistakes it makes. However, remember that
-	 * your features should be as fast as possible to compute. If the features are slow then you will be
-	 * able to do less plys in a turn.
-	 *
-	 * Add a good comment about what is in your utility and why you chose those features.
-	 *
-	 * @return The weighted linear combination of the features
+	 * Calculates and returns the utility of this state. The utility is cached
+	 * and will return a known utility if either:
+	 * 1) The state is an end-game state
+	 * 2) The state has already been computed
+	 * 
+	 * The utility prioritizes attacking when possible and making smart moves
+	 * towards a target. Additional bonuses are given for strategic placement,
+	 * such as cornering units or setting up for a future corner, to encourage
+	 * quick victories when possible. These heuristics also decrease the chance
+	 * of stalemates.
+	 * 
+	 * There are large utility bonuses for killing units as
+	 * given a small number of starting units, any change to living unit lists
+	 * is significant in terms of the game state.
+	 * @return
 	 */
 	public double getUtility() {
 		// Handle end-game scenarios
 		if (footmen.size() == 0) {
 			return ARCHER_WIN_BONUS;
 		} else if (archers.size() == 0) {
-			System.out.println("!!!!!!!!!!!!!!!!!!!GAME WIN BONUS");
 			return FOOTMEN_WIN_BONUS;
 		}
 
@@ -372,11 +371,13 @@ public class GameState {
 	}
 
 	/**
-	 * Gets the next best move for a given footman
+	 * Gets the next best move for a given footman. Handles recomputing paths
+	 * if necessary.
+	 * 
 	 * @param footman The footman in question
 	 * @return
      */
-	public XY getNextMove(DummyUnit footman) {
+	private XY getNextMove(DummyUnit footman) {
 		if (footman.target == null) {
 			footman.target = getBestTarget(footman);
 		}
@@ -392,12 +393,15 @@ public class GameState {
 
 		return footman.inherited.get(0);
 	}
+	
 	/**
-	 * Determines if an archer can move. Archer's which cannot move should increase the overall utility.
+	 * Determines if an archer can move. Archer's which cannot move should
+	 * increase the overall utility.
+	 * 
 	 * @param archer
 	 * @return
 	 */
-	public boolean archerTrapped(DummyUnit archer) {
+	private boolean archerTrapped(DummyUnit archer) {
 		for (Direction d: Direction.values()) {
 			if (d == Direction.SOUTHEAST ||
 					d == Direction.SOUTHWEST ||
@@ -431,10 +435,12 @@ public class GameState {
 
 	/**
 	 * Determines if the footment are in a "rook checkmate" like position.
-	 * Such a position is nice because it allows for the archer to be trapped and subsequently killed.
+	 * Such a position is nice because it allows for the archer to be trapped
+	 * and subsequently killed.
+	 * 
 	 * @return
 	 */
-	public double rookCheckmatePositionUtility() {
+	private double rookCheckmatePositionUtility() {
 		double utility = 0.0;
 
 		List<Pair<DummyUnit, Direction>> edgeArchers = new ArrayList<>();
@@ -465,11 +471,11 @@ public class GameState {
 	}
 
 	/**
-	 * Determines if this is a rook checkmate position.
+	 * Helper to determine if this is a rook checkmate position.
 	 * @param edgeArcherPair
 	 * @return
      */
-	public boolean isRookCheckmatePosition(Pair<DummyUnit, Direction> edgeArcherPair) {
+	private boolean isRookCheckmatePosition(Pair<DummyUnit, Direction> edgeArcherPair) {
 		boolean firstRankCovered = false;
 		boolean secondRankCovered = false;
 
@@ -508,7 +514,7 @@ public class GameState {
 	 * @param footman
 	 * @return
      */
-	public DummyUnit getBestTarget(DummyUnit footman) {
+	private DummyUnit getBestTarget(DummyUnit footman) {
 		int bestDistance = Integer.MAX_VALUE;
 		DummyUnit best = null;
 		DummyUnit option = null;
@@ -526,25 +532,24 @@ public class GameState {
 	}
 
 	/**
-	 * Computes the taxicab norm dx + dy. In this assignment, the minimum
-	 * number of moves to reach a given destination. Unlike Chebychev, accounts
-	 * for not being able to move diagonally.
+	 * Computes the taxicab norm dx + dy.
 	 * 
 	 * @param from
 	 * @param to
 	 * @return
 	 */
-	public static int getDistance(DummyUnit from, DummyUnit to) {
+	private static int getDistance(DummyUnit from, DummyUnit to) {
 		return getDistance(from.xy, to.xy);
 	}
 
 	/**
-	 * Computes the taxicab norm dx + dy from XY coordinates
+	 * Computes the taxicab norm dx + dy.
+	 * 
 	 * @param from
 	 * @param to
      * @return
      */
-	public static int getDistance(XY from, XY to) {
+	private static int getDistance(XY from, XY to) {
 		return Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
 	}
 
@@ -657,6 +662,7 @@ public class GameState {
 	private List<GameStateChild> buildGameStateChildren(List<List<Pair<DummyUnit, Action>>> gameStateActions, List<DummyUnit> targets) {
 		List<GameStateChild> next = new ArrayList<>();
 
+		//iterate over action combinations to generate states
 		for (List<Pair<DummyUnit, Action>> gameStateAction: gameStateActions) {
 			GameState state = new GameState(this);
 			List<DummyUnit> newControlledUnits	= new ArrayList<>();
@@ -672,8 +678,11 @@ public class GameState {
 
 			Map<Integer, Action> map = new HashMap<>();
 
+			//apply individual actions
 			for (Pair<DummyUnit, Action> pair : gameStateAction) {
 				Action action = pair.b;
+				
+				//handles attacks and moves differently
 				if (action instanceof TargetedAction) {
 					Iterator<DummyUnit> targetIter = newTargetUnits.iterator();
 					while (targetIter.hasNext()) {
@@ -683,12 +692,11 @@ public class GameState {
 							if (attackTarget.hp < 0) {
 								System.out.println("Applying attack!");
 								pair.a.target = null;
-								targetIter.remove();
+								targetIter.remove(); //this is why we need an iterator
 							}
 							break;
 						}
 					}
-
 					newControlledUnits.add(new DummyUnit(pair.a));
 				} else if (action instanceof DirectedAction){
 					newControlledUnits.add(new DummyUnit(pair.a, ((DirectedAction) action).getDirection()));
@@ -697,10 +705,8 @@ public class GameState {
 				map.put(pair.a.id, pair.b);
 			}
 
-			state.getUtility();
-
 			GameStateChild newChild = new GameStateChild(map, state);
-
+			state.getUtility();
 			next.add(newChild);
 		}
 
