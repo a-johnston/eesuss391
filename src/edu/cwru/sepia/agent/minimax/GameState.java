@@ -53,15 +53,14 @@ public class GameState {
 		}
 	}
 
-    private static final double ARCHER_WIN_BONUS        = -10000.0;
+    // Weights for the utility function
+    private static final double ARCHER_WIN_BONUS        = -10000.0; // Winning is trivially valuable
     private static final double FOOTMEN_WIN_BONUS       = 10000.0;
-    private static final double LIVING_ARCHER_BONUS     = -10.0;
-    private static final double LIVING_FOOTMAN_BONUS    = 10.0;
 	private static final double UTILITY_BASE			= 0;
-	private static final double UTILITY_ATTACK_BONUS	= 50.0;
+	private static final double UTILITY_ATTACK_BONUS	= 150.0;
     private static final double ROOK_CHECKMATE_BONUS    = 10.0;
-    private static final double UNCHASED_ARCHER_BONUS   = -5.0; // It's really bad to leave an archer "unchased"
-    private static final double CORNERED_ARCHER_BONUS   = 300.0;
+    private static final double UNCHASED_ARCHER_BONUS   = -20.0; // It's really bad to leave an archer "unchased"
+    private static final double CORNERED_ARCHER_BONUS   = 100.0;
 
     private State.StateView game;
     private boolean maxAgent;
@@ -150,8 +149,6 @@ public class GameState {
         	return FOOTMEN_WIN_BONUS;
         }
 
-        utility += footmen.size()*LIVING_FOOTMAN_BONUS;
-        utility += archers.size()*LIVING_ARCHER_BONUS;
         utility += rookCheckmatePositionUtility();
 
         // Prioritize being closer, having more footmen, and attacking
@@ -178,10 +175,47 @@ public class GameState {
                 utility -= 10;
             }
         }
-        utility += Math.random(); // Break ties randomly
+        utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
         return utility;
     }
 
+
+    /**
+     * Determines if an archer can move. Archer's which cannot move should increase the overall utility.
+     * @param archer
+     * @return
+     */
+    public boolean archerTrapped(DummyUnit archer) {
+        for (Direction d: Direction.values()) {
+            if (d == Direction.SOUTHEAST ||
+                    d == Direction.SOUTHWEST ||
+                    d == Direction.NORTHEAST ||
+                    d == Direction.NORTHWEST){
+                continue;
+            }
+
+            int newX = archer.x + d.xComponent();
+            int newY = archer.y + d.yComponent();
+            if(!game.inBounds(newX, newY)) {
+                continue;
+            }
+
+            if(game.isResourceAt(newX, newY)) {
+                continue;
+            }
+
+            for(DummyUnit footman: footmen) {
+                if(footman.x == newX && footman.y == newY) {
+                    continue;
+                }
+            }
+
+            return false;
+
+        }
+
+        return true;
+    }
 
     /**
      * Determines if the footment are in a "rook checkmate" like position.
@@ -215,7 +249,6 @@ public class GameState {
                 utility += ROOK_CHECKMATE_BONUS;
             }
         }
-
         return utility;
     }
 
@@ -336,68 +369,36 @@ public class GameState {
      * @return
      */
     private List<Pair<DummyUnit, List<Action>>> generateUnitActions(List<DummyUnit> controlled, List<DummyUnit> targets) {
-    	List<Pair<DummyUnit, List<Action>>> controlledActions = new ArrayList<>();
-    	
-    	for (DummyUnit unit : controlled) {
+        List<Pair<DummyUnit, List<Action>>> controlledActions = new ArrayList<>();
+
+        for (DummyUnit unit : controlled) {
             List<Action> unitActions = new ArrayList<>();
 
-        	for(DummyUnit enemy: targets) {
-        		if (getDistance(unit, enemy) <= unit.view.getTemplateView().getRange()) {
+            for (DummyUnit enemy : targets) {
+                if (getDistance(unit, enemy) <= unit.view.getTemplateView().getRange()) {
                     unitActions.add(this.createAttackAction(unit, enemy));
-        		}
-        	}
+                }
+            }
 
-        	for (Direction direction: Direction.values()) {
+            for (Direction direction : Direction.values()) {
                 // Ignore diagonal directional movement
                 if (direction == Direction.SOUTHEAST ||
                         direction == Direction.SOUTHWEST ||
                         direction == Direction.NORTHEAST ||
-                        direction == Direction.NORTHWEST){
+                        direction == Direction.NORTHWEST) {
                     continue;
                 }
-        		int newX = unit.x + direction.xComponent();
-        		int newY = unit.y + direction.yComponent();
-        		if (validMove(newX, newY, targets)) {
+                int newX = unit.x + direction.xComponent();
+                int newY = unit.y + direction.yComponent();
+                if (validMove(newX, newY, targets)) {
                     unitActions.add(this.createMoveAction(unit, direction));
-        		}
-        	}
+                }
+            }
 
             controlledActions.add(new Pair<>(unit, unitActions));
         }
-    	
-    	return controlledActions;
-    }
 
-    public boolean archerTrapped(DummyUnit archer) {
-        for (Direction d: Direction.values()) {
-            if (d == Direction.SOUTHEAST ||
-                    d == Direction.SOUTHWEST ||
-                    d == Direction.NORTHEAST ||
-                    d == Direction.NORTHWEST){
-                continue;
-            }
-
-            int newX = archer.x + d.xComponent();
-            int newY = archer.y + d.yComponent();
-            if(!game.inBounds(newX, newY)) {
-                continue;
-            }
-
-            if(game.isResourceAt(newX, newY)) {
-                continue;
-            }
-
-            for(DummyUnit footman: footmen) {
-                if(footman.x == newX && footman.y == newY) {
-                    continue;
-                }
-            }
-
-            return false;
-
-        }
-
-        return true;
+        return controlledActions;
     }
 
     /**

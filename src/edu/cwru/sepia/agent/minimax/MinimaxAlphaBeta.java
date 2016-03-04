@@ -147,10 +147,10 @@ public class MinimaxAlphaBeta extends Agent {
     public List<GameStateChild> orderChildrenWithHeuristics(
     		List<GameStateChild> children,
     		boolean ascending
-    		// possibly introduce killer heuristic or other optimizations?
+    		// Ordering is based purely on utility function. Utility handles discerning "good vs bad" game states.
     ) {
         return children.stream().sorted((a, b) -> {
-        	return (ascending ? 1 : -1) * 
+        	return (ascending ? 1 : -1) *
         			Double.compare(
         					// If there's a tie we go with the first one
         					a.state.getUtility(),
