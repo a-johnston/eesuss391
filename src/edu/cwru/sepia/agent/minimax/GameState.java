@@ -96,6 +96,16 @@ public class GameState {
 			}
 		}
 
+        public List<Integer> getAdjacentZones(int zone) {
+            List<Integer> adjacentZones = new ArrayList<Integer>();
+            for (int i = 0; i < adj[zone].length; i++) {
+                if (adj[zone][i] != null) {
+                    adjacentZones.add(i);
+                }
+            }
+            return adjacentZones;
+        }
+
 		public static List<List<XY>> discoverZones(int[][] map) {
 			int zoneId = 0;
 			List<List<XY>> zones = new ArrayList<>();
