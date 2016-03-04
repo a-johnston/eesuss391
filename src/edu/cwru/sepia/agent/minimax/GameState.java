@@ -209,6 +209,7 @@ public class GameState {
 	private static final double UNCHASED_ARCHER_BONUS   = -20.0; // It's really bad to leave an archer "unchased"
 	private static final double CORNERED_ARCHER_BONUS   = 100.0;
 
+    private GameState parent;
 	private State.StateView game;
 	private boolean maxAgent;
 	private Double utility = null;
@@ -245,6 +246,7 @@ public class GameState {
 	}
 
 	private GameState(GameState parent) {
+        this.parent = parent;
 		this.game   = parent.game;
 		this.maxAgent = !parent.maxAgent; // swap sides
 	}
@@ -299,12 +301,15 @@ public class GameState {
 		utility += rookCheckmatePositionUtility();
 
         boolean shortest;
-        for (DummyUnit footman: footmen) {
-			shortest = isShortestDistanceFootman(footman);
-            if (shortest) {
-                utility += CORRECT_MOVE_BONUS;
+        for (DummyUnit parentFootman: parent.footmen) {
+            for (DummyUnit parentArcher: parent.archers) {
+                XY xy = getBestMove(parentFootman.x, parentFootman.y, parentArcher.x, parentArcher.y);
+                for (DummyUnit footman: footmen) {
+                    if(footman.x == xy.x && footman.y == xy.y){
+                        utility += CORRECT_MOVE_BONUS;
+                    }
+                }
             }
-
         }
 		// Prioritize being closer, having more footmen, and attacking
         int temp;
@@ -465,18 +470,18 @@ public class GameState {
 	 * @param footman
 	 * @return
 	 */
-	public boolean isShortestDistanceFootman(DummyUnit footman) {
-		int best = Integer.MAX_VALUE;
-
-		int temp;
-		for (DummyUnit archer : archers) {
-			XY xy = getBestMove(footman.x, footman.y, archer.x, archer.y);
-            if(footman.x == xy.x && footman.y == xy.y) {
-                return true;
-            }
-		}
-		return false;
-	}
+//	public boolean isShortestDistanceFootman(DummyUnit footman) {
+//		int best = Integer.MAX_VALUE;
+//
+//		int temp;
+//		for (DummyUnit archer : archers) {
+//			XY xy = getBestMove(game., footman.y, archer.x, archer.y);
+//            if(footman.x == xy.x && footman.y == xy.y) {
+//                return true;
+//            }
+//		}
+//		return false;
+//	}
 	/**
 	 * Computes the taxicab norm dx + dy. In this assignment, the minimum
 	 * number of moves to reach a given destination. Unlike Chebychev, accounts
