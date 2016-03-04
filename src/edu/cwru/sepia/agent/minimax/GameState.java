@@ -206,9 +206,9 @@ public class GameState {
 	private static final double CORRECT_MOVE_BONUS      = 30.0; // "reward" the agent for moving in the correct direction.
 	private static final double UTILITY_BASE			= 0;
 	private static final double UTILITY_ATTACK_BONUS	= 500.0;
-	private static final double ROOK_CHECKMATE_BONUS    = 5.0;
+	private static final double ROOK_CHECKMATE_BONUS    = 50.0;
 //	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
-	private static final double CORNERED_ARCHER_BONUS   = 50.0;
+	private static final double CORNERED_ARCHER_BONUS   = 10.0;
 
     private GameState parent;
 	private State.StateView game;
@@ -306,7 +306,7 @@ public class GameState {
 		for (DummyUnit footman: footmen) {
 			if (footman.target == null) {
 				System.out.println("Getting target");
-				footman.target = getClosestArcher(footman);
+				footman.target = getBestTarget(footman);
 			}
 			
 			if (footman.inherited == null) {
@@ -463,20 +463,34 @@ public class GameState {
 		return firstRankCovered && secondRankCovered;
 	}
 	
-	public DummyUnit getClosestArcher(DummyUnit footman) {
+	public DummyUnit getBestTarget(DummyUnit footman) {
 		int bestDistance = Integer.MAX_VALUE;
 		DummyUnit best = null;
+		DummyUnit option = null;
 		
 		for (DummyUnit archer : archers) {
 			int temp = getDistance(footman, archer);
 			
 			if (temp < bestDistance) {
-				bestDistance = temp;
-				best = archer;
+				if (getOtherFootman(footman).target == archer) {
+					option = archer;
+				} else {
+					bestDistance = temp;
+					best = archer;
+				}
 			}
 		}
 		
-		return best;
+		return best == null ? option : best;
+	}
+	
+	public DummyUnit getOtherFootman(DummyUnit footman) {
+		for (DummyUnit other : footmen) {
+			if (other != footman) {
+				return other;
+			}
+		}
+		return footman;
 	}
 
 	/**
