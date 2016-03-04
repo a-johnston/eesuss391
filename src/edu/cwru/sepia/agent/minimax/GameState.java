@@ -44,12 +44,12 @@ public class GameState {
 		int zoneTo   = keypoints.map[xTo][yTo];
 
 		if (zoneFrom == zoneTo) {
-			// ...
+			return keypoints.makeTrivialStep(xFrom, yFrom, xTo, yTo);
 		}
 
 		int zoneNext = keypoints.dfs(zoneFrom, zoneTo).x;
 
-		return null;
+		return keypoints.makeTrivialStepToZone(xFrom, yFrom, zoneNext);
 	}
 
 	private static Keypoints keypoints;
@@ -169,6 +169,32 @@ public class GameState {
 			}
 
 			return best;
+		}
+		
+		public XY makeTrivialStepToZone(int x, int y, int zone) {
+			List<XY> edge = adj[map[x][y]][zone];
+			
+			XY best = null;
+			int score = Integer.MAX_VALUE;
+			
+			for (XY node : edge) {
+				int temp = getDistance(x, y, node.x, node.y);
+				
+				if (temp < score) {
+					score = temp;
+					best = node;
+				}
+			}
+			
+			return makeTrivialStep(x, y, best.x, best.y);
+		}
+		
+		public XY makeTrivialStep(int x, int y, int x2, int y2) {
+			if (Math.abs(x - x2) > Math.abs(y - y2)) {
+				return new XY(x + (x < x2 ? 1 : -1), y);
+			} else {
+				return new XY(x, y + (y < y2 ? 1 : -1));
+			}
 		}
 
 		public static boolean inZone(int[][] map, int x, int y, List<XY> zone) {
@@ -532,8 +558,12 @@ public class GameState {
 	 * @param to
 	 * @return
 	 */
-	public int getDistance(DummyUnit from, DummyUnit to) {
+	public static int getDistance(DummyUnit from, DummyUnit to) {
 		return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
+	}
+	
+	public static int getDistance(int fromX, int fromY, int toX, int toY) {
+		return Math.abs(fromX - toX) + Math.abs(fromY - toY);
 	}
 
 	/**
