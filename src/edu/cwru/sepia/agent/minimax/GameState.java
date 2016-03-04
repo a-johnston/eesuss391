@@ -298,8 +298,16 @@ public class GameState {
 
 		utility += rookCheckmatePositionUtility();
 
+        boolean shortest;
+        for (DummyUnit footman: footmen) {
+			shortest = isShortestDistanceFootman(footman);
+            if (shortest) {
+                utility += CORRECT_MOVE_BONUS;
+            }
+
+        }
 		// Prioritize being closer, having more footmen, and attacking
-		int temp;
+        int temp;
 		for (DummyUnit archer : archers) {
 			temp = getShortestDistanceArcher(archer);
 
@@ -312,16 +320,16 @@ public class GameState {
 				utility += CORNERED_ARCHER_BONUS;
 			}
 		}
-
-		for (DummyUnit footman : footmen) {
-			temp = getShortestDistanceFootman(footman);
-			utility -= temp;
-			if (footman.x == 0 || footman.x == game.getXExtent() -1) {
-				utility -= 10;
-			} else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
-				utility -= 10;
-			}
-		}
+//
+//		for (DummyUnit footman : footmen) {
+//			temp = getShortestDistanceFootman(footman);
+//			utility -= temp;
+//			if (footman.x == 0 || footman.x == game.getXExtent() -1) {
+//				utility -= 10;
+//			} else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
+//				utility -= 10;
+//			}
+//		}
 		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
 		return utility;
 	}
@@ -457,18 +465,17 @@ public class GameState {
 	 * @param footman
 	 * @return
 	 */
-	public int getShortestDistanceFootman(DummyUnit footman) {
+	public boolean isShortestDistanceFootman(DummyUnit footman) {
 		int best = Integer.MAX_VALUE;
 
 		int temp;
 		for (DummyUnit archer : archers) {
-			temp = getDistance(archer, footman);
-
-			if (Math.abs(temp) < Math.abs(best)) {
-				best = temp;
-			}
+			XY xy = getBestMove(footman.x, footman.y, archer.x, archer.y);
+            if(footman.x == xy.x && footman.y == xy.y) {
+                return true;
+            }
 		}
-		return best;
+		return false;
 	}
 	/**
 	 * Computes the taxicab norm dx + dy. In this assignment, the minimum
@@ -716,10 +723,5 @@ public class GameState {
 
 	public int getMapY() {
 		return game.getYExtent();
-	}
-
-	public XY getNextXY() {
-		// TODO: Get next xy
-		return null; 
 	}
 }
