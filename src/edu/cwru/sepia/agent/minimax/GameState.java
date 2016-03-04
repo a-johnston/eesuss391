@@ -3,6 +3,7 @@ package edu.cwru.sepia.agent.minimax;
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
+import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 import edu.cwru.sepia.util.Direction;
@@ -550,5 +551,24 @@ public class GameState {
     	}
     	
     	return newList;
+    }
+
+    public int[] getResources() {
+        int[] trees = new int[game.getAllResourceIds().size()*2];
+        int i = 0;
+        for (ResourceNode.ResourceView view: game.getAllResourceNodes()) {
+            trees[i] = view.getXPosition();
+            trees[i+1] = view.getYPosition();
+            i += 2;
+        }
+        return trees;
+    }
+
+    public int getMapX() {
+        return game.getXExtent();
+    }
+
+    public int getMapY() {
+        return game.getYExtent();
     }
 }
