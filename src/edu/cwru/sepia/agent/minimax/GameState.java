@@ -226,7 +226,7 @@ public class GameState {
 				tx = Math.round(x1 + dx * t);
 				ty = Math.round(y1 + dy * t);
 
-				if (map[(int) ty][(int) tx] == -1) {
+				if (map[(int) tx][(int) ty] == -1) {
 					return false;
 				}
 
