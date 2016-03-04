@@ -4,7 +4,9 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
+import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
@@ -20,6 +22,35 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
+	
+	private static class XY {
+		final int x;
+		final int y;
+		
+		public XY(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+	}
+	
+	public static void makeKeyPoints(StateView state) {
+		keypoints = new Keypoints(state);
+	}
+	
+	private static Keypoints keypoints;
+	
+	private static class Keypoints {
+		private int[][] map;
+		
+		Keypoints(StateView state) {
+			map = new int[state.getXExtent()][state.getYExtent()];
+			
+			for (ResourceView tree : state.getAllResourceNodes()) {
+				map[tree.getXPosition()][tree.getYPosition()] = -1;
+			}
+		}
+	}
+	
 	private class DummyUnit {
         int x;
 		int y;
