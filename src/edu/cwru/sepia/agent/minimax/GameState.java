@@ -3,7 +3,6 @@ package edu.cwru.sepia.agent.minimax;
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.DirectedAction;
 import edu.cwru.sepia.action.TargetedAction;
-import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.State.StateView;
@@ -23,6 +22,29 @@ import java.util.*;
  */
 public class GameState {
 
+	// Weights for the utility function
+	private static final double ARCHER_WIN_BONUS        = -100000.0; // Winning is trivially valuable
+	private static final double FOOTMEN_WIN_BONUS       = 100000.0;
+	private static final double CORRECT_MOVE_BONUS      = 500.0; // "reward" the agent for moving in the correct direction.
+	private static final double UTILITY_BASE			= 0;
+	private static final double LIVING_ARCHER_BONUS     = -1500.0;
+	private static final double LIVING_FOOTMAN_BONUS    = 1500.0;
+	private static final double UTILITY_ATTACK_BONUS	= 200.0;
+	private static final double ROOK_CHECKMATE_BONUS    = 500.0;
+	private static final double CORNERED_ARCHER_BONUS   = 1000.0;
+
+	// Information from a state we're deciding to save/cache
+	private State.StateView game;
+	private boolean maxAgent;
+	public Double utility = null;
+	private static XY[][] map;
+
+	private List<DummyUnit> footmen;
+	private List<DummyUnit> archers;
+
+	/**
+	 * Class to represent an XY coordinate pair
+	 */
 	private static class XY implements Comparable<XY> {
 		final int x;
 		final int y;
@@ -51,8 +73,13 @@ public class GameState {
 		}
 	}
 
-	private static XY[][] map;
 
+	/**
+	 * Creates a map from the stateview.
+	 * This is ran every A*
+	 * @param view
+	 * @return
+     */
 	public static XY[][] buildMap(StateView view) {
 		map = new XY[view.getXExtent()][view.getYExtent()];
 
@@ -69,6 +96,14 @@ public class GameState {
 		return map;
 	}
 
+
+	/**
+	 * The utility uses A* to determine the best possible move
+	 * We do not always calculate A*, only if we must recalculate it. s
+	 * @param from
+	 * @param to
+	 * @return
+     */
 	public List<XY> astar(XY from, XY to) {
 		XY[][] map = buildMap(this.game);
 
@@ -114,6 +149,12 @@ public class GameState {
 		return null;
 	}
 
+	/**
+	 * Returns a list of coordinates which are neighbors to this node
+	 * @param current
+	 * @param map
+     * @return
+     */
 	public List<XY> getNeighbors(XY current, XY[][] map) {
 		List<XY> neighbors = new ArrayList<>();
 
@@ -138,6 +179,11 @@ public class GameState {
 		return neighbors;
 	}
 
+	/**
+	 * Rebuilds the fastest path to get to the archer
+	 * @param node
+	 * @return
+     */
 	public List<XY> rebuildPath(XY node) {
 		List<XY> path = new ArrayList<>();
 
@@ -149,6 +195,10 @@ public class GameState {
 		return path;
 	}
 
+	/**
+	 * Represents a unit for the GameState to calculate utility
+	 * We keep track of all information we think is pertinent to calculating utility based on a unit in this.
+	 */
 	private class DummyUnit {
 		DummyUnit parent;
 		DummyUnit target;
@@ -200,24 +250,6 @@ public class GameState {
 		}
 	}
 
-	// Weights for the utility function
-	private static final double ARCHER_WIN_BONUS        = -100000.0; // Winning is trivially valuable
-	private static final double FOOTMEN_WIN_BONUS       = 100000.0;
-	private static final double CORRECT_MOVE_BONUS      = 30.0; // "reward" the agent for moving in the correct direction.
-	private static final double UTILITY_BASE			= 0;
-	private static final double LIVING_ARCHER_BONUS     = -1500.0;
-	private static final double LIVING_FOOTMAN_BONUS    = 1500.0;
-	private static final double UTILITY_ATTACK_BONUS	= 200.0;
-	private static final double ROOK_CHECKMATE_BONUS    = 500.0;
-	//	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
-	private static final double CORNERED_ARCHER_BONUS   = 1000.0;
-
-	private State.StateView game;
-	private boolean maxAgent;
-	public Double utility = null;
-
-	private List<DummyUnit> footmen;
-	private List<DummyUnit> archers;
 
 	/**
 	 * You will implement this constructor. It will
@@ -254,6 +286,9 @@ public class GameState {
 		this.maxAgent = !parent.maxAgent; // swap sides
 	}
 
+	/**
+	 * Constructs the dummy units
+	 */
 	public void buildDummyUnits() {
 		footmen = new ArrayList<>();
 		for (UnitView view : this.game.getUnits(0)) {
@@ -288,14 +323,12 @@ public class GameState {
 		// Handle end-game scenarios
 		if (footmen.size() == 0) {
 			return ARCHER_WIN_BONUS;
-		}
-
-		if (archers.size() == 0) {
+		} else if (archers.size() == 0) {
 			System.out.println("!!!!!!!!!!!!!!!!!!!GAME WIN BONUS");
 			return FOOTMEN_WIN_BONUS;
 		}
 
-		// Since we run a sort and then more checks, cache for performance
+		// Check to see if the utility is cached before calculating
 		if (this.utility != null) {
 			return this.utility;
 		}
@@ -305,63 +338,55 @@ public class GameState {
 		utility += rookCheckmatePositionUtility();
 		utility += archers.size() * LIVING_ARCHER_BONUS;
 		utility += footmen.size() * LIVING_FOOTMAN_BONUS;
+
+
 		for (DummyUnit footman: footmen) {
-
-			if (footman.target == null) {
-				footman.target = getBestTarget(footman);
-			}
-
-			if (footman.inherited == null || footman.inherited.size() == 0) {
-				if (footman.parent == null) {
-					footman.inherited = astar(footman.xy, footman.target.xy);;
-				} else {
-					footman.inherited = astar(footman.parent.xy, footman.target.xy);
-					footman.inherited.remove(0);
-				}
-			}
-
-			XY xy = footman.inherited.get(0);
+			XY xy = getNextMove(footman);
 
 			if (footman.xy.x == xy.x && footman.xy.y == xy.y) {
-				utility += CORRECT_MOVE_BONUS;
+				utility += CORRECT_MOVE_BONUS; // Reward the footman for picking a star move
 			} else {
 				footman.inherited = astar(footman.xy, footman.target.xy);
 			}
 
 			int temp = getDistance(footman, footman.target);
 
-			System.out.println("Temp" + temp);
-
 			if (temp == 1) {
-				System.out.println("GET FUCKED UP");
-				utility += UTILITY_ATTACK_BONUS;
+				utility += UTILITY_ATTACK_BONUS; // Reward the footman for being in attacking range
 			}
-
-			//			utility += UNCHASED_ARCHER_BONUS * temp;
 		}
 
-		// Prioritize being closer, having more footmen, and attacking
+		// Cornering archers is really good because it pretty much guarantees a kill
 		for (DummyUnit archer : archers) {
 			if(this.archerTrapped(archer)) {
 				utility += CORNERED_ARCHER_BONUS;
 			}
 		}
 
-		//		for (DummyUnit footman : footmen) {
-		//			temp = getShortestDistanceFootman(footman);
-		//			utility -= temp;
-		//			if (footman.x == 0 || footman.x == game.getXExtent() -1) {
-		//				utility -= 10;
-		//			} else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
-		//				utility -= 10;
-		//			}
-		//		}
-		//		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
-		System.out.println(utility);
 		return utility;
 	}
 
+	/**
+	 * Gets the next best move for a given footman
+	 * @param footman The footman in question
+	 * @return
+     */
+	public XY getNextMove(DummyUnit footman) {
+		if (footman.target == null) {
+			footman.target = getBestTarget(footman);
+		}
 
+		if (footman.inherited == null || footman.inherited.size() == 0) {
+			if (footman.parent == null) {
+				footman.inherited = astar(footman.xy, footman.target.xy);;
+			} else {
+				footman.inherited = astar(footman.parent.xy, footman.target.xy);
+				footman.inherited.remove(0);
+			}
+		}
+
+		return footman.inherited.get(0);
+	}
 	/**
 	 * Determines if an archer can move. Archer's which cannot move should increase the overall utility.
 	 * @param archer
@@ -434,6 +459,11 @@ public class GameState {
 		return utility;
 	}
 
+	/**
+	 * Determines if this is a rook checkmate position.
+	 * @param edgeArcherPair
+	 * @return
+     */
 	public boolean isRookCheckmatePosition(Pair<DummyUnit, Direction> edgeArcherPair) {
 		boolean firstRankCovered = false;
 		boolean secondRankCovered = false;
@@ -468,6 +498,11 @@ public class GameState {
 		return firstRankCovered && secondRankCovered;
 	}
 
+	/**
+	 * Determines the best archer for a footman to target
+	 * @param footman
+	 * @return
+     */
 	public DummyUnit getBestTarget(DummyUnit footman) {
 		int bestDistance = Integer.MAX_VALUE;
 		DummyUnit best = null;
@@ -477,63 +512,14 @@ public class GameState {
 			int temp = getDistance(footman, archer);
 
 			if (temp < bestDistance) {
-				//				if (getOtherFootman(footman).target == archer) {
-				//					option = archer;
-				//				} else {
 				bestDistance = temp;
 				best = archer;
-				//				}
 			}
 		}
 
 		return best == null ? option : best;
 	}
 
-	public DummyUnit getOtherFootman(DummyUnit footman) {
-		for (DummyUnit other : footmen) {
-			if (other != footman) {
-				return other;
-			}
-		}
-		return footman;
-	}
-
-	/**
-	 *
-	 * @param archer
-	 * @return
-	 */
-	public int getShortestDistanceArcher(DummyUnit archer) {
-		int best = Integer.MAX_VALUE;
-
-		int temp;
-		for (DummyUnit footman : footmen) {
-			temp = getDistance(archer, footman);
-
-			if (Math.abs(temp) < Math.abs(best)) {
-				best = temp;
-			}
-		}
-		return best;
-	}
-
-	/**
-	 *
-	 * @param footman
-	 * @return
-	 */
-	//	public boolean isShortestDistanceFootman(DummyUnit footman) {
-	//		int best = Integer.MAX_VALUE;
-	//
-	//		int temp;
-	//		for (DummyUnit archer : archers) {
-	//			XY xy = getBestMove(game., footman.y, archer.x, archer.y);
-	//            if(footman.x == xy.x && footman.y == xy.y) {
-	//                return true;
-	//            }
-	//		}
-	//		return false;
-	//	}
 	/**
 	 * Computes the taxicab norm dx + dy. In this assignment, the minimum
 	 * number of moves to reach a given destination. Unlike Chebychev, accounts
@@ -547,6 +533,12 @@ public class GameState {
 		return getDistance(from.xy, to.xy);
 	}
 
+	/**
+	 * Computes the taxicab norm dx + dy from XY coordinates
+	 * @param from
+	 * @param to
+     * @return
+     */
 	public static int getDistance(XY from, XY to) {
 		return Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
 	}
@@ -767,26 +759,6 @@ public class GameState {
 		for (DummyUnit dummy : dummies) {
 			newList.add(new DummyUnit(dummy));
 		}
-
 		return newList;
-	}
-
-	public int[] getResources() {
-		int[] trees = new int[game.getAllResourceIds().size()*2];
-		int i = 0;
-		for (ResourceNode.ResourceView view: game.getAllResourceNodes()) {
-			trees[i] = view.getXPosition();
-			trees[i+1] = view.getYPosition();
-			i += 2;
-		}
-		return trees;
-	}
-
-	public int getMapX() {
-		return game.getXExtent();
-	}
-
-	public int getMapY() {
-		return game.getYExtent();
 	}
 }
