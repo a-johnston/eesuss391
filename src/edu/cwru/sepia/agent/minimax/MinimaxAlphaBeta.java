@@ -132,6 +132,10 @@ public class MinimaxAlphaBeta extends Agent {
     	}
     	
     	//inherit utility, but make sure we keep the correct next action
+    	if (best == null) {
+    		return node;
+    	}
+    	
     	node.state.utility = best.state.utility;
     	if (node.action != null) {
     		return node;
