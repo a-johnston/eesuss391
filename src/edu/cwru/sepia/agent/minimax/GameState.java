@@ -203,11 +203,11 @@ public class GameState {
 	// Weights for the utility function
 	private static final double ARCHER_WIN_BONUS        = -10000.0; // Winning is trivially valuable
 	private static final double FOOTMEN_WIN_BONUS       = 10000.0;
-	private static final double CORRECT_MOVE_BONUS      = 500.0; // "reward" the agent for moving in the correct direction.
+	private static final double CORRECT_MOVE_BONUS      = 30.0; // "reward" the agent for moving in the correct direction.
 	private static final double UTILITY_BASE			= 0;
 	private static final double UTILITY_ATTACK_BONUS	= 500.0;
 	private static final double ROOK_CHECKMATE_BONUS    = 5.0;
-	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
+//	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
 	private static final double CORNERED_ARCHER_BONUS   = 50.0;
 
     private GameState parent;
@@ -244,6 +244,8 @@ public class GameState {
 		this.maxAgent = true;
 
 		buildDummyUnits();
+		
+		getUtility();
 	}
 
 	private GameState(GameState parent) {
@@ -303,15 +305,17 @@ public class GameState {
 
 		for (DummyUnit footman: footmen) {
 			if (footman.target == null) {
+				System.out.println("Getting target");
 				footman.target = getClosestArcher(footman);
 			}
 			
 			if (footman.inherited == null) {
 				if (footman.parent == null) {
 					footman.inherited = astar(footman.xy, footman.target.xy);;
+				} else {
+					footman.inherited = astar(footman.parent.xy, footman.target.xy);
+					footman.inherited.remove(0);
 				}
-				footman.inherited = astar(footman.parent.xy, footman.target.xy);
-				footman.inherited.remove(0);
 			}
 			
 			XY xy = footman.inherited.get(0);
@@ -319,7 +323,6 @@ public class GameState {
 			if (footman.xy.x == xy.x && footman.xy.y == xy.y) {
 				utility += CORRECT_MOVE_BONUS;
 			} else {
-				System.out.println("Wrong move: x: " + footman.xy.x + " " + xy.x + " y: " + footman.xy.y + " " + xy.y);
 				footman.inherited = astar(footman.xy, footman.target.xy);
 			}
 			
@@ -329,7 +332,7 @@ public class GameState {
 				utility += UTILITY_ATTACK_BONUS;
 			}
 			
-			utility += UNCHASED_ARCHER_BONUS * temp;
+//			utility += UNCHASED_ARCHER_BONUS * temp;
 		}
 		
 		// Prioritize being closer, having more footmen, and attacking
@@ -676,6 +679,8 @@ public class GameState {
 
 				map.put(pair.a.id, pair.b);
 			}
+			
+			state.getUtility();
 
 			GameStateChild newChild = new GameStateChild(map, state);
 

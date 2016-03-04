@@ -28,7 +28,8 @@ public class MinimaxAlphaBeta extends Agent {
             System.exit(1);
         }
 
-        numPlys = Integer.parseInt(args[0]);
+//        numPlys = Integer.parseInt(args[0]);
+        numPlys = 1;
         
         myAgent = this;
     }
@@ -44,6 +45,7 @@ public class MinimaxAlphaBeta extends Agent {
 
     @Override
     public Map<Integer, Action> middleStep(State.StateView newstate, History.HistoryView statehistory) {
+    	System.out.println("New round");
         GameStateChild bestChild = alphaBetaSearch(new GameStateChild(newstate),
                 numPlys,
                 Double.NEGATIVE_INFINITY,
