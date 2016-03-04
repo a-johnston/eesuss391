@@ -22,11 +22,11 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
-	
+
 	private static class XY implements Comparable<XY> {
 		final int x;
 		final int y;
-		
+
 		XY cameFrom;
 		float f;
 		float g; 
@@ -34,25 +34,25 @@ public class GameState {
 		public XY(int x, int y) {
 			this.x = x;
 			this.y = y;
-			
+
 			cameFrom = null;
 			f = Float.POSITIVE_INFINITY;
 			g = Float.POSITIVE_INFINITY;
 		}
-		
+
 		@Override
 		public int compareTo(XY o) {
 			return Float.compare(this.f, o.f);
 		}
-		
+
 		@Override
 		public String toString() {
 			return "(" + x + ", " + y + ")";
 		}
 	}
-	
+
 	private static XY[][] map;
-	
+
 	public static XY[][] buildMap(StateView view) {
 		map = new XY[view.getXExtent()][view.getYExtent()];
 
@@ -61,91 +61,91 @@ public class GameState {
 				map[x][y] = new XY(x, y);
 			}
 		}
-		
+
 		for (ResourceView tree : view.getAllResourceNodes()) {
 			map[tree.getXPosition()][tree.getYPosition()] = null;
 		}
-		
+
 		return map;
 	}
-	
+
 	public List<XY> astar(XY from, XY to) {
 		XY[][] map = buildMap(this.game);
-		
+
 		map[from.x][from.y] = from;
 		map[to.x][to.y] = to;
-		
+
 		from.g = 0;
 		from.f = getDistance(from, to);
-		
+
 		Queue<XY> frontier = new PriorityQueue<>(); //sorts based on f score
-        Set<XY> explored = new HashSet<>();
-        
-        frontier.add(from);
-        
-        XY current;
-        while (!frontier.isEmpty()) {
-        	current = frontier.remove();
-        	explored.add(current);
-        	
-        	if (current == to) {
-        		return rebuildPath(current);
-        	}
-        	
-        	for (XY next : getNeighbors(current, map)) {
-        		if (explored.contains(next)) {
-        			continue; //explored neighbor isn't worth checking
-        		}
-        		
-        		float new_g = current.g + 1;
-        		
-        		if (!frontier.contains(next)) {
-        			frontier.add(next);
-        		} else if (new_g >= next.g) {
-        			continue; //already had a better path to get here
-        		}
-        		
-        		next.cameFrom = current;
-        		next.g = new_g;
-        		next.f = new_g + getDistance(next, to);
-        	}
-        }
-		
+		Set<XY> explored = new HashSet<>();
+
+		frontier.add(from);
+
+		XY current;
+		while (!frontier.isEmpty()) {
+			current = frontier.remove();
+			explored.add(current);
+
+			if (current == to) {
+				return rebuildPath(current);
+			}
+
+			for (XY next : getNeighbors(current, map)) {
+				if (explored.contains(next)) {
+					continue; //explored neighbor isn't worth checking
+				}
+
+				float new_g = current.g + 1;
+
+				if (!frontier.contains(next)) {
+					frontier.add(next);
+				} else if (new_g >= next.g) {
+					continue; //already had a better path to get here
+				}
+
+				next.cameFrom = current;
+				next.g = new_g;
+				next.f = new_g + getDistance(next, to);
+			}
+		}
+
 		return null;
 	}
-	
+
 	public List<XY> getNeighbors(XY current, XY[][] map) {
 		List<XY> neighbors = new ArrayList<>();
-		
+
 		for (int i = -1; i < 2; i++) {
-    		if (current.x + i < 0 || current.x + i >= map.length) {
-    			continue;
-    		}
-    		
-    		for (int j = -1; j < 2; j++) {
-    			if (current.y + j < 0 || current.y + j >= map[0].length) {
-        			continue;
-        		}
-    			
-    			if ((Math.abs(i) == 1) ^ (Math.abs(j) == 1)) {
-    				if (map[current.x + i][current.y + j] != null) {
-        				neighbors.add(map[current.x + i][current.y + j]);
-        			}
-    			}
-    		}
-    	}
-		
+			if (current.x + i < 0 || current.x + i >= map.length) {
+				continue;
+			}
+
+			for (int j = -1; j < 2; j++) {
+				if (current.y + j < 0 || current.y + j >= map[0].length) {
+					continue;
+				}
+
+				if ((Math.abs(i) == 1) ^ (Math.abs(j) == 1)) {
+					if (map[current.x + i][current.y + j] != null) {
+						neighbors.add(map[current.x + i][current.y + j]);
+					}
+				}
+			}
+		}
+
 		return neighbors;
 	}
-	
+
 	public List<XY> rebuildPath(XY node) {
 		List<XY> path = new ArrayList<>();
-		
+
 		while (node != null) {
 			path.add(0, node);
 			node = node.cameFrom;
 		}
-		
+
 		return path;
 	}
 
@@ -164,7 +164,7 @@ public class GameState {
 			this.id = parent.id;
 			this.view = parent.view;
 			this.parent = parent;
-			
+
 			if (parent != null) {
 				target = parent.target;
 				if (parent.inherited != null) {
@@ -189,7 +189,7 @@ public class GameState {
 			this.id	  = parent.id;
 			this.view = parent.view;
 			this.parent = parent;
-			
+
 			if (parent != null) {
 				target = parent.target;
 				if (parent.inherited != null) {
@@ -205,11 +205,11 @@ public class GameState {
 	private static final double FOOTMEN_WIN_BONUS       = 100000.0;
 	private static final double CORRECT_MOVE_BONUS      = 30.0; // "reward" the agent for moving in the correct direction.
 	private static final double UTILITY_BASE			= 0;
-    private static final double LIVING_ARCHER_BONUS     = -1500.0;
-    private static final double LIVING_FOOTMAN_BONUS    = 1500.0;
+	private static final double LIVING_ARCHER_BONUS     = -1500.0;
+	private static final double LIVING_FOOTMAN_BONUS    = 1500.0;
 	private static final double UTILITY_ATTACK_BONUS	= 200.0;
 	private static final double ROOK_CHECKMATE_BONUS    = 500.0;
-//	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
+	//	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
 	private static final double CORNERED_ARCHER_BONUS   = 1000.0;
 
 	private State.StateView game;
@@ -245,7 +245,7 @@ public class GameState {
 		this.maxAgent = true;
 
 		buildDummyUnits();
-		
+
 		getUtility();
 	}
 
@@ -285,6 +285,16 @@ public class GameState {
 	 * @return The weighted linear combination of the features
 	 */
 	public double getUtility() {
+		// Handle end-game scenarios
+		if (footmen.size() == 0) {
+			return ARCHER_WIN_BONUS;
+		}
+
+		if (archers.size() == 0) {
+			System.out.println("!!!!!!!!!!!!!!!!!!!GAME WIN BONUS");
+			return FOOTMEN_WIN_BONUS;
+		}
+
 		// Since we run a sort and then more checks, cache for performance
 		if (this.utility != null) {
 			return this.utility;
@@ -292,25 +302,15 @@ public class GameState {
 
 		utility = UTILITY_BASE;
 
-		// Handle end-game scenarios
-		if (footmen.size() == 0) {
-			return ARCHER_WIN_BONUS;
-		}
-
-		if (archers.size() == 0) {
-			return FOOTMEN_WIN_BONUS;
-		}
-
 		utility += rookCheckmatePositionUtility();
-        utility += archers.size() * LIVING_ARCHER_BONUS;
-        utility += footmen.size() * LIVING_FOOTMAN_BONUS;
+		utility += archers.size() * LIVING_ARCHER_BONUS;
+		utility += footmen.size() * LIVING_FOOTMAN_BONUS;
 		for (DummyUnit footman: footmen) {
-			
+
 			if (footman.target == null) {
-				System.out.println("Getting target");
 				footman.target = getBestTarget(footman);
 			}
-			
+
 			if (footman.inherited == null || footman.inherited.size() == 0) {
 				if (footman.parent == null) {
 					footman.inherited = astar(footman.xy, footman.target.xy);;
@@ -319,24 +319,27 @@ public class GameState {
 					footman.inherited.remove(0);
 				}
 			}
-			
+
 			XY xy = footman.inherited.get(0);
-			
+
 			if (footman.xy.x == xy.x && footman.xy.y == xy.y) {
 				utility += CORRECT_MOVE_BONUS;
 			} else {
 				footman.inherited = astar(footman.xy, footman.target.xy);
 			}
-			
+
 			int temp = getDistance(footman, footman.target);
-			
+
+			System.out.println("Temp" + temp);
+
 			if (temp == 1) {
+				System.out.println("GET FUCKED UP");
 				utility += UTILITY_ATTACK_BONUS;
 			}
-			
-//			utility += UNCHASED_ARCHER_BONUS * temp;
+
+			//			utility += UNCHASED_ARCHER_BONUS * temp;
 		}
-		
+
 		// Prioritize being closer, having more footmen, and attacking
 		for (DummyUnit archer : archers) {
 			if(this.archerTrapped(archer)) {
@@ -344,16 +347,16 @@ public class GameState {
 			}
 		}
 
-//		for (DummyUnit footman : footmen) {
-//			temp = getShortestDistanceFootman(footman);
-//			utility -= temp;
-//			if (footman.x == 0 || footman.x == game.getXExtent() -1) {
-//				utility -= 10;
-//			} else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
-//				utility -= 10;
-//			}
-//		}
-//		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
+		//		for (DummyUnit footman : footmen) {
+		//			temp = getShortestDistanceFootman(footman);
+		//			utility -= temp;
+		//			if (footman.x == 0 || footman.x == game.getXExtent() -1) {
+		//				utility -= 10;
+		//			} else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
+		//				utility -= 10;
+		//			}
+		//		}
+		//		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
 		System.out.println(utility);
 		return utility;
 	}
@@ -464,28 +467,28 @@ public class GameState {
 		}
 		return firstRankCovered && secondRankCovered;
 	}
-	
+
 	public DummyUnit getBestTarget(DummyUnit footman) {
 		int bestDistance = Integer.MAX_VALUE;
 		DummyUnit best = null;
 		DummyUnit option = null;
-		
+
 		for (DummyUnit archer : archers) {
 			int temp = getDistance(footman, archer);
-			
+
 			if (temp < bestDistance) {
-				if (getOtherFootman(footman).target == archer) {
-					option = archer;
-				} else {
-					bestDistance = temp;
-					best = archer;
-				}
+				//				if (getOtherFootman(footman).target == archer) {
+				//					option = archer;
+				//				} else {
+				bestDistance = temp;
+				best = archer;
+				//				}
 			}
 		}
-		
+
 		return best == null ? option : best;
 	}
-	
+
 	public DummyUnit getOtherFootman(DummyUnit footman) {
 		for (DummyUnit other : footmen) {
 			if (other != footman) {
@@ -519,18 +522,18 @@ public class GameState {
 	 * @param footman
 	 * @return
 	 */
-//	public boolean isShortestDistanceFootman(DummyUnit footman) {
-//		int best = Integer.MAX_VALUE;
-//
-//		int temp;
-//		for (DummyUnit archer : archers) {
-//			XY xy = getBestMove(game., footman.y, archer.x, archer.y);
-//            if(footman.x == xy.x && footman.y == xy.y) {
-//                return true;
-//            }
-//		}
-//		return false;
-//	}
+	//	public boolean isShortestDistanceFootman(DummyUnit footman) {
+	//		int best = Integer.MAX_VALUE;
+	//
+	//		int temp;
+	//		for (DummyUnit archer : archers) {
+	//			XY xy = getBestMove(game., footman.y, archer.x, archer.y);
+	//            if(footman.x == xy.x && footman.y == xy.y) {
+	//                return true;
+	//            }
+	//		}
+	//		return false;
+	//	}
 	/**
 	 * Computes the taxicab norm dx + dy. In this assignment, the minimum
 	 * number of moves to reach a given destination. Unlike Chebychev, accounts
@@ -543,7 +546,7 @@ public class GameState {
 	public static int getDistance(DummyUnit from, DummyUnit to) {
 		return getDistance(from.xy, to.xy);
 	}
-	
+
 	public static int getDistance(XY from, XY to) {
 		return Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
 	}
@@ -681,6 +684,7 @@ public class GameState {
 						if(attackTarget.id == ((TargetedAction) action).getTargetId()) {
 							attackTarget.hp -= pair.a.view.getTemplateView().getBasicAttack();
 							if (attackTarget.hp < 0) {
+								System.out.println("Applying attack!");
 								pair.a.target = null;
 								targetIter.remove();
 							}
@@ -695,7 +699,7 @@ public class GameState {
 
 				map.put(pair.a.id, pair.b);
 			}
-			
+
 			state.getUtility();
 
 			GameStateChild newChild = new GameStateChild(map, state);
