@@ -47,7 +47,7 @@ public class GameState {
 			return keypoints.makeTrivialStep(xFrom, yFrom, xTo, yTo);
 		}
 
-		int zoneNext = keypoints.dfs(zoneFrom, zoneTo).x;
+		int zoneNext = keypoints.dfs(zoneFrom, zoneTo, -1).x;
 
 		return keypoints.makeTrivialStepToZone(xFrom, yFrom, zoneNext);
 	}
@@ -152,7 +152,7 @@ public class GameState {
 			locations.add(new XY(x, y));
 		}
 
-		public XY dfs(int zoneFrom, int zoneTo) {
+		public XY dfs(int zoneFrom, int zoneTo, int dontVisit) {
 			XY best = new XY(-1, Integer.MAX_VALUE);
 			
 			if (zoneFrom == zoneTo) {
@@ -160,8 +160,8 @@ public class GameState {
 			}
 			
 			for (int i = 0; i < adj.length; i++) {
-				if (adj[zoneFrom][i] != null) {
-					XY attempt = dfs(i, zoneTo);
+				if (i != dontVisit && adj[zoneFrom][i] != null) {
+					XY attempt = dfs(i, zoneTo, zoneFrom);
 					if (attempt.y + 1 < best.y) {
 						best = new XY(i, attempt.y + 1);
 					}
