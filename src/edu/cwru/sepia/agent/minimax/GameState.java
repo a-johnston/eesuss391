@@ -102,10 +102,10 @@ public class GameState {
 
 			boolean added;
 			int i;
-			for (int x = 0; x < map[0].length; x++) {
-				for (int y = 0; y < map.length; y++) {
+			for (int x = 0; x < map.length; x++) {
+				for (int y = 0; y < map[0].length; y++) {
 
-					if (map[y][x] == -1) {
+					if (map[x][y] == -1) {
 						continue;
 					}
 
@@ -114,7 +114,7 @@ public class GameState {
 					for (List<XY> zone : zones) {
 						if (inZone(map, x, y, zone)) {
 							zone.add(new XY(x, y));
-							map[y][x] = i;
+							map[x][y] = i;
 							added = true;
 							break;
 						}
@@ -123,7 +123,7 @@ public class GameState {
 					if (!added) {
 						List<XY> newZone = new ArrayList<>();
 						newZone.add(new XY(x, y));
-						map[y][x] = zoneId++;
+						map[x][y] = zoneId++;
 						zones.add(newZone);
 					}
 				}
