@@ -14,12 +14,17 @@ import edu.cwru.sepia.util.Pair;
 import java.util.*;
 
 /**
- * This class stores all of the information the agent
- * needs to know about the state of the game. For example this
- * might include things like footmen HP and positions.
- *
- * Add any information or methods you would like to this class,
- * but do not delete or change the signatures of the provided methods.
+ * Stores relevant information for a state in the game tree and generates
+ * child states upon request.
+ * 
+ * Handles finding all combinations of actions and applying actions to child
+ * states, including movement, attacking, and the death of units. Generalized
+ * for arbitrary numbers of footmen and archers.
+ * 
+ * Holds onto an A* implementation to implement a planned movement heuristic.
+ * 
+ * @author Adam Johnston	amj69
+ * @author Eric Luan		efl11
  */
 public class GameState {
 

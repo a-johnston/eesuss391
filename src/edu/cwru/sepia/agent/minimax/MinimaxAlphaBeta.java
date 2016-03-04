@@ -11,6 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Agent that prunes its game tree via an alpha-beta search.
+ * 
+ * @author Adam Johnston	amj69
+ * @author Eric Luan		efl11
+ */
 public class MinimaxAlphaBeta extends Agent {
 	private static final long serialVersionUID = 3799985942000030012L;
 	
@@ -44,7 +50,6 @@ public class MinimaxAlphaBeta extends Agent {
 
     @Override
     public Map<Integer, Action> middleStep(State.StateView newstate, History.HistoryView statehistory) {
-    	System.out.println("New round");
         GameStateChild bestChild = alphaBetaSearch(new GameStateChild(newstate),
                 numPlys,
                 Double.NEGATIVE_INFINITY,
@@ -63,13 +68,9 @@ public class MinimaxAlphaBeta extends Agent {
     public void loadPlayerData(InputStream is) {}
 
     /**
-     * You will implement this.
-     *
-     * This is the main entry point to the alpha beta search. Refer to the slides, assignment description
-     * and book for more information.
-     *
-     * Try to keep the logic in this function as abstract as possible (i.e. move as much SEPIA specific
-     * code into other functions and methods)
+     * Performs an alpha-beta search on the game tree for a given state and
+     * depth. Very straightforward implementation that returns the eventual
+     * leaf utility and the first action needed to reach that leaf.
      *
      * @param node The action and state to search from
      * @param depth The remaining number of plys under this node
@@ -79,9 +80,7 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta)
     {
-    	System.out.println("Depth " + depth);
     	if (depth == 0) {
-    		System.out.println("Util: " + node.state.getUtility());
     		return node;
     	}
     	
@@ -132,43 +131,35 @@ public class MinimaxAlphaBeta extends Agent {
     	}
     	
     	//inherit utility, but make sure we keep the correct next action
-    	if (best == null) {
+    	if (best == null) { //handles no-child case
     		return node;
     	}
     	
-    	node.state.utility = best.state.utility;
+    	node.state.utility = best.state.utility; //inherit utility to not lose action map
     	if (node.action != null) {
     		return node;
     	} else {
-    		return best; //for the first call to this
+    		return best; //for the first call to this wherein we have no action :(
     	}
     }
 
     /**
-     * You will implement this.
-     *
-     * Given a list of children you will order them according to heuristics you make up.
-     * See the assignment description for suggestions on heuristics to use when sorting.
-     *
-     * Use this function inside of your alphaBetaSearch method.
-     *
-     * Include a good comment about what your heuristics are and why you chose them.
-     *
+     * Sorts a list of child states according to their precomputed utility.
+     * Takes an additional parameter to sort in ascending or descending order
+     * to avoid a reverse list call in the minimizing player.
+     * 
+     * Does not take advantage of additional heuristics, i.e. the killer
+     * heuristic for a-b search.
+     * 
+     * Stable assuming the underlying sort implementation on streams is stable.
+     * 
      * @param children
-     * @return The list of children sorted by your heuristic.
+     * @param ascending
+     * @return
      */
-    public List<GameStateChild> orderChildrenWithHeuristics(
-    		List<GameStateChild> children,
-    		boolean ascending
-    		// Ordering is based purely on utility function. Utility handles discerning "good vs bad" game states.
-    ) {
-
+    public List<GameStateChild> orderChildrenWithHeuristics(List<GameStateChild> children, boolean ascending) {
         return children.stream().sorted((a, b) -> {
-        	return (ascending ? 1 : -1) *
-        			Double.compare(
-        					// If there's a tie we go with the first one
-        					a.state.getUtility(),
-        					b.state.getUtility());
+        	return (ascending ? 1 : -1) * Double.compare(a.state.getUtility(), b.state.getUtility());
         }).collect(Collectors.toList()); // Fancy Java 8
     }
 
