@@ -12,6 +12,7 @@ import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class stores all of the information the agent
@@ -39,17 +40,24 @@ public class GameState {
 		}
 	}
 
-	public static XY getBestMove(int xFrom, int yFrom, int xTo, int yTo) {
+    private static ConcurrentHashMap<Pair<Integer, Integer>, Integer> nextZone = new ConcurrentHashMap<>();
+
+    public static XY getBestMove(int xFrom, int yFrom, int xTo, int yTo) {
 		int zoneFrom = keypoints.map[xFrom][yFrom];
 		int zoneTo   = keypoints.map[xTo][yTo];
-
 		if (zoneFrom == zoneTo) {
 			return keypoints.makeTrivialStep(xFrom, yFrom, xTo, yTo);
 		}
+        for(Pair<Integer, Integer> key: nextZone.keySet()) {
+            if (key.a == zoneFrom && key.b == zoneTo) {
+                return keypoints.makeTrivialStepToZone(xFrom, yFrom, nextZone.get(new Pair<Integer, Integer>(zoneFrom, zoneTo)));
+            }
+        }
 
-		int zoneNext = keypoints.dfs(zoneFrom, zoneTo, -1).x;
+        int zoneNext = keypoints.dfs(zoneFrom, zoneTo, new ArrayList<Integer>()).x;
+        nextZone.put(new Pair<Integer, Integer>(zoneFrom, zoneTo), zoneNext);
+        return keypoints.makeTrivialStepToZone(xFrom, yFrom, zoneNext);
 
-		return keypoints.makeTrivialStepToZone(xFrom, yFrom, zoneNext);
 	}
 
 	private static Keypoints keypoints;
@@ -67,7 +75,6 @@ public class GameState {
 	private static class Keypoints {
 		private int[][] map;
 		private List<XY>[][] adj;
-
 		private List<List<XY>> zones;
 
 		@SuppressWarnings("unchecked")
@@ -121,7 +128,6 @@ public class GameState {
 					}
 				}
 			}
-
 			return zones;
 		}
 
@@ -152,16 +158,17 @@ public class GameState {
 			locations.add(new XY(x, y));
 		}
 
-		public XY dfs(int zoneFrom, int zoneTo, int dontVisit) {
+		public XY dfs(int zoneFrom, int zoneTo, ArrayList<Integer> dontVisit) {
 			XY best = new XY(-1, Integer.MAX_VALUE);
-			
-			if (zoneFrom == zoneTo) {
+
+            if (zoneFrom == zoneTo) {
 				return new XY(zoneFrom, 0);
 			}
 			
 			for (int i = 0; i < adj.length; i++) {
-				if (i != dontVisit && adj[zoneFrom][i] != null) {
-					XY attempt = dfs(i, zoneTo, zoneFrom);
+				if (!dontVisit.contains(i)  && adj[zoneFrom][i] != null) {
+                    dontVisit.add(i);
+					XY attempt = dfs(i, zoneTo, dontVisit);
 					if (attempt.y + 1 < best.y) {
 						best = new XY(i, attempt.y + 1);
 					}
@@ -225,7 +232,6 @@ public class GameState {
 
 				t += step;
 			}
-
 			return true;
 		}
 	}
@@ -367,7 +373,6 @@ public class GameState {
 
 		utility += rookCheckmatePositionUtility();
 
-        boolean shortest;
         for (DummyUnit parentFootman: parent.footmen) {
             for (DummyUnit parentArcher: parent.archers) {
                 XY xy = getBestMove(parentFootman.x, parentFootman.y, parentArcher.x, parentArcher.y);
