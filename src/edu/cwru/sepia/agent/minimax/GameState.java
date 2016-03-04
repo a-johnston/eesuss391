@@ -212,10 +212,9 @@ public class GameState {
 //	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
 	private static final double CORNERED_ARCHER_BONUS   = 1000.0;
 
-    private GameState parent;
 	private State.StateView game;
 	private boolean maxAgent;
-	private Double utility = null;
+	public Double utility = null;
 
 	private List<DummyUnit> footmen;
 	private List<DummyUnit> archers;
@@ -251,8 +250,7 @@ public class GameState {
 	}
 
 	private GameState(GameState parent) {
-        this.parent = parent;
-		this.game   = parent.game;
+		this.game	  = parent.game;
 		this.maxAgent = !parent.maxAgent; // swap sides
 	}
 

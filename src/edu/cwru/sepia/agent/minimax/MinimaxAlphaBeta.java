@@ -79,7 +79,9 @@ public class MinimaxAlphaBeta extends Agent {
      */
     public GameStateChild alphaBetaSearch(GameStateChild node, int depth, double alpha, double beta)
     {
+    	System.out.println("Depth " + depth);
     	if (depth == 0) {
+    		System.out.println("Util: " + node.state.getUtility());
     		return node;
     	}
     	
@@ -129,7 +131,13 @@ public class MinimaxAlphaBeta extends Agent {
     		}
     	}
     	
-        return best;
+    	//inherit utility, but make sure we keep the correct next action
+    	node.state.utility = best.state.utility;
+    	if (node.action != null) {
+    		return node;
+    	} else {
+    		return best; //for the first call to this
+    	}
     }
 
     /**
