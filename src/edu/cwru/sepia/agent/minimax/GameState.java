@@ -248,6 +248,7 @@ public class GameState {
 	private static final double UNCHASED_ARCHER_BONUS   = -20.0; // It's really bad to leave an archer "unchased"
 	private static final double CORNERED_ARCHER_BONUS   = 100.0;
 
+    private GameState parent;
 	private State.StateView game;
 	private boolean maxAgent;
 	private Double utility = null;
@@ -286,6 +287,7 @@ public class GameState {
 	}
 
 	private GameState(GameState parent) {
+        this.parent = parent;
 		this.game   = parent.game;
 		this.maxAgent = !parent.maxAgent; // swap sides
 	}
@@ -339,8 +341,19 @@ public class GameState {
 
 		utility += rookCheckmatePositionUtility();
 
+        boolean shortest;
+        for (DummyUnit parentFootman: parent.footmen) {
+            for (DummyUnit parentArcher: parent.archers) {
+                XY xy = getBestMove(parentFootman.x, parentFootman.y, parentArcher.x, parentArcher.y);
+                for (DummyUnit footman: footmen) {
+                    if(footman.x == xy.x && footman.y == xy.y){
+                        utility += CORRECT_MOVE_BONUS;
+                    }
+                }
+            }
+        }
 		// Prioritize being closer, having more footmen, and attacking
-		int temp;
+        int temp;
 		for (DummyUnit archer : archers) {
 			temp = getShortestDistanceArcher(archer);
 
@@ -353,16 +366,16 @@ public class GameState {
 				utility += CORNERED_ARCHER_BONUS;
 			}
 		}
-
-		for (DummyUnit footman : footmen) {
-			temp = getShortestDistanceFootman(footman);
-			utility -= temp;
-			if (footman.x == 0 || footman.x == game.getXExtent() -1) {
-				utility -= 10;
-			} else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
-				utility -= 10;
-			}
-		}
+//
+//		for (DummyUnit footman : footmen) {
+//			temp = getShortestDistanceFootman(footman);
+//			utility -= temp;
+//			if (footman.x == 0 || footman.x == game.getXExtent() -1) {
+//				utility -= 10;
+//			} else if (footman.y == 0 || footman.y == game.getYExtent() - 1) {
+//				utility -= 10;
+//			}
+//		}
 		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
 		return utility;
 	}
@@ -498,19 +511,18 @@ public class GameState {
 	 * @param footman
 	 * @return
 	 */
-	public int getShortestDistanceFootman(DummyUnit footman) {
-		int best = Integer.MAX_VALUE;
-
-		int temp;
-		for (DummyUnit archer : archers) {
-			temp = getDistance(archer, footman);
-
-			if (Math.abs(temp) < Math.abs(best)) {
-				best = temp;
-			}
-		}
-		return best;
-	}
+//	public boolean isShortestDistanceFootman(DummyUnit footman) {
+//		int best = Integer.MAX_VALUE;
+//
+//		int temp;
+//		for (DummyUnit archer : archers) {
+//			XY xy = getBestMove(game., footman.y, archer.x, archer.y);
+//            if(footman.x == xy.x && footman.y == xy.y) {
+//                return true;
+//            }
+//		}
+//		return false;
+//	}
 	/**
 	 * Computes the taxicab norm dx + dy. In this assignment, the minimum
 	 * number of moves to reach a given destination. Unlike Chebychev, accounts
@@ -757,10 +769,5 @@ public class GameState {
 
 	public int getMapY() {
 		return game.getYExtent();
-	}
-
-	public XY getNextXY() {
-		// TODO: Get next xy
-		return null; 
 	}
 }
