@@ -28,7 +28,8 @@ public class MinimaxAlphaBeta extends Agent {
             System.exit(1);
         }
 
-        numPlys = Integer.parseInt(args[0]);
+//        numPlys = Integer.parseInt(args[0]);
+        numPlys = 1;
         
         myAgent = this;
     }

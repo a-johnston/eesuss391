@@ -12,7 +12,6 @@ import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class stores all of the information the agent
@@ -31,208 +30,6 @@ public class GameState {
 		public XY(int x, int y) {
 			this.x = x;
 			this.y = y;
-		}
-	}
-
-	public static void makeKeyPoints(StateView state) {
-		if (keypoints == null) {
-			keypoints = new Keypoints(state);
-		}
-	}
-
-    private static ConcurrentHashMap<Pair<Integer, Integer>, Integer> nextZone = new ConcurrentHashMap<>();
-
-    public static XY getBestMove(int xFrom, int yFrom, int xTo, int yTo) {
-		int zoneFrom = keypoints.map[xFrom][yFrom];
-		int zoneTo   = keypoints.map[xTo][yTo];
-		if (zoneFrom == zoneTo) {
-			return keypoints.makeTrivialStep(xFrom, yFrom, xTo, yTo);
-		}
-        for(Pair<Integer, Integer> key: nextZone.keySet()) {
-            if (key.a == zoneFrom && key.b == zoneTo) {
-                return keypoints.makeTrivialStepToZone(xFrom, yFrom, nextZone.get(new Pair<Integer, Integer>(zoneFrom, zoneTo)));
-            }
-        }
-
-        int zoneNext = keypoints.dfs(zoneFrom, zoneTo, new ArrayList<Integer>()).x;
-        nextZone.put(new Pair<Integer, Integer>(zoneFrom, zoneTo), zoneNext);
-        return keypoints.makeTrivialStepToZone(xFrom, yFrom, zoneNext);
-
-	}
-
-	private static Keypoints keypoints;
-
-	/**
-	 * Handles pathfinding with a once-computed map that can provide suggestions
-	 * for the best next move.
-	 * 
-	 * Finds chunks of space that can be trivially traversed and then connects
-	 * them via edge nodes of each zone;
-	 * 
-	 * @author adam
-	 *
-	 */
-	private static class Keypoints {
-		private int[][] map;
-		private List<XY>[][] adj;
-		private List<List<XY>> zones;
-
-		@SuppressWarnings("unchecked")
-		Keypoints(StateView state) {
-			map = new int[state.getXExtent()][state.getYExtent()];
-
-			for (ResourceView tree : state.getAllResourceNodes()) {
-				map[tree.getXPosition()][tree.getYPosition()] = -1;
-			}
-
-			zones = discoverZones(map);
-
-			adj = new List[zones.size()][zones.size()];
-
-			for (int x = 1; x < map.length - 1; x++) {
-				for (int y = 1; y < map[0].length - 1; y++) {
-					findAdjacencies(x, y, adj, zones, map);
-				}
-			}
-		}
-
-		public static List<List<XY>> discoverZones(int[][] map) {
-			int zoneId = 0;
-			List<List<XY>> zones = new ArrayList<>();
-
-			boolean added;
-			int i;
-			for (int x = 0; x < map.length; x++) {
-				for (int y = 0; y < map[0].length; y++) {
-
-					if (map[x][y] == -1) {
-						continue;
-					}
-
-					added = false;
-					i = 0;
-					for (List<XY> zone : zones) {
-						if (inZone(map, x, y, zone)) {
-							zone.add(new XY(x, y));
-							map[x][y] = i;
-							added = true;
-							break;
-						}
-						i++;
-					}
-					if (!added) {
-						List<XY> newZone = new ArrayList<>();
-						newZone.add(new XY(x, y));
-						map[x][y] = zoneId++;
-						zones.add(newZone);
-					}
-				}
-			}
-			return zones;
-		}
-
-		public void findAdjacencies(int x, int y, List<XY>[][] adj, List<List<XY>> zones, int[][] map) {
-			if (map[x][y] == -1) {
-				return;
-			}
-
-			for (int i = -1; i < 2; i++) {
-				for (int j = -1; j < 2; j++) {
-					if ((Math.abs(i) == 1) ^ (Math.abs(j) == 1)) {
-						if (map[x][y] != map[x+i][y+j] && map[x+i][y+j] != -1) {
-							markAdjacent(x, y, map[x][y], map[x+i][y+j], adj);
-						}
-					}
-				}
-			}
-		}
-
-		public void markAdjacent(int x, int y, int zoneFrom, int zoneTo, List<XY>[][] adj) {
-			List<XY> locations = adj[zoneFrom][zoneTo];
-
-			if (locations == null) {
-				locations = new ArrayList<>();
-				adj[zoneFrom][zoneTo] = locations;
-			}
-
-			locations.add(new XY(x, y));
-		}
-
-		public XY dfs(int zoneFrom, int zoneTo, ArrayList<Integer> dontVisit) {
-			XY best = new XY(-1, Integer.MAX_VALUE);
-
-            if (zoneFrom == zoneTo) {
-				return new XY(zoneFrom, 0);
-			}
-			
-			for (int i = 0; i < adj.length; i++) {
-				if (!dontVisit.contains(i)  && adj[zoneFrom][i] != null) {
-                    dontVisit.add(i);
-					XY attempt = dfs(i, zoneTo, dontVisit);
-					if (attempt.y + 1 < best.y) {
-						best = new XY(i, attempt.y + 1);
-					}
-				}
-			}
-
-			return best;
-		}
-		
-		public XY makeTrivialStepToZone(int x, int y, int zone) {
-			List<XY> edge = adj[map[x][y]][zone];
-			
-			XY best = null;
-			int score = Integer.MAX_VALUE;
-			
-			for (XY node : edge) {
-				int temp = getDistance(x, y, node.x, node.y);
-				
-				if (temp < score) {
-					score = temp;
-					best = node;
-				}
-			}
-			
-			return makeTrivialStep(x, y, best.x, best.y);
-		}
-		
-		public XY makeTrivialStep(int x, int y, int x2, int y2) {
-			if (Math.abs(x - x2) > Math.abs(y - y2)) {
-				return new XY(x + (x < x2 ? 1 : -1), y);
-			} else {
-				return new XY(x, y + (y < y2 ? 1 : -1));
-			}
-		}
-
-		public static boolean inZone(int[][] map, int x, int y, List<XY> zone) {
-			for (XY xy : zone) {
-				if (!trivialPathExists(map, x, y, xy.x, xy.y)) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		public static boolean trivialPathExists(int[][] map, int x1, int y1, int x2, int y2) {
-			double t = 0.0;
-
-			double tx, ty;
-			double dx = x2 - x1;
-			double dy = y2 - y1;
-
-			double step = 0.5 / Math.sqrt(dx*dx + dy*dy);
-
-			while (t <= 1.0) {
-				tx = Math.round(x1 + dx * t);
-				ty = Math.round(y1 + dy * t);
-
-				if (map[(int) tx][(int) ty] == -1) {
-					return false;
-				}
-
-				t += step;
-			}
-			return true;
 		}
 	}
 
@@ -273,9 +70,9 @@ public class GameState {
 	// Weights for the utility function
 	private static final double ARCHER_WIN_BONUS        = -10000.0; // Winning is trivially valuable
 	private static final double FOOTMEN_WIN_BONUS       = 10000.0;
-	private static final double CORRECT_MOVE_BONUS      = 100.0; // "reward" the agent for moving in the correct direction.
+	private static final double CORRECT_MOVE_BONUS      = 500.0; // "reward" the agent for moving in the correct direction.
 	private static final double UTILITY_BASE			= 0;
-	private static final double UTILITY_ATTACK_BONUS	= 150.0;
+	private static final double UTILITY_ATTACK_BONUS	= 800.0;
 	private static final double ROOK_CHECKMATE_BONUS    = 10.0;
 	private static final double UNCHASED_ARCHER_BONUS   = -20.0; // It's really bad to leave an archer "unchased"
 	private static final double CORNERED_ARCHER_BONUS   = 100.0;
@@ -314,8 +111,6 @@ public class GameState {
 		this.maxAgent = true;
 
 		buildDummyUnits();
-
-		makeKeyPoints(state);
 	}
 
 	private GameState(GameState parent) {
@@ -375,28 +170,27 @@ public class GameState {
 
         for (DummyUnit parentFootman: parent.footmen) {
             for (DummyUnit parentArcher: parent.archers) {
-                XY xy = getBestMove(parentFootman.x, parentFootman.y, parentArcher.x, parentArcher.y);
                 for (DummyUnit footman: footmen) {
-                    if(footman.x == xy.x && footman.y == xy.y){
-                        utility += CORRECT_MOVE_BONUS;
-                    }
+//                    if(footman.x == xy.x && footman.y == xy.y){
+//                    		...
+//                    }
                 }
             }
         }
 		// Prioritize being closer, having more footmen, and attacking
-        int temp;
-		for (DummyUnit archer : archers) {
-			temp = getShortestDistanceArcher(archer);
-
-			if (temp == 1) {
-				utility += UTILITY_ATTACK_BONUS;
-			}
-
-			utility += UNCHASED_ARCHER_BONUS*temp;
-			if(this.archerTrapped(archer)) {
-				utility += CORNERED_ARCHER_BONUS;
-			}
-		}
+//        int temp;
+//		for (DummyUnit archer : archers) {
+//			temp = getShortestDistanceArcher(archer);
+//
+//			if (temp == 1) {
+//				utility += UTILITY_ATTACK_BONUS;
+//			}
+//
+//			utility += UNCHASED_ARCHER_BONUS*temp;
+//			if(this.archerTrapped(archer)) {
+//				utility += CORNERED_ARCHER_BONUS;
+//			}
+//		}
 //
 //		for (DummyUnit footman : footmen) {
 //			temp = getShortestDistanceFootman(footman);
@@ -407,7 +201,7 @@ public class GameState {
 //				utility -= 10;
 //			}
 //		}
-		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
+//		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
 		return utility;
 	}
 
@@ -569,6 +363,10 @@ public class GameState {
 	
 	public static int getDistance(int fromX, int fromY, int toX, int toY) {
 		return Math.abs(fromX - toX) + Math.abs(fromY - toY);
+	}
+	
+	public static int getDistanceChebyshev(int fromX, int fromY, int toX, int toY) {
+		return Math.max(Math.abs(fromX - toX), Math.abs(fromY - toY));
 	}
 
 	/**
