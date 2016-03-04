@@ -201,14 +201,16 @@ public class GameState {
 	}
 
 	// Weights for the utility function
-	private static final double ARCHER_WIN_BONUS        = -10000.0; // Winning is trivially valuable
-	private static final double FOOTMEN_WIN_BONUS       = 10000.0;
+	private static final double ARCHER_WIN_BONUS        = -100000.0; // Winning is trivially valuable
+	private static final double FOOTMEN_WIN_BONUS       = 100000.0;
 	private static final double CORRECT_MOVE_BONUS      = 30.0; // "reward" the agent for moving in the correct direction.
 	private static final double UTILITY_BASE			= 0;
-	private static final double UTILITY_ATTACK_BONUS	= 500.0;
-	private static final double ROOK_CHECKMATE_BONUS    = 5.0;
+    private static final double LIVING_ARCHER_BONUS     = -1500.0;
+    private static final double LIVING_FOOTMAN_BONUS    = 1500.0;
+	private static final double UTILITY_ATTACK_BONUS	= 200.0;
+	private static final double ROOK_CHECKMATE_BONUS    = 500.0;
 //	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
-	private static final double CORNERED_ARCHER_BONUS   = 50.0;
+	private static final double CORNERED_ARCHER_BONUS   = 1000.0;
 
     private GameState parent;
 	private State.StateView game;
@@ -302,7 +304,8 @@ public class GameState {
 		}
 
 		utility += rookCheckmatePositionUtility();
-
+        utility += archers.size() * LIVING_ARCHER_BONUS;
+        utility += footmen.size() * LIVING_FOOTMAN_BONUS;
 		for (DummyUnit footman: footmen) {
 			if (footman.target == null) {
 				System.out.println("Getting target");
