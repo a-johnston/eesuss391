@@ -22,36 +22,161 @@ import java.util.*;
  * but do not delete or change the signatures of the provided methods.
  */
 public class GameState {
-
-	private static class XY {
+	
+	private static class XY implements Comparable<XY> {
 		final int x;
 		final int y;
+		
+		XY cameFrom;
+		float f;
+		float g; 
 
 		public XY(int x, int y) {
 			this.x = x;
 			this.y = y;
+			
+			cameFrom = null;
+			f = Float.POSITIVE_INFINITY;
+			g = Float.POSITIVE_INFINITY;
 		}
+		
+		@Override
+		public int compareTo(XY o) {
+			return Float.compare(this.f, o.f);
+		}
+		
+		@Override
+		public String toString() {
+			return "(" + x + ", " + y + ")";
+		}
+	}
+	
+	private static XY[][] map;
+	
+	public static XY[][] buildMap(StateView view) {
+		map = new XY[view.getXExtent()][view.getYExtent()];
+
+		for (int x = 0; x < map.length; x++) {
+			for (int y = 0; y < map[0].length; y++) {
+				map[x][y] = new XY(x, y);
+			}
+		}
+		
+		for (ResourceView tree : view.getAllResourceNodes()) {
+			map[tree.getXPosition()][tree.getYPosition()] = null;
+		}
+		
+		return map;
+	}
+	
+	public List<XY> astar(XY from, XY to) {
+		XY[][] map = buildMap(this.game);
+		
+		map[from.x][from.y] = from;
+		map[to.x][to.y] = to;
+		
+		from.g = 0;
+		from.f = getDistance(from, to);
+		
+		Queue<XY> frontier = new PriorityQueue<>(); //sorts based on f score
+        Set<XY> explored = new HashSet<>();
+        
+        frontier.add(from);
+        
+        XY current;
+        while (!frontier.isEmpty()) {
+        	current = frontier.remove();
+        	explored.add(current);
+        	
+        	if (current == to) {
+        		return rebuildPath(current);
+        	}
+        	
+        	for (XY next : getNeighbors(current, map)) {
+        		if (explored.contains(next)) {
+        			continue; //explored neighbor isn't worth checking
+        		}
+        		
+        		float new_g = current.g + 1;
+        		
+        		if (!frontier.contains(next)) {
+        			frontier.add(next);
+        		} else if (new_g >= next.g) {
+        			continue; //already had a better path to get here
+        		}
+        		
+        		next.cameFrom = current;
+        		next.g = new_g;
+        		next.f = new_g + getDistance(next, to);
+        	}
+        }
+		
+		return null;
+	}
+	
+	public List<XY> getNeighbors(XY current, XY[][] map) {
+		List<XY> neighbors = new ArrayList<>();
+		
+		for (int i = -1; i < 2; i++) {
+    		if (current.x + i < 0 || current.x + i >= map.length) {
+    			continue;
+    		}
+    		
+    		for (int j = -1; j < 2; j++) {
+    			if (current.y + j < 0 || current.y + j >= map[0].length) {
+        			continue;
+        		}
+    			
+    			if ((Math.abs(i) == 1) ^ (Math.abs(j) == 1)) {
+    				if (map[current.x + i][current.y + j] != null) {
+        				neighbors.add(map[current.x + i][current.y + j]);
+        			}
+    			}
+    		}
+    	}
+		
+		return neighbors;
+	}
+	
+	public List<XY> rebuildPath(XY node) {
+		List<XY> path = new ArrayList<>();
+		
+		while (node != null) {
+			path.add(0, node);
+			node = node.cameFrom;
+		}
+		
+		return path;
 	}
 
 	private class DummyUnit {
-		int x;
-		int y;
+		DummyUnit parent;
+		DummyUnit target;
+		List<XY> inherited;
+		XY xy;
 		int hp;
 		int id;
 		UnitView view;
 
 		public DummyUnit(DummyUnit parent) {
-			this.x  = parent.x;
-			this.y  = parent.y;
+			this.xy = parent.xy;
 			this.hp = parent.hp;
 			this.id = parent.id;
 			this.view = parent.view;
+			this.parent = parent;
+			
+			if (parent != null) {
+				target = parent.target;
+				if (parent.inherited != null) {
+					this.inherited = new ArrayList<>(parent.inherited);
+					this.inherited.remove(0);
+				}
+			}
 		}
 
 
 		public DummyUnit(UnitView view) {
-			this.x  = view.getXPosition();
-			this.y  = view.getYPosition();
+			this.xy  = new XY(view.getXPosition(), view.getYPosition());
 			this.hp = view.getHP();
 			this.id = view.getID();
 			this.view = view;
@@ -59,11 +184,19 @@ public class GameState {
 
 
 		public DummyUnit(DummyUnit parent, Direction direction) {
-			this.x  = parent.x + direction.xComponent();
-			this.y  = parent.y + direction.yComponent();
-			this.hp = parent.hp;
-			this.id = parent.id;
+			this.xy   = new XY(parent.xy.x + direction.xComponent(), parent.xy.y + direction.yComponent());
+			this.hp   = parent.hp;
+			this.id	  = parent.id;
 			this.view = parent.view;
+			this.parent = parent;
+			
+			if (parent != null) {
+				target = parent.target;
+				if (parent.inherited != null) {
+					this.inherited = new ArrayList<>(parent.inherited);
+					this.inherited.remove(0);
+				}
+			}
 		}
 	}
 
@@ -72,10 +205,10 @@ public class GameState {
 	private static final double FOOTMEN_WIN_BONUS       = 10000.0;
 	private static final double CORRECT_MOVE_BONUS      = 500.0; // "reward" the agent for moving in the correct direction.
 	private static final double UTILITY_BASE			= 0;
-	private static final double UTILITY_ATTACK_BONUS	= 800.0;
-	private static final double ROOK_CHECKMATE_BONUS    = 10.0;
-	private static final double UNCHASED_ARCHER_BONUS   = -20.0; // It's really bad to leave an archer "unchased"
-	private static final double CORNERED_ARCHER_BONUS   = 100.0;
+	private static final double UTILITY_ATTACK_BONUS	= 500.0;
+	private static final double ROOK_CHECKMATE_BONUS    = 5.0;
+	private static final double UNCHASED_ARCHER_BONUS   = -1.0; // It's really bad to leave an archer "unchased"
+	private static final double CORNERED_ARCHER_BONUS   = 50.0;
 
     private GameState parent;
 	private State.StateView game;
@@ -168,30 +301,44 @@ public class GameState {
 
 		utility += rookCheckmatePositionUtility();
 
-        for (DummyUnit parentFootman: parent.footmen) {
-            for (DummyUnit parentArcher: parent.archers) {
-                for (DummyUnit footman: footmen) {
-//                    if(footman.x == xy.x && footman.y == xy.y){
-//                    		...
-//                    }
-                }
-            }
-        }
+		for (DummyUnit footman: footmen) {
+			if (footman.target == null) {
+				footman.target = getClosestArcher(footman);
+			}
+			
+			if (footman.inherited == null) {
+				if (footman.parent == null) {
+					footman.inherited = astar(footman.xy, footman.target.xy);;
+				}
+				footman.inherited = astar(footman.parent.xy, footman.target.xy);
+				footman.inherited.remove(0);
+			}
+			
+			XY xy = footman.inherited.get(0);
+			
+			if (footman.xy.x == xy.x && footman.xy.y == xy.y) {
+				utility += CORRECT_MOVE_BONUS;
+			} else {
+				System.out.println("Wrong move: x: " + footman.xy.x + " " + xy.x + " y: " + footman.xy.y + " " + xy.y);
+				footman.inherited = astar(footman.xy, footman.target.xy);
+			}
+			
+			int temp = getDistance(footman, footman.target);
+			
+			if (temp == 1) {
+				utility += UTILITY_ATTACK_BONUS;
+			}
+			
+			utility += UNCHASED_ARCHER_BONUS * temp;
+		}
+		
 		// Prioritize being closer, having more footmen, and attacking
-//        int temp;
-//		for (DummyUnit archer : archers) {
-//			temp = getShortestDistanceArcher(archer);
-//
-//			if (temp == 1) {
-//				utility += UTILITY_ATTACK_BONUS;
-//			}
-//
-//			utility += UNCHASED_ARCHER_BONUS*temp;
-//			if(this.archerTrapped(archer)) {
-//				utility += CORNERED_ARCHER_BONUS;
-//			}
-//		}
-//
+		for (DummyUnit archer : archers) {
+			if(this.archerTrapped(archer)) {
+				utility += CORNERED_ARCHER_BONUS;
+			}
+		}
+
 //		for (DummyUnit footman : footmen) {
 //			temp = getShortestDistanceFootman(footman);
 //			utility -= temp;
@@ -202,6 +349,7 @@ public class GameState {
 //			}
 //		}
 //		utility += Math.random(); // Break ties randomly to decrease chance of infinite games.
+		System.out.println(utility);
 		return utility;
 	}
 
@@ -220,8 +368,8 @@ public class GameState {
 				continue;
 			}
 
-			int newX = archer.x + d.xComponent();
-			int newY = archer.y + d.yComponent();
+			int newX = archer.xy.x + d.xComponent();
+			int newY = archer.xy.y + d.yComponent();
 			if(!game.inBounds(newX, newY)) {
 				continue;
 			}
@@ -231,7 +379,7 @@ public class GameState {
 			}
 
 			for(DummyUnit footman: footmen) {
-				if(footman.x == newX && footman.y == newY) {
+				if(footman.xy.x == newX && footman.xy.y == newY) {
 					continue;
 				}
 			}
@@ -254,18 +402,18 @@ public class GameState {
 		List<Pair<DummyUnit, Direction>> edgeArchers = new ArrayList<>();
 		for (DummyUnit archer : archers) {
 			// Not else if because of corner case...like a literal corner case.
-			if(archer.x == 0) {
+			if(archer.xy.x == 0) {
 				edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.WEST));
 			}
 
-			if (archer.y == 0) {
+			if (archer.xy.y == 0) {
 				edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.NORTH));
 			}
-			if (archer.x == game.getXExtent() - 1) {
+			if (archer.xy.x == game.getXExtent() - 1) {
 				edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.EAST));
 
 			}
-			if (archer.y == game.getYExtent() - 1) {
+			if (archer.xy.y == game.getYExtent() - 1) {
 				edgeArchers.add(new Pair<DummyUnit, Direction>(archer, Direction.SOUTH));
 			}
 		}
@@ -284,32 +432,48 @@ public class GameState {
 
 		for (DummyUnit footman: footmen) {
 			if(edgeArcherPair.b == Direction.EAST) {
-				if (footman.x == game.getXExtent() - 1) {
+				if (footman.xy.x == game.getXExtent() - 1) {
 					firstRankCovered = true;
-				} else if (footman.x == game.getXExtent() - 2) {
+				} else if (footman.xy.x == game.getXExtent() - 2) {
 					secondRankCovered = true;
 				}
 			} else if (edgeArcherPair.b == Direction.WEST) {
-				if (footman.x == 0) {
+				if (footman.xy.x == 0) {
 					firstRankCovered = true;
-				} else if (footman.x == 1) {
+				} else if (footman.xy.x == 1) {
 					secondRankCovered = true;
 				}
 			} else if (edgeArcherPair.b == Direction.NORTH) {
-				if (footman.y == 0) {
+				if (footman.xy.y == 0) {
 					firstRankCovered = true;
-				} else if (footman.y == 1) {
+				} else if (footman.xy.y == 1) {
 					secondRankCovered = true;
 				}
 			} else if (edgeArcherPair.b == Direction.SOUTH) {
-				if (footman.y == game.getYExtent() - 1 ) {
+				if (footman.xy.y == game.getYExtent() - 1 ) {
 					firstRankCovered = true;
-				} else if (footman.y == game.getYExtent() - 2) {
+				} else if (footman.xy.y == game.getYExtent() - 2) {
 					secondRankCovered = true;
 				}
 			}
 		}
 		return firstRankCovered && secondRankCovered;
+	}
+	
+	public DummyUnit getClosestArcher(DummyUnit footman) {
+		int bestDistance = Integer.MAX_VALUE;
+		DummyUnit best = null;
+		
+		for (DummyUnit archer : archers) {
+			int temp = getDistance(footman, archer);
+			
+			if (temp < bestDistance) {
+				bestDistance = temp;
+				best = archer;
+			}
+		}
+		
+		return best;
 	}
 
 	/**
@@ -358,15 +522,11 @@ public class GameState {
 	 * @return
 	 */
 	public static int getDistance(DummyUnit from, DummyUnit to) {
-		return Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
+		return getDistance(from.xy, to.xy);
 	}
 	
-	public static int getDistance(int fromX, int fromY, int toX, int toY) {
-		return Math.abs(fromX - toX) + Math.abs(fromY - toY);
-	}
-	
-	public static int getDistanceChebyshev(int fromX, int fromY, int toX, int toY) {
-		return Math.max(Math.abs(fromX - toX), Math.abs(fromY - toY));
+	public static int getDistance(XY from, XY to) {
+		return Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
 	}
 
 	/**
@@ -421,8 +581,8 @@ public class GameState {
 						direction == Direction.NORTHWEST) {
 					continue;
 				}
-				int newX = unit.x + direction.xComponent();
-				int newY = unit.y + direction.yComponent();
+				int newX = unit.xy.x + direction.xComponent();
+				int newY = unit.xy.y + direction.yComponent();
 				if (validMove(newX, newY, targets)) {
 					unitActions.add(this.createMoveAction(unit, direction));
 				}
@@ -502,7 +662,8 @@ public class GameState {
 						if(attackTarget.id == ((TargetedAction) action).getTargetId()) {
 							attackTarget.hp -= pair.a.view.getTemplateView().getBasicAttack();
 							if (attackTarget.hp < 0) {
-								//targetIter.remove();
+								pair.a.target = null;
+								targetIter.remove();
 							}
 							break;
 						}
@@ -542,7 +703,7 @@ public class GameState {
 
 		// Enemies don't move on our turn...right...right guys?!?!?!?
 		for (DummyUnit enemy: enemies) {
-			if(enemy.x == newX && enemy.y == newY) {
+			if(enemy.xy.x == newX && enemy.xy.y == newY) {
 				return false;
 			}
 		}
