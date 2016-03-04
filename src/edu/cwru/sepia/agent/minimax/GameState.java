@@ -35,7 +35,7 @@ public class GameState {
 	private static final double LIVING_ARCHER_BONUS     = -1500.0;		// increases utility when footmen have more units
 	private static final double LIVING_FOOTMAN_BONUS    = 1500.0;		// large value to mark turning point in game strategy
 	private static final double UTILITY_ATTACK_BONUS	= 200.0;
-	private static final double ROOK_CHECKMATE_BONUS    = 500.0;
+	private static final double ROOK_CHECKMATE_BONUS    = 900.0;
 	private static final double CORNERED_ARCHER_BONUS   = 1000.0;
 
 	// Information from a state we're deciding to save/cache
