@@ -6,3 +6,4 @@ out/
 bin/
 saves/
 .idea/
+.DS_Store
