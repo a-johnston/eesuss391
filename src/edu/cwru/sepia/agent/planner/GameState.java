@@ -1,8 +1,11 @@
 package edu.cwru.sepia.agent.planner;
 
+import edu.cwru.sepia.environment.model.state.ResourceNode;
+import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 
-import java.util.List;
+import javax.annotation.Resource;
+import java.util.*;
 
 /**
  * This class is used to represent the state of the game after applying one of the avaiable actions. It will also
@@ -23,6 +26,16 @@ import java.util.List;
  */
 public class GameState implements Comparable<GameState> {
 
+    private static boolean buildPeasants;
+    private static int playerNum;
+    private static int requiredGold;
+    private static int requiredWood;
+    private static List<ResourceNode.ResourceView> goldmines = new ArrayList<>(); // Not sure we want to actually make these lists static. doing it this way for now...
+    private static List<ResourceNode.ResourceView> forests = new ArrayList<>();
+
+    private int collectedGold;
+    private int collectedWood;
+
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
      * nodes should be constructed from the another constructor you create or by factory functions that you create.
@@ -34,7 +47,27 @@ public class GameState implements Comparable<GameState> {
      * @param buildPeasants True if the BuildPeasant action should be considered
      */
     public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
-        // TODO: Implement me!
+        this.buildPeasants = buildPeasants;
+        this.playerNum = playernum;
+        this.requiredGold = requiredGold;
+        this.requiredWood = requiredWood;
+
+        for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
+            if (node.getType() == ResourceNode.Type.GOLD_MINE) {
+                 goldmines.add(node);
+            } else if (node.getType() == ResourceNode.Type.TREE) {
+                forests.add(node);
+            }
+        }
+
+        // Presumably these numbers are 0 here...but you never know i guess
+        collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
+        collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
+        // TODO: Figure out how to construct the state
+    }
+
+    public GameState() {
+        // TODO: The constructor for every other case. Probably dependent on what generateGameStateChildren needs to pass along. 
     }
 
     /**
@@ -45,8 +78,19 @@ public class GameState implements Comparable<GameState> {
      * @return true if the goal conditions are met in this instance of game state.
      */
     public boolean isGoal() {
-        // TODO: Implement me!
-        return false;
+        if(buildPeasants) {
+            return false; // Implement this for part two.
+        } else {
+            this.isGoalNoBuildPeasants();
+        }
+    }
+
+    /**
+     * Determines if a state is a goal state in the non peasant building game
+     * @return
+     */
+    public boolean isGoalNoBuildPeasants() {
+        return (collectedGold == requiredGold && collectedWood == requiredWood);
     }
 
     /**
