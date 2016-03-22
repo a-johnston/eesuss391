@@ -203,18 +203,26 @@ public class GameState implements Comparable<GameState> {
         int woodCollectionsNeeded = woodMineMovesLeft();
         cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
 
+        int temp = 0;
+        int max = 0;
         for (DummyUnit peasant: peasants) {
             if (peasant.gold != 0 || peasant.wood != 0) {
-                cachedHeuristic += peasant.position.chebyshevDistance(townHall);
+                temp += peasant.position.chebyshevDistance(townHall);
             } else if(goldCollectionsNeeded != 0) {
-                cachedHeuristic += getShortestRoundtrip(peasant.position, goldmines);
+                temp += getShortestRoundtrip(peasant.position, goldmines);
                 goldCollectionsNeeded--;
             } else if (woodCollectionsNeeded != 0) {
-                cachedHeuristic += getShortestRoundtrip(peasant.position, forests);
+                temp += getShortestRoundtrip(peasant.position, forests);
                 woodCollectionsNeeded--;
             }
+
+            if (temp > max) {
+                max = temp;
+            }
+            temp = 0;
         }
 
+        cachedHeuristic += max; 
         cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * (goldMineMovesLeft())/peasants.size();
         cachedHeuristic += getShortestRoundtrip(townHall, forests) * (woodMineMovesLeft())/peasants.size();
 
