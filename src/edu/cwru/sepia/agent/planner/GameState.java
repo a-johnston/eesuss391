@@ -26,21 +26,19 @@ import java.util.*;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
-
-    public class DummyUnit {
-        private Position position;
-        private
+	private class DummyUnit {
+        Position position;
     }
 
     private static boolean buildPeasants;
     private static int playerNum;
     private static int requiredGold;
     private static int requiredWood;
+    private static Position townHall;
 
     private List<ResourceNode.ResourceView> goldmines;
     private List<ResourceNode.ResourceView> forests;
-    private static Position townHall;
-
+    private State.StateView state;
 
     private int collectedGold;
     private int collectedWood;
@@ -65,6 +63,7 @@ public class GameState implements Comparable<GameState> {
         
         this.goldmines = new ArrayList<>();
         this.forests   = new ArrayList<>();
+        this.state	   = state;
 
         for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
             if (node.getType() == ResourceNode.Type.GOLD_MINE) {
@@ -77,7 +76,7 @@ public class GameState implements Comparable<GameState> {
         collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
         collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
 
-        // Find the damn townhall
+        // Find the town hall
         for(UnitView unit: state.getUnits(playerNum)) {
             // TODO: fill this in 
         }
@@ -95,7 +94,8 @@ public class GameState implements Comparable<GameState> {
      * @return true if the goal conditions are met in this instance of game state.
      */
     public boolean isGoal() {
-        return (collectedGold == requiredGold && collectedWood == requiredWood);
+        return (collectedGold >= requiredGold
+        	 && collectedWood >= requiredWood);
     }
 
     /**
@@ -105,10 +105,11 @@ public class GameState implements Comparable<GameState> {
      * @return A list of the possible successor states and their associated actions
      */
     public List<GameState> generateChildren() {
-        // TODO: Implement me!
         List<GameState> children = new ArrayList<>();
 
-        return null;
+        // TODO: Implement me!
+        
+        return children;
     }
 
     /**
@@ -179,7 +180,13 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public int hashCode() {
-        // TODO: Implement me!
-        return 0;
+        int hash = 0;
+        
+        hash ^= requiredGold  * 5527 + requiredWood  * 719; // magic primes
+        hash ^= collectedGold * 6763 + collectedWood * 401;
+        
+        // TODO: More XOR once we have more member variables
+        
+        return hash;
     }
 }
