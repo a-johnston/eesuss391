@@ -35,6 +35,8 @@ public class GameState implements Comparable<GameState> {
 
     private int collectedGold;
     private int collectedWood;
+    
+    private Double cachedHeuristic, cachedCost;
 
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -78,10 +80,10 @@ public class GameState implements Comparable<GameState> {
      * @return true if the goal conditions are met in this instance of game state.
      */
     public boolean isGoal() {
-        if(buildPeasants) {
+        if (buildPeasants) {
             return false; // Implement this for part two.
         } else {
-            this.isGoalNoBuildPeasants();
+            return this.isGoalNoBuildPeasants();
         }
     }
 
@@ -113,8 +115,14 @@ public class GameState implements Comparable<GameState> {
      * @return The value estimated remaining cost to reach a goal state from this state.
      */
     public double heuristic() {
+    	if (cachedHeuristic != null) {
+    		return cachedHeuristic;
+    	}
+    	
+    	cachedHeuristic = 0.0;
         // TODO: Implement me!
-        return 0.0;
+    	
+        return cachedHeuristic;
     }
 
     /**
@@ -125,8 +133,14 @@ public class GameState implements Comparable<GameState> {
      * @return The current cost to reach this goal
      */
     public double getCost() {
+    	if (cachedCost != null) {
+    		return cachedCost;
+    	}
+    	
+    	cachedCost = 0.0;
         // TODO: Implement me!
-        return 0.0;
+    	
+        return cachedCost;
     }
 
     /**
@@ -138,8 +152,7 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public int compareTo(GameState o) {
-        // TODO: Implement me!
-        return 0;
+        return Double.compare(heuristic(), o.heuristic()); // TODO: this is just a placeholder
     }
 
     /**
@@ -150,8 +163,7 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public boolean equals(Object o) {
-        // TODO: Implement me!
-        return false;
+        return hashCode() == o.hashCode(); // TODO: might want to additionally enforce type checking
     }
 
     /**
