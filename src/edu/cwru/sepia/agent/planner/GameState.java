@@ -66,6 +66,9 @@ public class GameState implements Comparable<GameState> {
     private static final int PEASANT_GOLD_COST = 400;
     private static final int MAX_PEASANT_HOLD = 100;
 
+
+    private static int mapXExtent;
+    private static int mapYExtent;
     private static boolean buildPeasants;
     private static int playerNum;
     private static int requiredGold;
@@ -97,6 +100,8 @@ public class GameState implements Comparable<GameState> {
         GameState.playerNum		= playernum;
         GameState.requiredGold	= requiredGold;
         GameState.requiredWood	= requiredWood;
+        GameState.mapXExtent    = state.getXExtent();
+        GameState.mapYExtent    = state.getYExtent();
         
         this.goldmines = new ArrayList<>();
         this.forests   = new ArrayList<>();
@@ -222,7 +227,7 @@ public class GameState implements Comparable<GameState> {
             temp = 0;
         }
 
-        cachedHeuristic += max; 
+        cachedHeuristic += max;
         cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * (goldMineMovesLeft())/peasants.size();
         cachedHeuristic += getShortestRoundtrip(townHall, forests) * (woodMineMovesLeft())/peasants.size();
 
