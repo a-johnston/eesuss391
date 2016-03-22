@@ -30,8 +30,9 @@ public class GameState implements Comparable<GameState> {
     private static int playerNum;
     private static int requiredGold;
     private static int requiredWood;
-    private static List<ResourceNode.ResourceView> goldmines = new ArrayList<>(); // Not sure we want to actually make these lists static. doing it this way for now...
-    private static List<ResourceNode.ResourceView> forests = new ArrayList<>();
+    
+    private List<ResourceNode.ResourceView> goldmines;
+    private List<ResourceNode.ResourceView> forests;
 
     private int collectedGold;
     private int collectedWood;
@@ -49,10 +50,13 @@ public class GameState implements Comparable<GameState> {
      * @param buildPeasants True if the BuildPeasant action should be considered
      */
     public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
-        this.buildPeasants = buildPeasants;
-        this.playerNum = playernum;
-        this.requiredGold = requiredGold;
-        this.requiredWood = requiredWood;
+        GameState.buildPeasants = buildPeasants;
+        GameState.playerNum		= playernum;
+        GameState.requiredGold	= requiredGold;
+        GameState.requiredWood	= requiredWood;
+        
+        this.goldmines = new ArrayList<>();
+        this.forests   = new ArrayList<>();
 
         for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
             if (node.getType() == ResourceNode.Type.GOLD_MINE) {
@@ -62,7 +66,6 @@ public class GameState implements Comparable<GameState> {
             }
         }
 
-        // Presumably these numbers are 0 here...but you never know i guess
         collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
         collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
         // TODO: Figure out how to construct the state
