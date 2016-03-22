@@ -3,9 +3,9 @@ package edu.cwru.sepia.agent.planner;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
-import javax.annotation.Resource;
 import java.util.*;
 
 /**
@@ -28,11 +28,21 @@ import java.util.*;
 public class GameState implements Comparable<GameState> {
     public class DummyUnit {
         private Position position;
-        private int amtWood;
-        private int amtGold;
+        private int wood;
+        private int gold;
 
         public DummyUnit(Position p) {
             this.position = p;
+        }
+        
+        @Override
+        public int hashCode() {
+        	int hash = position.hashCode();
+        	
+        	hash ^= 307 * wood;
+        	hash ^= 569	* gold;
+        	
+        	return hash;
         }
     }
 
@@ -41,12 +51,14 @@ public class GameState implements Comparable<GameState> {
         private int amountLeft;
         private ResourceNode.Type type;
         private int distanceToTownHall;
+        private int id;
 
-        public DummyResourceSpot(Position p, ResourceNode.Type t, int amountLeft, Position townHall) {
+        public DummyResourceSpot(Position p, int id, ResourceNode.Type t, int amountLeft, Position townHall) {
             this.position = p;
             this.amountLeft = amountLeft;
             this.type = t;
             this.distanceToTownHall = p.chebyshevDistance(townHall);
+            this.id = id;
         }
     }
     private static final String TOWNHALL = "TOWNHALL";
@@ -88,7 +100,6 @@ public class GameState implements Comparable<GameState> {
         
         this.goldmines = new ArrayList<>();
         this.forests   = new ArrayList<>();
-        this.state	   = state;
 
         collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
         collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
@@ -106,9 +117,9 @@ public class GameState implements Comparable<GameState> {
 
                 if(unit.getCargoAmount() != 0) {
                     if(unit.getCargoType() == ResourceType.GOLD) {
-                        peasant.amtGold = unit.getCargoAmount();
+                        peasant.gold = unit.getCargoAmount();
                     } else if (unit.getCargoType() == ResourceType.WOOD) {
-                        peasant.amtWood = unit.getCargoAmount();
+                        peasant.wood = unit.getCargoAmount();
                     }
                 }
                 peasants.add(peasant);
@@ -123,6 +134,7 @@ public class GameState implements Comparable<GameState> {
             if (node.getType() == ResourceNode.Type.GOLD_MINE) {
                 goldmines.add(new DummyResourceSpot(
                         new Position(node.getXPosition(), node.getYPosition()),
+                        node.getID(),
                         node.getType(),
                         node.getAmountRemaining(),
                         townHall
@@ -130,6 +142,7 @@ public class GameState implements Comparable<GameState> {
             } else if (node.getType() == ResourceNode.Type.TREE) {
                 forests.add(new DummyResourceSpot(
                         new Position(node.getXPosition(), node.getYPosition()),
+                        node.getID(),
                         node.getType(),
                         node.getAmountRemaining(),
                         townHall
@@ -162,7 +175,11 @@ public class GameState implements Comparable<GameState> {
     public List<GameState> generateChildren() {
         List<GameState> children = new ArrayList<>();
 
-        // TODO: Implement me!
+        if (buildPeasants) {
+        	// TODO additional actions here!
+        }
+        
+        // TODO: Implement me! Basic actions here
         
         return children;
     }
@@ -187,7 +204,7 @@ public class GameState implements Comparable<GameState> {
         cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
 
         for (DummyUnit peasant: peasants) {
-            if (peasant.amtWood != 0 || peasant.amtGold != 0) {
+            if (peasant.gold != 0 || peasant.wood != 0) {
                 cachedHeuristic += peasant.position.chebyshevDistance(townHall);
             } else if(goldCollectionsNeeded != 0) {
                 cachedHeuristic += getShortestRoundtrip(peasant.position, goldmines);
@@ -279,6 +296,24 @@ public class GameState implements Comparable<GameState> {
         
         hash ^= requiredGold  * 5527 + requiredWood  * 719; // magic primes
         hash ^= collectedGold * 6763 + collectedWood * 401;
+        
+        // using two primes, gives 2213 distributed integers in the cyclic group
+        // of Z\2213Z since gcd(983, 2213) = 1
+        int mult = 983;
+        for (DummyResourceSpot mine : goldmines) {
+        	// might need to multiply the ID factor to further distinguish instances 
+        	hash ^= mult * mine.amountLeft * (mine.id + 1);
+        	mult = (mult + 983) % 2213;
+        }
+        
+        for (DummyResourceSpot forest : forests) {
+        	hash ^= mult * forest.amountLeft * (forest.id + 1);
+        	mult = (mult + 983) % 2213;
+        } 
+        
+        for (DummyUnit peasant : peasants) {
+        	hash ^= peasant.hashCode();
+        }
         
         // TODO: More XOR once we have more member variables
         
