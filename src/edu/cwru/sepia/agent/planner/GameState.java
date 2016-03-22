@@ -36,8 +36,23 @@ public class GameState implements Comparable<GameState> {
         }
     }
 
+    public class DummyResourceSpot {
+        private Position position;
+        private int amountLeft;
+        private ResourceNode.Type type;
+        private int distanceToTownHall;
+
+        public DummyResourceSpot(Position p, ResourceNode.Type t, int amountLeft, Position townHall) {
+            this.position = p;
+            this.amountLeft = amountLeft;
+            this.type = t;
+            this.distanceToTownHall = p.chebyshevDistance(townHall);
+        }
+    }
     private static final String TOWNHALL = "TOWNHALL";
     private static final String PEASANT = "PEASANT";
+    private static final int PEASANT_GOLD_COST = 400;
+    private static final int MAX_PEASANT_HOLD = 100;
 
     private static boolean buildPeasants;
     private static int playerNum;
@@ -45,15 +60,15 @@ public class GameState implements Comparable<GameState> {
     private static int requiredWood;
     private static Position townHall;
 
-    private List<ResourceNode.ResourceView> goldmines;
-    private List<ResourceNode.ResourceView> forests;
+    private List<DummyResourceSpot> goldmines;
+    private List<DummyResourceSpot> forests;
     private State.StateView state;
     private List<DummyUnit> peasants;
 
     private int collectedGold;
     private int collectedWood;
     
-    private Double cachedHeuristic, cachedCost;
+    private Double cachedHeuristic;
 
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -74,14 +89,6 @@ public class GameState implements Comparable<GameState> {
         this.goldmines = new ArrayList<>();
         this.forests   = new ArrayList<>();
         this.state	   = state;
-
-        for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
-            if (node.getType() == ResourceNode.Type.GOLD_MINE) {
-                 goldmines.add(node);
-            } else if (node.getType() == ResourceNode.Type.TREE) {
-                forests.add(node);
-            }
-        }
 
         collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
         collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
@@ -107,8 +114,27 @@ public class GameState implements Comparable<GameState> {
                 peasants.add(peasant);
             }
         }
+
         if (townHall == null) {
             System.err.println("No townhall found");
+        }
+
+        for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
+            if (node.getType() == ResourceNode.Type.GOLD_MINE) {
+                goldmines.add(new DummyResourceSpot(
+                        new Position(node.getXPosition(), node.getYPosition()),
+                        node.getType(),
+                        node.getAmountRemaining(),
+                        townHall
+                ));
+            } else if (node.getType() == ResourceNode.Type.TREE) {
+                forests.add(new DummyResourceSpot(
+                        new Position(node.getXPosition(), node.getYPosition()),
+                        node.getType(),
+                        node.getAmountRemaining(),
+                        townHall
+                ));
+            }
         }
     }
 
@@ -124,8 +150,7 @@ public class GameState implements Comparable<GameState> {
      * @return true if the goal conditions are met in this instance of game state.
      */
     public boolean isGoal() {
-        return (collectedGold >= requiredGold
-        	 && collectedWood >= requiredWood);
+        return (!needMoreGold() && !needMoreWood());
     }
 
     /**
@@ -154,13 +179,57 @@ public class GameState implements Comparable<GameState> {
     	if (cachedHeuristic != null) {
     		return cachedHeuristic;
     	}
-    	
+
     	cachedHeuristic = 0.0;
-        // TODO: Implement me!
-    	
+
+        int goldCollectionsNeeded = goldMineMovesLeft();
+        int woodCollectionsNeeded = woodMineMovesLeft();
+        cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
+
+        for (DummyUnit peasant: peasants) {
+            if (peasant.amtWood != 0 || peasant.amtGold != 0) {
+                cachedHeuristic += peasant.position.chebyshevDistance(townHall);
+            } else if(goldCollectionsNeeded != 0) {
+                cachedHeuristic += getShortestRoundtrip(peasant.position, goldmines);
+                goldCollectionsNeeded--;
+            } else if (woodCollectionsNeeded != 0) {
+                cachedHeuristic += getShortestRoundtrip(peasant.position, forests);
+                woodCollectionsNeeded--;
+            }
+        }
+
+        cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * (goldMineMovesLeft())/peasants.size();
+        cachedHeuristic += getShortestRoundtrip(townHall, forests) * (woodMineMovesLeft())/peasants.size();
+
         return cachedHeuristic;
     }
 
+    public double getShortestRoundtrip(Position pos, List<DummyResourceSpot> resourceSpots) {
+        double roundTrip = Double.POSITIVE_INFINITY;
+        for (DummyResourceSpot resourceSpot: resourceSpots) {
+            int temp = pos.chebyshevDistance(resourceSpot.position) + resourceSpot.distanceToTownHall;
+            if (temp < roundTrip) {
+                roundTrip = temp;
+            }
+        }
+        return roundTrip;
+    }
+
+    public int goldMineMovesLeft() {
+        return Math.min((requiredGold - collectedGold)/MAX_PEASANT_HOLD, 0);
+    }
+
+    public int woodMineMovesLeft() {
+        return Math.min((requiredWood - collectedWood)/MAX_PEASANT_HOLD, 0);
+    }
+
+    public boolean needMoreWood() {
+        return collectedWood < requiredWood;
+    }
+
+    public boolean needMoreGold() {
+        return collectedGold < requiredGold;
+    }
     /**
      *
      * Write the function that computes the current cost to get to this node. This is combined with your heuristic to
@@ -169,14 +238,10 @@ public class GameState implements Comparable<GameState> {
      * @return The current cost to reach this goal
      */
     public double getCost() {
-    	if (cachedCost != null) {
-    		return cachedCost;
-    	}
-    	
-    	cachedCost = 0.0;
+    	double cost = 0.0;
+
         // TODO: Implement me!
-    	
-        return cachedCost;
+        return cost;
     }
 
     /**
