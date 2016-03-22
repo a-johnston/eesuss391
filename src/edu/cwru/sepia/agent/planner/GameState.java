@@ -3,6 +3,7 @@ package edu.cwru.sepia.agent.planner;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -26,13 +27,20 @@ import java.util.*;
  */
 public class GameState implements Comparable<GameState> {
 
+    public class DummyUnit {
+        private Position position;
+        private
+    }
+
     private static boolean buildPeasants;
     private static int playerNum;
     private static int requiredGold;
     private static int requiredWood;
-    
+
     private List<ResourceNode.ResourceView> goldmines;
     private List<ResourceNode.ResourceView> forests;
+    private static Position townHall;
+
 
     private int collectedGold;
     private int collectedWood;
@@ -68,11 +76,15 @@ public class GameState implements Comparable<GameState> {
 
         collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
         collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
-        // TODO: Figure out how to construct the state
+
+        // Find the damn townhall
+        for(UnitView unit: state.getUnits(playerNum)) {
+            // TODO: fill this in 
+        }
     }
 
     public GameState() {
-        // TODO: The constructor for every other case. Probably dependent on what generateGameStateChildren needs to pass along. 
+        // TODO: The constructor for every other case. Probably dependent on what generateGameStateChildren needs to pass along.
     }
 
     /**
@@ -83,18 +95,6 @@ public class GameState implements Comparable<GameState> {
      * @return true if the goal conditions are met in this instance of game state.
      */
     public boolean isGoal() {
-        if (buildPeasants) {
-            return false; // Implement this for part two.
-        } else {
-            return this.isGoalNoBuildPeasants();
-        }
-    }
-
-    /**
-     * Determines if a state is a goal state in the non peasant building game
-     * @return
-     */
-    public boolean isGoalNoBuildPeasants() {
         return (collectedGold == requiredGold && collectedWood == requiredWood);
     }
 
@@ -106,6 +106,8 @@ public class GameState implements Comparable<GameState> {
      */
     public List<GameState> generateChildren() {
         // TODO: Implement me!
+        List<GameState> children = new ArrayList<>();
+
         return null;
     }
 
