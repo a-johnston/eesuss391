@@ -26,9 +26,18 @@ import java.util.*;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
-	private class DummyUnit {
-        Position position;
+    public class DummyUnit {
+        private Position position;
+        private int amtWood;
+        private int amtGold;
+
+        public DummyUnit(Position p) {
+            this.position = p;
+        }
     }
+
+    private static final String TOWNHALL = "TOWNHALL";
+    private static final String PEASANT = "PEASANT";
 
     private static boolean buildPeasants;
     private static int playerNum;
@@ -39,6 +48,7 @@ public class GameState implements Comparable<GameState> {
     private List<ResourceNode.ResourceView> goldmines;
     private List<ResourceNode.ResourceView> forests;
     private State.StateView state;
+    private List<DummyUnit> peasants;
 
     private int collectedGold;
     private int collectedWood;
@@ -76,9 +86,29 @@ public class GameState implements Comparable<GameState> {
         collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
         collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
 
-        // Find the town hall
+        // Init townhall and peasants
+        peasants = new ArrayList<DummyUnit>();
         for(UnitView unit: state.getUnits(playerNum)) {
-            // TODO: fill this in 
+            if (unit.getTemplateView().getName().equals(TOWNHALL)) {
+                townHall = new Position(unit.getXPosition(), unit.getYPosition());
+            } else if (unit.getTemplateView().equals(PEASANT)) {
+
+                DummyUnit peasant = new DummyUnit(
+                        new Position(unit.getXPosition(), unit.getYPosition())
+                );
+
+                if(unit.getCargoAmount() != 0) {
+                    if(unit.getCargoType() == ResourceType.GOLD) {
+                        peasant.amtGold = unit.getCargoAmount();
+                    } else if (unit.getCargoType() == ResourceType.WOOD) {
+                        peasant.amtWood = unit.getCargoAmount();
+                    }
+                }
+                peasants.add(peasant);
+            }
+        }
+        if (townHall == null) {
+            System.err.println("No townhall found");
         }
     }
 
