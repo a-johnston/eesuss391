@@ -43,6 +43,10 @@ public class GameState implements Comparable<GameState> {
         	
         	return hash;
         }
+        
+        public boolean hasSomething() {
+        	return wood + gold != 0;
+        }
     }
 
     public class DummyResourceSpot {
@@ -207,15 +211,23 @@ public class GameState implements Comparable<GameState> {
         int woodCollectionsNeeded = woodMineMovesLeft();
         cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
 
-        int temp = 0;
+        int temp;
         int max = 0;
+        /*
+         * TODO:
+         * This loop figures out what the most expensive peasant is going to be.
+         * Potentially overestimates as we don't check if resource spot runs out?
+         * i.e. one very close, one very far, first peasant depletes close one,
+         * heuristic still treats as if second peasant can go there
+         */
         for (DummyUnit peasant: peasants) {
-            if (peasant.gold != 0 || peasant.wood != 0) {
+        	temp = 0;
+            if (peasant.hasSomething()) {
                 temp += peasant.position.chebyshevDistance(townHall);
-            } else if(goldCollectionsNeeded != 0) {
+            } else if (goldCollectionsNeeded > 0) {
                 temp += getShortestRoundtrip(peasant.position, goldmines);
                 goldCollectionsNeeded--;
-            } else if (woodCollectionsNeeded != 0) {
+            } else if (woodCollectionsNeeded > 0) {
                 temp += getShortestRoundtrip(peasant.position, forests);
                 woodCollectionsNeeded--;
             }
@@ -223,21 +235,22 @@ public class GameState implements Comparable<GameState> {
             if (temp > max) {
                 max = temp;
             }
-            temp = 0;
         }
 
         cachedHeuristic += max;
-        cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * (goldMineMovesLeft())/peasants.size();
-        cachedHeuristic += getShortestRoundtrip(townHall, forests) * (woodMineMovesLeft())/peasants.size();
+        cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * ceilDivide(goldMineMovesLeft(), peasants.size());
+        cachedHeuristic += getShortestRoundtrip(townHall, forests) * ceilDivide(woodMineMovesLeft(), peasants.size());
 
         return cachedHeuristic;
     }
 
     public double getShortestRoundtrip(Position pos, List<DummyResourceSpot> resourceSpots) {
         return resourceSpots.stream()
-        		.mapToInt(spot -> pos.chebyshevDistance(spot.position))
-        		.min()
-        		.getAsInt();
+        		.mapToInt(resource -> {
+        			return resource.amountLeft > 0 
+        					? pos.chebyshevDistance(resource.position)
+        					: Integer.MAX_VALUE;
+        		}).min().getAsInt();
     }
 
     public int goldMineMovesLeft() {
