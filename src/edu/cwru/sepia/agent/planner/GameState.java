@@ -3,7 +3,6 @@ package edu.cwru.sepia.agent.planner;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
-import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.util.*;
@@ -235,22 +234,23 @@ public class GameState implements Comparable<GameState> {
     }
 
     public double getShortestRoundtrip(Position pos, List<DummyResourceSpot> resourceSpots) {
-        double roundTrip = Double.POSITIVE_INFINITY;
-        for (DummyResourceSpot resourceSpot: resourceSpots) {
-            int temp = pos.chebyshevDistance(resourceSpot.position) + resourceSpot.distanceToTownHall;
-            if (temp < roundTrip) {
-                roundTrip = temp;
-            }
-        }
-        return roundTrip;
+        return resourceSpots.stream()
+        		.mapToInt(spot -> pos.chebyshevDistance(spot.position))
+        		.min()
+        		.getAsInt();
     }
 
     public int goldMineMovesLeft() {
-        return Math.min((requiredGold - collectedGold)/MAX_PEASANT_HOLD, 0);
+        return Math.max(ceilDivide(requiredGold - collectedGold, MAX_PEASANT_HOLD), 0);
     }
 
     public int woodMineMovesLeft() {
-        return Math.min((requiredWood - collectedWood)/MAX_PEASANT_HOLD, 0);
+        return Math.max(ceilDivide(requiredWood - collectedWood, MAX_PEASANT_HOLD), 0);
+    }
+    
+    // might be a nicer way of doing this, but otherwise the two above methods underestimate by 1
+    private int ceilDivide(double n, double d) {
+    	return (int) Math.ceil(n / d);
     }
 
     public boolean needMoreWood() {

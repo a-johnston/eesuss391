@@ -19,8 +19,9 @@ import java.util.Stack;
  * This is an outline of the PEAgent. Implement the provided methods. You may add your own methods and members.
  */
 public class PEAgent extends Agent {
+	private static final long serialVersionUID = 1L;
 
-    // The plan being executed
+	// The plan being executed
     private Stack<StripsAction> plan = null;
 
     // maps the real unit Ids to the plan's unit ids
