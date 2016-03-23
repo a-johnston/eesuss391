@@ -29,9 +29,23 @@ public class GameState implements Comparable<GameState> {
         private Position position;
         private int wood;
         private int gold;
+        
+        private double randomId;
 
         public DummyUnit(Position p) {
             this.position = p;
+            this.randomId = Math.random();
+        }
+        
+        public DummyUnit(DummyUnit parent) {
+        	this.position = parent.position;
+        	this.wood	  = parent.wood;
+        	this.gold	  = parent.gold;
+        	this.randomId = parent.randomId;
+        }
+        
+        public boolean hasSomething() {
+        	return wood + gold != 0;
         }
         
         @Override
@@ -44,8 +58,17 @@ public class GameState implements Comparable<GameState> {
         	return hash;
         }
         
-        public boolean hasSomething() {
-        	return wood + gold != 0;
+        /*
+         * TODO: current use case makes it seem like dummies should be equal
+         * not when their parameters are equal but when they represent the same
+         * actual unit. Might need to change this as we move forward.
+         */
+        @Override
+        public boolean equals(Object obj) {
+        	if (obj instanceof DummyUnit) {
+        		return this.randomId == ((DummyUnit) obj).randomId;
+        	}
+        	return false;
         }
     }
 
@@ -64,6 +87,7 @@ public class GameState implements Comparable<GameState> {
             this.id = id;
         }
     }
+    
     private static final String TOWNHALL = "TOWNHALL";
     private static final String PEASANT = "PEASANT";
     private static final int PEASANT_GOLD_COST = 400;
@@ -159,8 +183,9 @@ public class GameState implements Comparable<GameState> {
         }
     }
 
-    public GameState() {
-        // TODO: The constructor for every other case. Probably dependent on what generateGameStateChildren needs to pass along.
+    public GameState(GameState parent) {
+    	collectedGold = parent.collectedGold;
+    	collectedWood = parent.collectedWood;
     }
 
     /**
@@ -248,7 +273,7 @@ public class GameState implements Comparable<GameState> {
         return resourceSpots.stream()
         		.mapToInt(resource -> {
         			return resource.amountLeft > 0 
-        					? pos.chebyshevDistance(resource.position)
+        					? pos.chebyshevDistance(resource.position) + resource.distanceToTownHall
         					: Integer.MAX_VALUE;
         		}).min().getAsInt();
     }
