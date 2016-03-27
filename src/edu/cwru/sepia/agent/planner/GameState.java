@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.agent.planner.actions.CreatePeasantAction;
+import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceType;
@@ -39,21 +40,21 @@ public class GameState implements Comparable<GameState> {
         private int gold;
 
         public double getRandomId() {
-            return randomId;
+            return id;
         }
 
-        private double randomId;
+        private int id;
 
         public DummyUnit(Position p) {
             this.position = p;
-            this.randomId = Math.random();
+            this.id = (int) (Integer.MAX_VALUE * Math.random());
         }
         
         public DummyUnit(DummyUnit parent) {
         	this.position = parent.position;
         	this.wood	  = parent.wood;
         	this.gold	  = parent.gold;
-        	this.randomId = parent.randomId;
+        	this.id = parent.id;
         }
         
         public boolean hasSomething() {
@@ -78,7 +79,7 @@ public class GameState implements Comparable<GameState> {
         @Override
         public boolean equals(Object obj) {
         	if (obj instanceof DummyUnit) {
-        		return this.randomId == ((DummyUnit) obj).randomId;
+        		return this.id == ((DummyUnit) obj).id;
         	}
         	return false;
         }
@@ -243,6 +244,32 @@ public class GameState implements Comparable<GameState> {
     	
     	// CREATE PEASANT HERE
     }
+    
+    public DummyUnit getUnit(int id) {
+    	for (DummyUnit unit : peasants) {
+    		if (unit.id == id) {
+    			return unit;
+    		}
+    	}
+    	
+    	return null;
+    }
+    
+    public DummyResourceSpot getResourceSpot(int id) {
+    	for (DummyResourceSpot spot : goldmines) {
+    		if (spot.id == id) {
+    			return spot;
+    		}
+    	}
+    	
+    	for (DummyResourceSpot spot : forests) {
+    		if (spot.id == id) {
+    			return spot;
+    		}
+    	}
+    	
+    	return null;
+    }
 
     /**
      * Unlike in the first A* assignment there are many possible goal states. As long as the wood and gold requirements
@@ -268,6 +295,12 @@ public class GameState implements Comparable<GameState> {
         	actions.add(new CreatePeasantAction());
         }
         
+        for (DummyUnit unit : peasants) {
+        	DummyResourceSpot spot = getAdjacentResource(unit.position);
+        	if (spot != null) {
+        		actions.add(new HarvestAction(unit.id, spot.id));
+        	}
+        }
         // TODO: Implement me! Basic actions here
         
         return actions.stream()
@@ -330,11 +363,31 @@ public class GameState implements Comparable<GameState> {
 
     public double getShortestRoundtrip(Position pos, List<DummyResourceSpot> resourceSpots) {
         return resourceSpots.stream()
+        		.filter(resource -> resource.amountLeft > 0)
         		.mapToInt(resource -> {
-        			return resource.amountLeft > 0 
-        					? pos.chebyshevDistance(resource.position) + resource.distanceToTownHall
-        					: Integer.MAX_VALUE;
-        		}).min().getAsInt();
+        			return pos.chebyshevDistance(resource.position) + resource.distanceToTownHall;
+        		})
+        		.min().getAsInt();
+    }
+    
+    public DummyResourceSpot getAdjacentResource(Position pos) {
+    	if (goldMineMovesLeft() > 0) {
+    		for (DummyResourceSpot mine : goldmines) {
+    			if (mine.amountLeft > 0 && pos.isAdjacent(mine.position)) {
+    				return mine;
+    			}
+    		}
+    	}
+    	
+    	if (woodMineMovesLeft() > 0) {
+    		for (DummyResourceSpot wood : forests) {
+    			if (wood.amountLeft > 0 && pos.isAdjacent(wood.position)) {
+    				return wood;
+    			}
+    		}
+    	}
+    	
+    	return null;
     }
 
     public int goldMineMovesLeft() {
