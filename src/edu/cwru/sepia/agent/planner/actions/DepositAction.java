@@ -48,7 +48,7 @@ public class DepositAction implements StripsAction {
     }
 
 	@Override
-	public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
+	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
 		// TODO Auto-generated method stub
 		return null;
 	}

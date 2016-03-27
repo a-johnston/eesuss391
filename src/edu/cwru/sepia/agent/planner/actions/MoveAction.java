@@ -31,13 +31,15 @@ public class MoveAction implements StripsAction {
 
 	@Override
 	public GameState apply(GameState state) {
-		// TODO Auto-generated method stub
-		return null;
+		GameState child = new GameState(state, this);
+		
+		child.getUnit(unitID).moveTo(end);
+		
+		return child;
 	}
 	
 	@Override
-	public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
-		// TODO Auto-generated method stub
-		return null;
+	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
+		return Action.createCompoundMove(unitMap.get(unitID), end.x, end.y);
 	}
 }

@@ -5,13 +5,13 @@ import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
+import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Collector;
 
 /**
  * This class is used to represent the state of the game after applying one of the avaiable actions. It will also
@@ -73,6 +73,10 @@ public class GameState implements Comparable<GameState> {
             return id;
         }
         
+        public void moveTo(Position position) {
+			this.position = position;
+		}
+        
         @Override
         public int hashCode() {
         	int hash = position.hashCode();
@@ -103,31 +107,35 @@ public class GameState implements Comparable<GameState> {
     }
 
     public class DummyResourceSpot extends Copyable<DummyResourceSpot> {
-        public Position getPosition() {
-            return position;
-        }
         private Position position;
         private int amountLeft;
-        private ResourceNode.Type type;
         private int distanceToTownHall;
-
-        public int getId() {
-            return id;
-        }
 
         private int id;
 
-        public DummyResourceSpot(Position p, int id, ResourceNode.Type t, int amountLeft, Position townHall) {
-            this.position = p;
-            this.amountLeft = amountLeft;
-            this.type = t;
-            this.distanceToTownHall = p.chebyshevDistance(townHall);
-            this.id = id;
+        public DummyResourceSpot(ResourceView node, Position townHall) {
+            this.position 	= new Position(node.getXPosition(), node.getYPosition());
+            this.amountLeft = node.getAmountRemaining();
+            this.id 		= node.getID();
+            
+            this.distanceToTownHall = this.position.chebyshevDistance(townHall);
         }
 
-		public DummyResourceSpot(DummyResourceSpot dummyResourceSpot) {
-			// TODO Auto-generated constructor stub
+		public DummyResourceSpot(DummyResourceSpot parent) {
+			this.position 	= parent.position;
+			this.amountLeft = parent.amountLeft;
+			this.id 		= parent.id;
+			
+			this.distanceToTownHall = parent.distanceToTownHall;
 		}
+		
+		public Position getPosition() {
+            return position;
+        }
+		
+		public int getId() {
+            return id;
+        }
 
 		@Override
 		public DummyResourceSpot copy() {
@@ -170,14 +178,13 @@ public class GameState implements Comparable<GameState> {
     }
 
     private List<DummyResourceSpot> forests;
-    private State.StateView state;
 
     public List<DummyUnit> getPeasants() {
         return peasants;
     }
 
     private List<DummyUnit> peasants;
-    private int peasantTemplateId;
+    private static int peasantTemplateId;
 
     private int collectedGold;
     private int collectedWood;
@@ -212,7 +219,7 @@ public class GameState implements Comparable<GameState> {
         collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
         collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
 
-        // Init townhall and peasants
+        // Initialize town hall and peasants
         peasants = new ArrayList<DummyUnit>();
         for(UnitView unit: state.getUnits(playerNum)) {
             if (unit.getTemplateView().getName().equals(TOWNHALL)) {
@@ -233,31 +240,21 @@ public class GameState implements Comparable<GameState> {
                         peasant.wood = unit.getCargoAmount();
                     }
                 }
+                
                 peasants.add(peasant);
             }
         }
 
         if (townHall == null) {
             System.err.println("No townhall found");
+            System.exit(1);
         }
 
         for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
             if (node.getType() == ResourceNode.Type.GOLD_MINE) {
-                goldmines.add(new DummyResourceSpot(
-                        new Position(node.getXPosition(), node.getYPosition()),
-                        node.getID(),
-                        node.getType(),
-                        node.getAmountRemaining(),
-                        townHall
-                ));
+                goldmines.add(new DummyResourceSpot(node, townHall));
             } else if (node.getType() == ResourceNode.Type.TREE) {
-                forests.add(new DummyResourceSpot(
-                        new Position(node.getXPosition(), node.getYPosition()),
-                        node.getID(),
-                        node.getType(),
-                        node.getAmountRemaining(),
-                        townHall
-                ));
+                forests.add(new DummyResourceSpot(node, townHall));
             }
         }
     }
@@ -270,8 +267,18 @@ public class GameState implements Comparable<GameState> {
     	this.forests   = deepCopyList(parent.forests);
     	this.goldmines = deepCopyList(parent.goldmines);
     	
-    	cachedCost = parent.cachedCost + 1;
+    	this.parent = parent;
     	this.action = action;
+    	
+    	cachedCost = parent.cachedCost + 1;
+    }
+    
+    public GameState getParentState() {
+    	return parent;
+    }
+    
+    public StripsAction getAction() {
+    	return action;
     }
     
     private <T extends Copyable<T>> List<T> deepCopyList(List<T> list) {
@@ -389,7 +396,7 @@ public class GameState implements Comparable<GameState> {
         List<StripsAction> actions = new ArrayList<>();
 
         if (buildPeasants) {
-        	actions.add(new CreatePeasantAction());
+        	actions.add(new CreatePeasantAction(this));
         }
         
         for (DummyUnit unit : peasants) {

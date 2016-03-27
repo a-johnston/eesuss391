@@ -53,7 +53,7 @@ public class HarvestAction implements StripsAction {
     }
 
     @Override
-    public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
+    public Action getSepiaAction(Map<Integer, Integer> unitMap) {
         return Action.createCompoundGather(unitMap.get(unitID), resourceID);
     }
 }
