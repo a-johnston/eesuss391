@@ -27,10 +27,18 @@ import java.util.*;
  */
 public class GameState implements Comparable<GameState> {
     public class DummyUnit {
+        public Position getPosition() {
+            return position;
+        }
+
         private Position position;
         private int wood;
         private int gold;
-        
+
+        public double getRandomId() {
+            return randomId;
+        }
+
         private double randomId;
 
         public DummyUnit(Position p) {
@@ -74,6 +82,9 @@ public class GameState implements Comparable<GameState> {
     }
 
     public class DummyResourceSpot {
+        public Position getPosition() {
+            return position;
+        }
         private Position position;
         private int amountLeft;
         private ResourceNode.Type type;
@@ -89,8 +100,8 @@ public class GameState implements Comparable<GameState> {
         }
     }
     
-    private static final String TOWNHALL = "TOWNHALL";
-    private static final String PEASANT = "PEASANT";
+    private static final String TOWNHALL = "TownHall";
+    private static final String PEASANT = "Peasant";
     private static final int PEASANT_GOLD_COST = 400;
     private static final int MAX_PEASANT_HOLD = 100;
 
@@ -100,11 +111,30 @@ public class GameState implements Comparable<GameState> {
     private static int playerNum;
     private static int requiredGold;
     private static int requiredWood;
+
+    public static Position getTownHall() {
+        return townHall;
+    }
+
     private static Position townHall;
 
+    public List<DummyResourceSpot> getGoldmines() {
+        return goldmines;
+    }
+
     private List<DummyResourceSpot> goldmines;
+
+    public List<DummyResourceSpot> getForests() {
+        return forests;
+    }
+
     private List<DummyResourceSpot> forests;
     private State.StateView state;
+
+    public List<DummyUnit> getPeasants() {
+        return peasants;
+    }
+
     private List<DummyUnit> peasants;
 
     private int collectedGold;
@@ -216,7 +246,7 @@ public class GameState implements Comparable<GameState> {
         List<GameState> children = new ArrayList<>();
 
         if (buildPeasants) {
-        	// TODO additional actions here!
+                // TODO additional actions here!
         }
         
         // TODO: Implement me! Basic actions here
@@ -305,6 +335,8 @@ public class GameState implements Comparable<GameState> {
     public boolean needMoreGold() {
         return collectedGold < requiredGold;
     }
+
+    public int getGold() { return this.collectedGold; };
     /**
      *
      * Write the function that computes the current cost to get to this node. This is combined with your heuristic to
