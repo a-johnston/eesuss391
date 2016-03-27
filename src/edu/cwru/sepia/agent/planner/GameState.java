@@ -112,10 +112,6 @@ public class GameState implements Comparable<GameState> {
     private static int requiredGold;
     private static int requiredWood;
 
-    public static Position getTownHall() {
-        return townHall;
-    }
-
     private static Position townHall;
 
     public List<DummyResourceSpot> getGoldmines() {
