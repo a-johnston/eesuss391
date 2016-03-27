@@ -242,6 +242,7 @@ public class GameState implements Comparable<GameState> {
 
         if (townHall == null) {
             System.err.println("No townhall found");
+            System.exit(1);
         }
 
         for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
