@@ -113,7 +113,16 @@ public class GameState implements Comparable<GameState> {
     private static final int PEASANT_GOLD_COST = 400;
     private static final int MAX_PEASANT_HOLD = 100;
 
+    public static int getMapXExtent() {
+        return mapXExtent;
+    }
+
     private static int mapXExtent;
+
+    public static int getMapYExtent() {
+        return mapYExtent;
+    }
+
     private static int mapYExtent;
     private static boolean buildPeasants;
     private static int playerNum;
