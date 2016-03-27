@@ -1,5 +1,6 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 
 public class MoveAction implements StripsAction {
@@ -15,5 +16,10 @@ public class MoveAction implements StripsAction {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
+	@Override
+	public Action getSepiaAction(GameState state) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

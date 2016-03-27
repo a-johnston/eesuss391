@@ -374,4 +374,9 @@ public class GameState implements Comparable<GameState> {
         
         return hash;
     }
+
+	public Position getTownHall() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

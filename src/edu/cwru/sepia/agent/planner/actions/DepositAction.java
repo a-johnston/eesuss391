@@ -1,5 +1,6 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
@@ -41,4 +42,10 @@ public class DepositAction implements StripsAction {
     public GameState apply(GameState state) {
         return null;
     }
+
+	@Override
+	public Action getSepiaAction(GameState state) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
