@@ -18,7 +18,7 @@ public class HarvestAction implements StripsAction {
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        GameState.DummyResourceSpot spot;
+        GameState.DummyResourceSpot spot = null;
         for(GameState.DummyResourceSpot possibleSpot: state.getGoldmines()) {
             if (possibleSpot.getId() == unitID) {
                 spot = possibleSpot;
