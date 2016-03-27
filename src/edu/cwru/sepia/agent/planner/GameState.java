@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.agent.planner.actions.CreatePeasantAction;
+import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
@@ -286,7 +287,61 @@ public class GameState implements Comparable<GameState> {
     	
     	// CREATE PEASANT HERE
     }
-    
+
+    public void doHarvest() {
+        if (!(action instanceof HarvestAction)) {
+            throw new Error("Tried to do a harvest while not harvesting");
+        } else {
+            HarvestAction harvest = (HarvestAction) action;
+            boolean isHarvestingGold = true;
+            int amountGathered = 0;
+            for(DummyResourceSpot spot: getGoldmines()) {
+                if(spot.getId() == harvest.getResourceID()) {
+                    if(spot.amountLeft < 100) {
+                        amountGathered = spot.amountLeft;
+                        goldmines.remove(spot);
+                    } else {
+                        amountGathered = 100;
+                        spot.amountLeft -= 100;
+                    }
+                    break;
+                }
+            }
+
+            for(DummyResourceSpot spot: getForests()) {
+                if(spot.getId() == harvest.getResourceID()) {
+                    isHarvestingGold = false;
+                    if(spot.amountLeft < 100) {
+                        amountGathered = spot.amountLeft;
+                        goldmines.remove(spot);
+                    } else {
+                        amountGathered = 100;
+                        spot.amountLeft -= 100;
+                    }
+                    break;
+                }
+            }
+
+            for (DummyUnit unit: peasants) {
+                if(unit.getId() == harvest.getUnitID()) {
+                    if (isHarvestingGold) {
+                        unit.gold += amountGathered;
+                    } else {
+                        unit.wood += amountGathered;
+                    }
+                }
+            }
+        }
+    }
+
+    public void doDeposit() {
+        if (!(action instanceof DepositAction)) {
+            throw new Error("Tried to do a deposit while not depositing");
+        } else {
+            
+        }
+    }
+
     public DummyUnit getUnit(int id) {
     	for (DummyUnit unit : peasants) {
     		if (unit.id == id) {

@@ -42,7 +42,9 @@ public class DepositAction implements StripsAction {
 
     @Override
     public GameState apply(GameState state) {
-        return null;
+        GameState newState = new GameState(state, this);
+        newState.doDeposit();
+        return newState;
     }
 
 	@Override

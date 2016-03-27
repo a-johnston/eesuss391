@@ -11,7 +11,16 @@ import edu.cwru.sepia.agent.planner.GameState.DummyResourceSpot;
  * Created by eluan on 3/27/16.
  */
 public class HarvestAction implements StripsAction {
+    public int getUnitID() {
+        return unitID;
+    }
+
     int unitID;
+
+    public int getResourceID() {
+        return resourceID;
+    }
+
     int resourceID;
 
     public HarvestAction(int unitID, int resourceID) {
@@ -34,11 +43,17 @@ public class HarvestAction implements StripsAction {
 
     @Override
     public GameState apply(GameState state) {
-        return null;
+        DummyUnit unit = state.getUnit(unitID);
+        DummyResourceSpot spot = state.getResourceSpot(resourceID);
+
+        GameState newState = new GameState(state, this);
+        newState.doHarvest();
+
+        return newState;
     }
 
     @Override
     public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
-        return null;
+        return Action.createCompoundGather(unitMap.get(unitID), resourceID);
     }
 }
