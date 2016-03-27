@@ -19,6 +19,10 @@ public class MoveAction implements StripsAction {
 
 	@Override
 	public boolean preconditionsMet(GameState state) {
+        if (!end.inBounds(state.getMapXExtent(), state.getMapYExtent())) {
+            return false;
+        }
+
         for(DummyUnit unit: state.getPeasants()) {
             if(unit.getRandomId() == this.unitID) {
                 canMove(state, unit);

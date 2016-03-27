@@ -8,6 +8,7 @@ import edu.cwru.sepia.agent.planner.GameState;
  * creates child game states in which that action has been taken.
  */
 public class CreatePeasantAction implements StripsAction{
+
     @Override
     public boolean preconditionsMet(GameState state) {
         return state.getGold() >= 400 && state.getPeasants().size() < 3;
