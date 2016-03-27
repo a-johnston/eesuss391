@@ -271,6 +271,7 @@ public class GameState implements Comparable<GameState> {
         // TODO: Implement me! Basic actions here
         
         return actions.stream()
+        		.filter(action -> action.preconditionsMet(GameState.this))
         		.map(action -> action.apply(GameState.this))
         		.collect(Collectors.toList());
     }
