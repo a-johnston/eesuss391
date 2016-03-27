@@ -46,5 +46,5 @@ public interface StripsAction {
      * @param state
      * @return
      */
-    public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state);
+    public Action getSepiaAction(Map<Integer, Integer> unitMap);
 }

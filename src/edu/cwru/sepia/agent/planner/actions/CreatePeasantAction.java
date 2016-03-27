@@ -11,6 +11,14 @@ import edu.cwru.sepia.agent.planner.GameState;
  */
 public class CreatePeasantAction implements StripsAction{
 
+	int townhallId;
+	int peasantTemplateId;
+	
+	public CreatePeasantAction(GameState state) {
+		townhallId = state.getTownHallId();
+		peasantTemplateId = state.getPeasantTemplateId();
+	}
+	
     @Override
     public boolean preconditionsMet(GameState state) {
         return state.getGold() >= 400 && state.getPeasants().size() < 3;
@@ -24,8 +32,7 @@ public class CreatePeasantAction implements StripsAction{
     }
 
 	@Override
-	public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
-		Action.createPrimitiveBuild(state.getTownHallId(), state.getPeasantTemplateId());
-		return null;
+	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
+		return Action.createPrimitiveBuild(townhallId, peasantTemplateId);
 	}
 }

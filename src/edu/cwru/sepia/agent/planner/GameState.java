@@ -72,6 +72,10 @@ public class GameState implements Comparable<GameState> {
             return id;
         }
         
+        public void moveTo(Position position) {
+			this.position = position;
+		}
+        
         @Override
         public int hashCode() {
         	int hash = position.hashCode();
@@ -337,7 +341,7 @@ public class GameState implements Comparable<GameState> {
         List<StripsAction> actions = new ArrayList<>();
 
         if (buildPeasants) {
-        	actions.add(new CreatePeasantAction());
+        	actions.add(new CreatePeasantAction(this));
         }
         
         for (DummyUnit unit : peasants) {
