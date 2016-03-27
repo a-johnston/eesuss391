@@ -13,8 +13,9 @@ import java.util.*;
  * Created by Devin on 3/15/15.
  */
 public class PlannerAgent extends Agent {
-
-    final int requiredWood;
+	private static final long serialVersionUID = 1L;
+	
+	final int requiredWood;
     final int requiredGold;
     final boolean buildPeasants;
 
@@ -49,7 +50,6 @@ public class PlannerAgent extends Agent {
 
         // write the plan to a text file
         savePlan(plan);
-
 
         // Instantiates the PEAgent with the specified plan.
         peAgent = new PEAgent(playernum, plan);
@@ -91,8 +91,31 @@ public class PlannerAgent extends Agent {
      * @return The plan or null if no plan is found.
      */
     private Stack<StripsAction> AstarSearch(GameState startState) {
-        // TODO: Implement me!
-        return null;
+        Stack<StripsAction> plan  = new Stack<>();
+        Queue<GameState> frontier = new PriorityQueue<>();
+        Set<GameState> explored	  = new HashSet<>();
+        
+        frontier.add(startState);
+    	
+        while (!frontier.isEmpty()) {
+        	GameState state = frontier.poll();
+        	
+        	for (GameState child : state.generateChildren()) {
+        		if (explored.contains(child)) {
+        			continue;
+        		}
+        		
+        		if (!frontier.contains(child)) {
+        			
+        		} else if (true) {
+        			continue;
+        		}
+        	}
+        	
+        	explored.add(state);
+        }
+        
+        return plan;
     }
 
     /**
@@ -121,7 +144,8 @@ public class PlannerAgent extends Agent {
 
             outputWriter = new PrintWriter(outputFile.getAbsolutePath());
 
-            Stack<StripsAction> tempPlan = (Stack<StripsAction>) plan.clone();
+            @SuppressWarnings("unchecked")
+			Stack<StripsAction> tempPlan = (Stack<StripsAction>) plan.clone();
             while(!tempPlan.isEmpty()) {
                 outputWriter.println(tempPlan.pop().toString());
             }

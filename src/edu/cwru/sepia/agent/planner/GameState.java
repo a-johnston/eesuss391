@@ -1,5 +1,6 @@
 package edu.cwru.sepia.agent.planner;
 
+import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
@@ -93,7 +94,6 @@ public class GameState implements Comparable<GameState> {
     private static final int PEASANT_GOLD_COST = 400;
     private static final int MAX_PEASANT_HOLD = 100;
 
-
     private static int mapXExtent;
     private static int mapYExtent;
     private static boolean buildPeasants;
@@ -110,7 +110,12 @@ public class GameState implements Comparable<GameState> {
     private int collectedGold;
     private int collectedWood;
     
+    private GameState parent;
+    // represents the action taken to get to this state from the parent
+    private StripsAction action;
+    
     private Double cachedHeuristic;
+    private double cachedCost;
 
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -186,6 +191,8 @@ public class GameState implements Comparable<GameState> {
     public GameState(GameState parent) {
     	collectedGold = parent.collectedGold;
     	collectedWood = parent.collectedWood;
+    	
+    	cachedCost = parent.cachedCost + 1;
     }
 
     /**
@@ -306,10 +313,7 @@ public class GameState implements Comparable<GameState> {
      * @return The current cost to reach this goal
      */
     public double getCost() {
-    	double cost = 0.0;
-
-        // TODO: Implement me!
-        return cost;
+        return cachedCost;
     }
 
     /**
@@ -321,7 +325,7 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public int compareTo(GameState o) {
-        return Double.compare(heuristic(), o.heuristic()); // TODO: this is just a placeholder
+        return Double.compare(getCost(), o.getCost()); // TODO: this is just a placeholder
     }
 
     /**

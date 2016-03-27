@@ -4,7 +4,6 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.environment.model.history.History;
-import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Template;
 import edu.cwru.sepia.environment.model.state.Unit;
