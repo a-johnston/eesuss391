@@ -89,6 +89,11 @@ public class GameState implements Comparable<GameState> {
         private int amountLeft;
         private ResourceNode.Type type;
         private int distanceToTownHall;
+
+        public int getId() {
+            return id;
+        }
+
         private int id;
 
         public DummyResourceSpot(Position p, int id, ResourceNode.Type t, int amountLeft, Position townHall) {
