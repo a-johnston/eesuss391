@@ -1,5 +1,6 @@
 package edu.cwru.sepia.agent.planner;
 
+import edu.cwru.sepia.agent.planner.actions.CreatePeasantAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceType;
@@ -7,6 +8,8 @@ import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Collector;
 
 /**
  * This class is used to represent the state of the game after applying one of the avaiable actions. It will also
@@ -259,15 +262,17 @@ public class GameState implements Comparable<GameState> {
      * @return A list of the possible successor states and their associated actions
      */
     public List<GameState> generateChildren() {
-        List<GameState> children = new ArrayList<>();
+        List<StripsAction> actions = new ArrayList<>();
 
         if (buildPeasants) {
-                // TODO additional actions here!
+        	actions.add(new CreatePeasantAction());
         }
         
         // TODO: Implement me! Basic actions here
         
-        return children;
+        return actions.stream()
+        		.map(action -> action.apply(GameState.this))
+        		.collect(Collectors.toList());
     }
 
     /**
