@@ -30,19 +30,22 @@ import java.util.stream.Collector;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
-    public class DummyUnit {
-        public Position getPosition() {
-            return position;
-        }
-
+	
+	/**
+	 * @author adam
+	 * 
+	 * imo preferable to reflecting to clone
+	 *
+	 * @param <T>
+	 */
+	private abstract class Copyable<T> {
+		abstract public T copy();
+	}
+	
+    public class DummyUnit extends Copyable<DummyUnit> {
         private Position position;
         private int wood;
         private int gold;
-
-        public double getRandomId() {
-            return id;
-        }
-
         private int id;
 
         public DummyUnit(Position p) {
@@ -59,6 +62,14 @@ public class GameState implements Comparable<GameState> {
         
         public boolean hasSomething() {
         	return wood + gold != 0;
+        }
+        
+        public Position getPosition() {
+            return position;
+        }
+        
+        public int getId() {
+            return id;
         }
         
         @Override
@@ -83,9 +94,14 @@ public class GameState implements Comparable<GameState> {
         	}
         	return false;
         }
+
+		@Override
+		public DummyUnit copy() {
+			return new DummyUnit(this);
+		}
     }
 
-    public class DummyResourceSpot {
+    public class DummyResourceSpot extends Copyable<DummyResourceSpot> {
         public Position getPosition() {
             return position;
         }
@@ -107,6 +123,15 @@ public class GameState implements Comparable<GameState> {
             this.distanceToTownHall = p.chebyshevDistance(townHall);
             this.id = id;
         }
+
+		public DummyResourceSpot(DummyResourceSpot dummyResourceSpot) {
+			// TODO Auto-generated constructor stub
+		}
+
+		@Override
+		public DummyResourceSpot copy() {
+			return new DummyResourceSpot(this);
+		}
     }
     
     private static final String TOWNHALL = "TownHall";
@@ -240,8 +265,16 @@ public class GameState implements Comparable<GameState> {
     	collectedGold = parent.collectedGold;
     	collectedWood = parent.collectedWood;
     	
+    	this.peasants  = deepCopyList(parent.peasants);
+    	this.forests   = deepCopyList(parent.forests);
+    	this.goldmines = deepCopyList(parent.goldmines);
+    	
     	cachedCost = parent.cachedCost + 1;
     	this.action = action;
+    }
+    
+    private <T extends Copyable<T>> List<T> deepCopyList(List<T> list) {
+    	return list.stream().map(Copyable::copy).collect(Collectors.toList());
     }
     
     public void makePeasant() {

@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.Map;
+
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
@@ -18,7 +20,7 @@ public class DepositAction implements StripsAction {
     @Override
     public boolean preconditionsMet(GameState state) {
         for (GameState.DummyUnit unit : state.getPeasants()) {
-            if (unit.getRandomId() == this.id) {
+            if (unit.getId() == this.id) {
                 return canDeposit(state, unit);
             }
         }
@@ -44,7 +46,7 @@ public class DepositAction implements StripsAction {
     }
 
 	@Override
-	public Action getSepiaAction(GameState state) {
+	public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
 		// TODO Auto-generated method stub
 		return null;
 	}

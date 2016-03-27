@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.Map;
+
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
@@ -36,7 +38,7 @@ public class HarvestAction implements StripsAction {
     }
 
     @Override
-    public Action getSepiaAction(GameState state) {
+    public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
         return null;
     }
 }

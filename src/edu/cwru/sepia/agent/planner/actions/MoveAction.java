@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.Map;
+
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
@@ -14,26 +16,18 @@ public class MoveAction implements StripsAction {
     public MoveAction(int unitID, Position start, Position end) {
         this.unitID = unitID;
         this.start = start;
-        this.end = end;
+        this.end = end.move(end.getDirection(start));
     }
 
 	@Override
 	public boolean preconditionsMet(GameState state) {
-        if (!end.inBounds(state.getMapXExtent(), state.getMapYExtent())) {
+		if (!end.inBounds(GameState.getMapXExtent(), GameState.getMapYExtent())) {
             return false;
         }
 
-        for(DummyUnit unit: state.getPeasants()) {
-            if(unit.getRandomId() == this.unitID) {
-                canMove(state, unit);
-            }
-        }
-		return false;
+        DummyUnit unit = state.getUnit(unitID);
+        return unit != null && unit.getPosition().equals(start);
 	}
-
-    private boolean canMove(GameState state, DummyUnit unit) {
-        return unit.getPosition().equals(start);
-    }
 
 	@Override
 	public GameState apply(GameState state) {
@@ -42,7 +36,7 @@ public class MoveAction implements StripsAction {
 	}
 	
 	@Override
-	public Action getSepiaAction(GameState state) {
+	public Action getSepiaAction(Map<Integer, Integer> unitMap, GameState state) {
 		// TODO Auto-generated method stub
 		return null;
 	}
