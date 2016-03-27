@@ -10,7 +10,7 @@ import edu.cwru.sepia.agent.planner.GameState;
 public class CreatePeasantAction implements StripsAction{
     @Override
     public boolean preconditionsMet(GameState state) {
-        return state.getGold() >= 400;
+        return state.getGold() >= 400 && state.getPeasants().size() < 3;
     }
 
     @Override
