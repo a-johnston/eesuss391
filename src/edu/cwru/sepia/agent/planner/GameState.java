@@ -155,9 +155,8 @@ public class GameState implements Comparable<GameState> {
     private int collectedGold;
     private int collectedWood;
     
-    private GameState parent;
-    // represents the action taken to get to this state from the parent
-    private StripsAction action;
+    private GameState parent;		// parent state of this state
+    private StripsAction action;	// action turning parent into this state
     
     private Double cachedHeuristic;
     private double cachedCost;
@@ -236,11 +235,12 @@ public class GameState implements Comparable<GameState> {
         }
     }
 
-    public GameState(GameState parent) {
+    public GameState(GameState parent, StripsAction action) {
     	collectedGold = parent.collectedGold;
     	collectedWood = parent.collectedWood;
     	
     	cachedCost = parent.cachedCost + 1;
+    	this.action = action;
     }
     
     public void makePeasant() {
