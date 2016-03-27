@@ -113,6 +113,7 @@ public class GameState implements Comparable<GameState> {
     private static int requiredWood;
 
     private static Position townHall;
+    private static int townHallId;
 
     public List<DummyResourceSpot> getGoldmines() {
         return goldmines;
@@ -132,6 +133,7 @@ public class GameState implements Comparable<GameState> {
     }
 
     private List<DummyUnit> peasants;
+    private int peasantTemplateId;
 
     private int collectedGold;
     private int collectedWood;
@@ -172,8 +174,11 @@ public class GameState implements Comparable<GameState> {
         for(UnitView unit: state.getUnits(playerNum)) {
             if (unit.getTemplateView().getName().equals(TOWNHALL)) {
                 townHall = new Position(unit.getXPosition(), unit.getYPosition());
+                townHallId = unit.getID();
             } else if (unit.getTemplateView().equals(PEASANT)) {
 
+            	peasantTemplateId = unit.getTemplateView().getID();
+            	
                 DummyUnit peasant = new DummyUnit(
                         new Position(unit.getXPosition(), unit.getYPosition())
                 );
@@ -219,6 +224,16 @@ public class GameState implements Comparable<GameState> {
     	collectedWood = parent.collectedWood;
     	
     	cachedCost = parent.cachedCost + 1;
+    }
+    
+    public void makePeasant() {
+    	if (collectedGold < GameState.PEASANT_GOLD_COST) {
+    		throw new Error("Tried to create peasant with not enough gold!");
+    	}
+    	
+    	collectedGold -= PEASANT_GOLD_COST;
+    	
+    	// CREATE PEASANT HERE
     }
 
     /**
@@ -333,6 +348,7 @@ public class GameState implements Comparable<GameState> {
     }
 
     public int getGold() { return this.collectedGold; };
+    
     /**
      *
      * Write the function that computes the current cost to get to this node. This is combined with your heuristic to
@@ -404,7 +420,14 @@ public class GameState implements Comparable<GameState> {
     }
 
 	public Position getTownHall() {
-		// TODO Auto-generated method stub
-		return null;
+		return townHall;
+	}
+	
+	public int getTownHallId() {
+		return townHallId;
+	}
+
+	public int getPeasantTemplateId() {
+		return peasantTemplateId;
 	}
 }

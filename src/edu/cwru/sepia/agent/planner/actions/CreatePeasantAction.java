@@ -4,7 +4,8 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 
 /**
- * Created by eluan on 3/24/16.
+ * This class checks to see if a new peasant can be made and additionally
+ * creates child game states in which that action has been taken.
  */
 public class CreatePeasantAction implements StripsAction{
     @Override
@@ -14,12 +15,14 @@ public class CreatePeasantAction implements StripsAction{
 
     @Override
     public GameState apply(GameState state) {
-        return null;
+    	GameState child = new GameState(state);
+    	child.makePeasant();
+        return child;
     }
 
 	@Override
 	public Action getSepiaAction(GameState state) {
-		// TODO Auto-generated method stub
+		Action.createPrimitiveBuild(state.getTownHallId(), state.getPeasantTemplateId());
 		return null;
 	}
 }
