@@ -389,7 +389,7 @@ public class GameState implements Comparable<GameState> {
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null) {
-				actions.add(new HarvestAction(unit.id, spot.id));
+				actions.add(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position)));
 			}
 		}
 		// TODO: Implement me! Basic actions here
