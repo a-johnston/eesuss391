@@ -11,6 +11,10 @@ import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
  */
 public class DepositAction implements StripsAction {
 
+    public int getId() {
+        return id;
+    }
+
     int id;
     
     public DepositAction(int unitID) {
