@@ -30,7 +30,7 @@ public class CreatePeasantAction implements StripsAction{
     }
 
 	@Override
-	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
-		return Action.createPrimitiveBuild(townhallId, peasantTemplateId);
+	public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap) {
+		actionMap.put(townhallId, Action.createPrimitiveBuild(townhallId, peasantTemplateId));
 	}
 }

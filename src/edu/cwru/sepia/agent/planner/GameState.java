@@ -152,6 +152,10 @@ public class GameState implements Comparable<GameState> {
 		public Type getType() {
 			return type;
 		}
+		
+		public int getAmount() {
+			return amountLeft;
+		}
 
 		@Override
 		public DummyResourceSpot copy() {

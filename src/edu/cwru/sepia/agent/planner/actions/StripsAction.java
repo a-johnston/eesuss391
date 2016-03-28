@@ -42,9 +42,9 @@ public interface StripsAction {
     public GameState apply(GameState state);
     
     /**
-     * Creates a Sepia action equivalent to applying this StripsAction to a given state
+     * Puts a Sepia action equivalent to applying this StripsAction to a given state into the given action map
      * @param state
      * @return
      */
-    public Action getSepiaAction(Map<Integer, Integer> unitMap);
+    public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap);
 }

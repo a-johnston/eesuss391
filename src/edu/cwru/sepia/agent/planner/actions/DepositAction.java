@@ -4,45 +4,31 @@ import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
-import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
+
 /**
- * Created by eluan on 3/24/16.
+ * Represents the action of a unit depositing what it is carrying at a town hall
  */
 public class DepositAction implements StripsAction {
 
     public int getId() {
-        return id;
+        return unitId;
     }
 
-    int id;
+    int unitId;
     
     public DepositAction(int unitID) {
-        this.id = unitID;
+        this.unitId = unitID;
     }
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        for (GameState.DummyUnit unit : state.getPeasants()) {
-            if (unit.getId() == this.id) {
-                return canDeposit(state, unit);
-            }
-        }
-        return false;
+    	DummyUnit unit = state.getUnit(unitId);
+    	
+        return unit != null
+           && !unit.hasSomething()
+           &&  unit.getPosition().isAdjacent(state.getTownHall());
     }
-
-    private boolean canDeposit(GameState state, DummyUnit unit) {
-        if(!unit.hasSomething()){
-            return false;
-        }
-        for (Position p: state.getTownHall().getAdjacentPositions()) {
-            if(p.equals(unit.getPosition())){
-                return true;
-            }
-        }
-        return false;
-    }
-
 
     @Override
     public GameState apply(GameState state) {
@@ -52,8 +38,7 @@ public class DepositAction implements StripsAction {
     }
 
 	@Override
-	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
-		// TODO Auto-generated method stub
-		return null;
+	public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap) {
+		// TODO make deposit action
 	}
 }

@@ -37,9 +37,9 @@ public class MoveAction implements StripsAction {
 		
 		return child;
 	}
-	
+
 	@Override
-	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
-		return Action.createCompoundMove(unitMap.get(unitID), end.x, end.y);
+	public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap) {
+		actionMap.put(unitMap.get(unitID), Action.createCompoundMove(unitMap.get(unitID), end.x, end.y));
 	}
 }

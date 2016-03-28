@@ -8,37 +8,39 @@ import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.agent.planner.GameState.DummyResourceSpot;
 
 /**
- * Created by eluan on 3/27/16.
+ * Represents the action of harvesting from some resource location
  */
 public class HarvestAction implements StripsAction {
-    public int getUnitID() {
-        return unitID;
-    }
-
-    int unitID;
-
-    public int getResourceID() {
-        return resourceID;
-    }
-
-    int resourceID;
+    int unitId;
+    int resourceId;
 
     public HarvestAction(int unitID, int resourceID) {
-        this.unitID = unitID;
-        this.resourceID = resourceID;
+        this.unitId = unitID;
+        this.resourceId = resourceID;
     }
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        DummyUnit unit = state.getUnit(unitID);
-        DummyResourceSpot spot = state.getResourceSpot(resourceID);
+        DummyUnit unit = state.getUnit(unitId);
+        DummyResourceSpot spot = state.getResourceSpot(resourceId);
 
-        return unit != null && spot != null && canHarvest(spot, unit);
+        if (unit == null || spot == null || unit.hasSomething() || spot.getAmount() == 0) {
+        	return false;
+        }
+        
+        return canHarvest(spot, unit);
     }
 
     private boolean canHarvest(GameState.DummyResourceSpot harvestSpot, GameState.DummyUnit unit) {
-        return !unit.hasSomething() 
-        	 && unit.getPosition().isAdjacent(harvestSpot.getPosition());
+        return unit.getPosition().isAdjacent(harvestSpot.getPosition());
+    }
+    
+    public int getUnitID() {
+        return unitId;
+    }
+    
+    public int getResourceID() {
+        return resourceId;
     }
 
     @Override
@@ -46,8 +48,8 @@ public class HarvestAction implements StripsAction {
         return new GameState(state, this).doHarvest(this);
     }
 
-    @Override
-    public Action getSepiaAction(Map<Integer, Integer> unitMap) {
-        return Action.createCompoundGather(unitMap.get(unitID), resourceID);
-    }
+	@Override
+	public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap) {
+		actionMap.put(unitMap.get(unitId), Action.createCompoundGather(unitMap.get(unitId), resourceId));
+	}
 }
