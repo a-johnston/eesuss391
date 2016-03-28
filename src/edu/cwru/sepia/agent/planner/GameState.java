@@ -345,7 +345,16 @@ public class GameState implements Comparable<GameState> {
         if (!(action instanceof DepositAction)) {
             throw new Error("Tried to do a deposit while not depositing");
         } else {
-            
+            DepositAction deposit = (DepositAction) action;
+            for (DummyUnit unit: peasants) {
+                if(unit.getId() == deposit.getId()) {
+                    collectedGold = unit.gold;
+                    collectedWood = unit.wood;
+                    unit.gold = 0;
+                    unit.wood = 0;
+                    break;
+                }
+            }
         }
     }
 

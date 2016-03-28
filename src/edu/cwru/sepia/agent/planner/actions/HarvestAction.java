@@ -43,9 +43,6 @@ public class HarvestAction implements StripsAction {
 
     @Override
     public GameState apply(GameState state) {
-        DummyUnit unit = state.getUnit(unitID);
-        DummyResourceSpot spot = state.getResourceSpot(resourceID);
-
         GameState newState = new GameState(state, this);
         newState.doHarvest();
 
