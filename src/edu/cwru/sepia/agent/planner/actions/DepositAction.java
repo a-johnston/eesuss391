@@ -5,6 +5,7 @@ import java.util.Map;
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
+import edu.cwru.sepia.util.Direction;
 
 /**
  * Represents the action of a unit depositing what it is carrying at a town hall
@@ -15,10 +16,12 @@ public class DepositAction implements StripsAction {
         return unitId;
     }
 
-    int unitId;
+    private int unitId;
+	private Direction direction;
     
-    public DepositAction(int unitID) {
-        this.unitId = unitID;
+    public DepositAction(int unitID, Direction direction) {
+        this.unitId	   = unitID;
+        this.direction = direction;
     }
 
     @Override
@@ -27,7 +30,7 @@ public class DepositAction implements StripsAction {
     	
         return unit != null
            && !unit.hasSomething()
-           &&  unit.getPosition().isAdjacent(state.getTownHall());
+           &&  unit.getPosition().move(direction).equals(state.getTownHall());
     }
 
     @Override
@@ -39,6 +42,6 @@ public class DepositAction implements StripsAction {
 
 	@Override
 	public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap) {
-		// TODO make deposit action
+		actionMap.put(unitId, Action.createPrimitiveDeposit(unitId, direction));
 	}
 }
