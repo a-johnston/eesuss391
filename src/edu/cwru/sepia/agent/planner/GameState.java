@@ -6,6 +6,7 @@ import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
+import edu.cwru.sepia.environment.model.state.ResourceNode.Type;
 import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
-	
+
 	/**
 	 * @author adam
 	 * 
@@ -42,555 +43,537 @@ public class GameState implements Comparable<GameState> {
 	private abstract class Copyable<T> {
 		abstract public T copy();
 	}
-	
-    public class DummyUnit extends Copyable<DummyUnit> {
-        private Position position;
-        private int wood;
-        private int gold;
-        private int id;
 
-        public DummyUnit(Position p) {
-            this.position = p;
-            this.id = (int) (Integer.MAX_VALUE * Math.random());
-        }
-        
-        public DummyUnit(DummyUnit parent) {
-        	this.position = parent.position;
-        	this.wood	  = parent.wood;
-        	this.gold	  = parent.gold;
-        	this.id = parent.id;
-        }
-        
-        public boolean hasSomething() {
-        	return wood + gold != 0;
-        }
-        
-        public Position getPosition() {
-            return position;
-        }
-        
-        public int getId() {
-            return id;
-        }
-        
-        public void moveTo(Position position) {
+	public class DummyUnit extends Copyable<DummyUnit> {
+		private Position position;
+		private int wood;
+		private int gold;
+		private int id;
+
+		public DummyUnit(Position p) {
+			this.position = p;
+			this.id = (int) (Integer.MAX_VALUE * Math.random());
+		}
+
+		public DummyUnit(DummyUnit parent) {
+			this.position = parent.position;
+			this.wood	  = parent.wood;
+			this.gold	  = parent.gold;
+			this.id = parent.id;
+		}
+
+		public boolean hasSomething() {
+			return wood + gold != 0;
+		}
+
+		public Position getPosition() {
+			return position;
+		}
+
+		public int getId() {
+			return id;
+		}
+
+		public void moveTo(Position position) {
 			this.position = position;
 		}
-        
-        @Override
-        public int hashCode() {
-        	int hash = position.hashCode();
-        	
-        	hash ^= 307 * wood;
-        	hash ^= 569	* gold;
-        	
-        	return hash;
-        }
-        
-        /*
-         * TODO: current use case makes it seem like dummies should be equal
-         * not when their parameters are equal but when they represent the same
-         * actual unit. Might need to change this as we move forward.
-         */
-        @Override
-        public boolean equals(Object obj) {
-        	if (obj instanceof DummyUnit) {
-        		return this.id == ((DummyUnit) obj).id;
-        	}
-        	return false;
-        }
+
+		public void give(Type type, int amount) {
+			if (type == Type.GOLD_MINE) {
+				gold += amount;
+			} else {
+				wood += amount;
+			}
+		}
+
+		@Override
+		public int hashCode() {
+			int hash = position.hashCode();
+
+			hash ^= 307 * wood;
+			hash ^= 569	* gold;
+
+			return hash;
+		}
+
+		/*
+		 * TODO: current use case makes it seem like dummies should be equal
+		 * not when their parameters are equal but when they represent the same
+		 * actual unit. Might need to change this as we move forward.
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof DummyUnit) {
+				return this.id == ((DummyUnit) obj).id;
+			}
+			return false;
+		}
 
 		@Override
 		public DummyUnit copy() {
 			return new DummyUnit(this);
 		}
-    }
+	}
 
-    public class DummyResourceSpot extends Copyable<DummyResourceSpot> {
-        private Position position;
-        private int amountLeft;
-        private int distanceToTownHall;
+	public class DummyResourceSpot extends Copyable<DummyResourceSpot> {
+		private Position position;
+		private int amountLeft;
+		private int distanceToTownHall;
+		private Type type;
 
-        private int id;
+		private int id;
 
-        public DummyResourceSpot(ResourceView node, Position townHall) {
-            this.position 	= new Position(node.getXPosition(), node.getYPosition());
-            this.amountLeft = node.getAmountRemaining();
-            this.id 		= node.getID();
-            
-            this.distanceToTownHall = this.position.chebyshevDistance(townHall);
-        }
+		public DummyResourceSpot(ResourceView node, Position townHall) {
+			this.position 	= new Position(node.getXPosition(), node.getYPosition());
+			this.amountLeft = node.getAmountRemaining();
+			this.id 		= node.getID();
+			this.type		= node.getType();
+
+			this.distanceToTownHall = this.position.chebyshevDistance(townHall);
+		}
 
 		public DummyResourceSpot(DummyResourceSpot parent) {
 			this.position 	= parent.position;
 			this.amountLeft = parent.amountLeft;
 			this.id 		= parent.id;
-			
+			this.type		= parent.type;
+
 			this.distanceToTownHall = parent.distanceToTownHall;
 		}
-		
+
 		public Position getPosition() {
-            return position;
-        }
-		
+			return position;
+		}
+
 		public int getId() {
-            return id;
-        }
+			return id;
+		}
+
+		public Type getType() {
+			return type;
+		}
 
 		@Override
 		public DummyResourceSpot copy() {
 			return new DummyResourceSpot(this);
 		}
-    }
-    
-    private static final String TOWNHALL = "TownHall";
-    private static final String PEASANT = "Peasant";
-    private static final int PEASANT_GOLD_COST = 400;
-    private static final int MAX_PEASANT_HOLD = 100;
+	}
 
-    public static int getMapXExtent() {
-        return mapXExtent;
-    }
+	private static final String TOWNHALL = "TownHall";
+	private static final String PEASANT = "Peasant";
+	private static final int PEASANT_GOLD_COST = 400;
+	private static final int MAX_PEASANT_HOLD = 100;
 
-    private static int mapXExtent;
+	public static int getMapXExtent() {
+		return mapXExtent;
+	}
 
-    public static int getMapYExtent() {
-        return mapYExtent;
-    }
+	private static int mapXExtent;
 
-    private static int mapYExtent;
-    private static boolean buildPeasants;
-    private static int playerNum;
-    private static int requiredGold;
-    private static int requiredWood;
+	public static int getMapYExtent() {
+		return mapYExtent;
+	}
 
-    private static Position townHall;
-    private static int townHallId;
+	private static int mapYExtent;
+	private static boolean buildPeasants;
+	private static int playerNum;
+	private static int requiredGold;
+	private static int requiredWood;
 
-    public List<DummyResourceSpot> getGoldmines() {
-        return goldmines;
-    }
+	private static Position townHall;
+	private static int townHallId;
 
-    private List<DummyResourceSpot> goldmines;
+	public List<DummyResourceSpot> getGoldmines() {
+		return goldmines;
+	}
 
-    public List<DummyResourceSpot> getForests() {
-        return forests;
-    }
+	private List<DummyResourceSpot> goldmines;
 
-    private List<DummyResourceSpot> forests;
+	public List<DummyResourceSpot> getForests() {
+		return forests;
+	}
 
-    public List<DummyUnit> getPeasants() {
-        return peasants;
-    }
+	private List<DummyResourceSpot> forests;
 
-    private List<DummyUnit> peasants;
-    private static int peasantTemplateId;
+	public List<DummyUnit> getPeasants() {
+		return peasants;
+	}
 
-    private int collectedGold;
-    private int collectedWood;
-    
-    private GameState parent;		// parent state of this state
-    private StripsAction action;	// action turning parent into this state
-    
-    private Double cachedHeuristic;
-    private double cachedCost;
+	private List<DummyUnit> peasants;
+	private static int peasantTemplateId;
 
-    /**
-     * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
-     * nodes should be constructed from the another constructor you create or by factory functions that you create.
-     *
-     * @param state The current stateview at the time the plan is being created
-     * @param playernum The player number of agent that is planning
-     * @param requiredGold The goal amount of gold (e.g. 200 for the small scenario)
-     * @param requiredWood The goal amount of wood (e.g. 200 for the small scenario)
-     * @param buildPeasants True if the BuildPeasant action should be considered
-     */
-    public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
-        GameState.buildPeasants = buildPeasants;
-        GameState.playerNum		= playernum;
-        GameState.requiredGold	= requiredGold;
-        GameState.requiredWood	= requiredWood;
-        GameState.mapXExtent    = state.getXExtent();
-        GameState.mapYExtent    = state.getYExtent();
-        
-        this.goldmines = new ArrayList<>();
-        this.forests   = new ArrayList<>();
+	private int collectedGold;
+	private int collectedWood;
 
-        collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
-        collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
+	private GameState parent;		// parent state of this state
+	private StripsAction action;	// action turning parent into this state
 
-        // Initialize town hall and peasants
-        peasants = new ArrayList<DummyUnit>();
-        for(UnitView unit: state.getUnits(playerNum)) {
-            if (unit.getTemplateView().getName().equals(TOWNHALL)) {
-                townHall = new Position(unit.getXPosition(), unit.getYPosition());
-                townHallId = unit.getID();
-            } else if (unit.getTemplateView().equals(PEASANT)) {
+	private Double cachedHeuristic;
+	private double cachedCost;
 
-            	peasantTemplateId = unit.getTemplateView().getID();
-            	
-                DummyUnit peasant = new DummyUnit(
-                        new Position(unit.getXPosition(), unit.getYPosition())
-                );
+	/**
+	 * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
+	 * nodes should be constructed from the another constructor you create or by factory functions that you create.
+	 *
+	 * @param state The current stateview at the time the plan is being created
+	 * @param playernum The player number of agent that is planning
+	 * @param requiredGold The goal amount of gold (e.g. 200 for the small scenario)
+	 * @param requiredWood The goal amount of wood (e.g. 200 for the small scenario)
+	 * @param buildPeasants True if the BuildPeasant action should be considered
+	 */
+	public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
+		GameState.buildPeasants = buildPeasants;
+		GameState.playerNum		= playernum;
+		GameState.requiredGold	= requiredGold;
+		GameState.requiredWood	= requiredWood;
+		GameState.mapXExtent    = state.getXExtent();
+		GameState.mapYExtent    = state.getYExtent();
 
-                if(unit.getCargoAmount() != 0) {
-                    if(unit.getCargoType() == ResourceType.GOLD) {
-                        peasant.gold = unit.getCargoAmount();
-                    } else if (unit.getCargoType() == ResourceType.WOOD) {
-                        peasant.wood = unit.getCargoAmount();
-                    }
-                }
-                
-                peasants.add(peasant);
-            }
-        }
+		this.goldmines = new ArrayList<>();
+		this.forests   = new ArrayList<>();
 
-        if (townHall == null) {
-            System.err.println("No townhall found");
-            System.exit(1);
-        }
+		collectedGold = state.getResourceAmount(playerNum, ResourceType.GOLD);
+		collectedWood = state.getResourceAmount(playerNum, ResourceType.WOOD);
 
-        for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
-            if (node.getType() == ResourceNode.Type.GOLD_MINE) {
-                goldmines.add(new DummyResourceSpot(node, townHall));
-            } else if (node.getType() == ResourceNode.Type.TREE) {
-                forests.add(new DummyResourceSpot(node, townHall));
-            }
-        }
-    }
+		// Initialize town hall and peasants
+		peasants = new ArrayList<DummyUnit>();
+		for(UnitView unit: state.getUnits(playerNum)) {
+			if (unit.getTemplateView().getName().equals(TOWNHALL)) {
+				townHall = new Position(unit.getXPosition(), unit.getYPosition());
+				townHallId = unit.getID();
+			} else if (unit.getTemplateView().equals(PEASANT)) {
 
-    public GameState(GameState parent, StripsAction action) {
-    	collectedGold = parent.collectedGold;
-    	collectedWood = parent.collectedWood;
-    	
-    	this.peasants  = deepCopyList(parent.peasants);
-    	this.forests   = deepCopyList(parent.forests);
-    	this.goldmines = deepCopyList(parent.goldmines);
-    	
-    	this.parent = parent;
-    	this.action = action;
-    	
-    	cachedCost = parent.cachedCost + 1;
-    }
-    
-    public GameState getParentState() {
-    	return parent;
-    }
-    
-    public StripsAction getAction() {
-    	return action;
-    }
-    
-    private <T extends Copyable<T>> List<T> deepCopyList(List<T> list) {
-    	return list.stream().map(Copyable::copy).collect(Collectors.toList());
-    }
-    
-    public void makePeasant() {
-    	if (collectedGold < GameState.PEASANT_GOLD_COST) {
-    		throw new Error("Tried to create peasant with not enough gold!");
-    	}
-    	
-    	collectedGold -= PEASANT_GOLD_COST;
-    	
-    	// CREATE PEASANT HERE
-    }
+				peasantTemplateId = unit.getTemplateView().getID();
 
-    public void doHarvest() {
-        if (!(action instanceof HarvestAction)) {
-            throw new Error("Tried to do a harvest while not harvesting");
-        } else {
-            HarvestAction harvest = (HarvestAction) action;
-            boolean isHarvestingGold = true;
-            int amountGathered = 0;
-            for(DummyResourceSpot spot: getGoldmines()) {
-                if(spot.getId() == harvest.getResourceID()) {
-                    if(spot.amountLeft < 100) {
-                        amountGathered = spot.amountLeft;
-                        goldmines.remove(spot);
-                    } else {
-                        amountGathered = 100;
-                        spot.amountLeft -= 100;
-                    }
-                    break;
-                }
-            }
+				DummyUnit peasant = new DummyUnit(
+						new Position(unit.getXPosition(), unit.getYPosition())
+						);
 
-            for(DummyResourceSpot spot: getForests()) {
-                if(spot.getId() == harvest.getResourceID()) {
-                    isHarvestingGold = false;
-                    if(spot.amountLeft < 100) {
-                        amountGathered = spot.amountLeft;
-                        goldmines.remove(spot);
-                    } else {
-                        amountGathered = 100;
-                        spot.amountLeft -= 100;
-                    }
-                    break;
-                }
-            }
+				if(unit.getCargoAmount() != 0) {
+					if(unit.getCargoType() == ResourceType.GOLD) {
+						peasant.gold = unit.getCargoAmount();
+					} else if (unit.getCargoType() == ResourceType.WOOD) {
+						peasant.wood = unit.getCargoAmount();
+					}
+				}
 
-            for (DummyUnit unit: peasants) {
-                if(unit.getId() == harvest.getUnitID()) {
-                    if (isHarvestingGold) {
-                        unit.gold += amountGathered;
-                    } else {
-                        unit.wood += amountGathered;
-                    }
-                }
-            }
-        }
-    }
+				peasants.add(peasant);
+			}
+		}
 
-    public void doDeposit() {
-        if (!(action instanceof DepositAction)) {
-            throw new Error("Tried to do a deposit while not depositing");
-        } else {
-            
-        }
-    }
+		if (townHall == null) {
+			System.err.println("No townhall found");
+			System.exit(1);
+		}
 
-    public DummyUnit getUnit(int id) {
-    	for (DummyUnit unit : peasants) {
-    		if (unit.id == id) {
-    			return unit;
-    		}
-    	}
-    	
-    	return null;
-    }
-    
-    public DummyResourceSpot getResourceSpot(int id) {
-    	for (DummyResourceSpot spot : goldmines) {
-    		if (spot.id == id) {
-    			return spot;
-    		}
-    	}
-    	
-    	for (DummyResourceSpot spot : forests) {
-    		if (spot.id == id) {
-    			return spot;
-    		}
-    	}
-    	
-    	return null;
-    }
+		for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
+			if (node.getType() == ResourceNode.Type.GOLD_MINE) {
+				goldmines.add(new DummyResourceSpot(node, townHall));
+			} else if (node.getType() == ResourceNode.Type.TREE) {
+				forests.add(new DummyResourceSpot(node, townHall));
+			}
+		}
+	}
 
-    /**
-     * Unlike in the first A* assignment there are many possible goal states. As long as the wood and gold requirements
-     * are met the peasants can be at any location and the capacities of the resource locations can be anything. Use
-     * this function to check if the goal conditions are met and return true if they are.
-     *
-     * @return true if the goal conditions are met in this instance of game state.
-     */
-    public boolean isGoal() {
-        return (!needMoreGold() && !needMoreWood());
-    }
+	public GameState(GameState parent, StripsAction action) {
+		collectedGold = parent.collectedGold;
+		collectedWood = parent.collectedWood;
 
-    /**
-     * The branching factor of this search graph are much higher than the planning. Generate all of the possible
-     * successor states and their associated actions in this method.
-     *
-     * @return A list of the possible successor states and their associated actions
-     */
-    public List<GameState> generateChildren() {
-        List<StripsAction> actions = new ArrayList<>();
+		this.peasants  = deepCopyList(parent.peasants);
+		this.forests   = deepCopyList(parent.forests);
+		this.goldmines = deepCopyList(parent.goldmines);
 
-        if (buildPeasants) {
-        	actions.add(new CreatePeasantAction(this));
-        }
-        
-        for (DummyUnit unit : peasants) {
-        	DummyResourceSpot spot = getAdjacentResource(unit.position);
-        	if (spot != null) {
-        		actions.add(new HarvestAction(unit.id, spot.id));
-        	}
-        }
-        // TODO: Implement me! Basic actions here
-        
-        return actions.stream()
-        		.filter(action -> action.preconditionsMet(GameState.this))
-        		.map(action -> action.apply(GameState.this))
-        		.collect(Collectors.toList());
-    }
+		this.parent = parent;
+		this.action = action;
 
-    /**
-     * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
-     * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.
-     *
-     * Add a description here in your submission explaining your heuristic.
-     *
-     * @return The value estimated remaining cost to reach a goal state from this state.
-     */
-    public double heuristic() {
-    	if (cachedHeuristic != null) {
-    		return cachedHeuristic;
-    	}
+		cachedCost = parent.cachedCost + 1;
+	}
 
-    	cachedHeuristic = 0.0;
+	public GameState getParentState() {
+		return parent;
+	}
 
-        int goldCollectionsNeeded = goldMineMovesLeft();
-        int woodCollectionsNeeded = woodMineMovesLeft();
-        cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
+	public StripsAction getAction() {
+		return action;
+	}
 
-        int temp;
-        int max = 0;
-        /*
-         * TODO:
-         * This loop figures out what the most expensive peasant is going to be.
-         * Potentially overestimates as we don't check if resource spot runs out?
-         * i.e. one very close, one very far, first peasant depletes close one,
-         * heuristic still treats as if second peasant can go there
-         */
-        for (DummyUnit peasant: peasants) {
-        	temp = 0;
-            if (peasant.hasSomething()) {
-                temp += peasant.position.chebyshevDistance(townHall);
-            } else if (goldCollectionsNeeded > 0) {
-                temp += getShortestRoundtrip(peasant.position, goldmines);
-                goldCollectionsNeeded--;
-            } else if (woodCollectionsNeeded > 0) {
-                temp += getShortestRoundtrip(peasant.position, forests);
-                woodCollectionsNeeded--;
-            }
+	private <T extends Copyable<T>> List<T> deepCopyList(List<T> list) {
+		return list.stream().map(Copyable::copy).collect(Collectors.toList());
+	}
 
-            if (temp > max) {
-                max = temp;
-            }
-        }
+	public GameState makePeasant() {
+		if (collectedGold < GameState.PEASANT_GOLD_COST) {
+			throw new Error("Tried to create peasant with not enough gold!");
+		}
 
-        cachedHeuristic += max;
-        cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * ceilDivide(goldMineMovesLeft(), peasants.size());
-        cachedHeuristic += getShortestRoundtrip(townHall, forests) * ceilDivide(woodMineMovesLeft(), peasants.size());
+		collectedGold -= PEASANT_GOLD_COST;
 
-        return cachedHeuristic;
-    }
+		// CREATE PEASANT HERE
+		
+		return this;
+	}
 
-    public double getShortestRoundtrip(Position pos, List<DummyResourceSpot> resourceSpots) {
-        return resourceSpots.stream()
-        		.filter(resource -> resource.amountLeft > 0)
-        		.mapToInt(resource -> {
-        			return pos.chebyshevDistance(resource.position) + resource.distanceToTownHall;
-        		})
-        		.min().getAsInt();
-    }
-    
-    public DummyResourceSpot getAdjacentResource(Position pos) {
-    	if (goldMineMovesLeft() > 0) {
-    		for (DummyResourceSpot mine : goldmines) {
-    			if (mine.amountLeft > 0 && pos.isAdjacent(mine.position)) {
-    				return mine;
-    			}
-    		}
-    	}
-    	
-    	if (woodMineMovesLeft() > 0) {
-    		for (DummyResourceSpot wood : forests) {
-    			if (wood.amountLeft > 0 && pos.isAdjacent(wood.position)) {
-    				return wood;
-    			}
-    		}
-    	}
-    	
-    	return null;
-    }
+	public GameState doHarvest(HarvestAction harvest) {
+		DummyResourceSpot spot = getResourceSpot(harvest.getResourceID());
 
-    public int goldMineMovesLeft() {
-        return Math.max(ceilDivide(requiredGold - collectedGold, MAX_PEASANT_HOLD), 0);
-    }
+		int amountGathered = Math.min(spot.amountLeft, GameState.MAX_PEASANT_HOLD);
+		spot.amountLeft -= amountGathered;
 
-    public int woodMineMovesLeft() {
-        return Math.max(ceilDivide(requiredWood - collectedWood, MAX_PEASANT_HOLD), 0);
-    }
-    
-    // might be a nicer way of doing this, but otherwise the two above methods underestimate by 1
-    private int ceilDivide(double n, double d) {
-    	return (int) Math.ceil(n / d);
-    }
+		getUnit(harvest.getUnitID()).give(spot.getType(), amountGathered);
+		
+		return this;
+	}
 
-    public boolean needMoreWood() {
-        return collectedWood < requiredWood;
-    }
+	public void doDeposit() {
+		if (!(action instanceof DepositAction)) {
+			throw new Error("Tried to do a deposit while not depositing");
+		} else {
 
-    public boolean needMoreGold() {
-        return collectedGold < requiredGold;
-    }
+		}
+	}
 
-    public int getGold() { return this.collectedGold; };
-    
-    /**
-     *
-     * Write the function that computes the current cost to get to this node. This is combined with your heuristic to
-     * determine which actions/states are better to explore.
-     *
-     * @return The current cost to reach this goal
-     */
-    public double getCost() {
-        return cachedCost;
-    }
+	public DummyUnit getUnit(int id) {
+		for (DummyUnit unit : peasants) {
+			if (unit.id == id) {
+				return unit;
+			}
+		}
 
-    /**
-     * This is necessary to use your state in the Java priority queue. See the official priority queue and Comparable
-     * interface documentation to learn how this function should work.
-     *
-     * @param o The other game state to compare
-     * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
-     */
-    @Override
-    public int compareTo(GameState o) {
-        return Double.compare(getCost(), o.getCost()); // TODO: this is just a placeholder
-    }
+		return null;
+	}
 
-    /**
-     * This will be necessary to use the GameState as a key in a Set or Map.
-     *
-     * @param o The game state to compare
-     * @return True if this state equals the other state, false otherwise.
-     */
-    @Override
-    public boolean equals(Object o) {
-        return hashCode() == o.hashCode(); // TODO: might want to additionally enforce type checking
-    }
+	public DummyResourceSpot getResourceSpot(int id) {
+		for (DummyResourceSpot spot : goldmines) {
+			if (spot.id == id) {
+				return spot;
+			}
+		}
 
-    /**
-     * This is necessary to use the GameState as a key in a HashSet or HashMap. Remember that if two objects are
-     * equal they should hash to the same value.
-     *
-     * @return An integer hashcode that is equal for equal states.
-     */
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        
-        hash ^= requiredGold  * 5527 + requiredWood  * 719; // magic primes
-        hash ^= collectedGold * 6763 + collectedWood * 401;
-        
-        // using two primes, gives 2213 distributed integers in the cyclic group
-        // of Z\2213Z since gcd(983, 2213) = 1
-        int mult = 983;
-        for (DummyResourceSpot mine : goldmines) {
-        	// might need to multiply the ID factor to further distinguish instances 
-        	hash ^= mult * mine.amountLeft * (mine.id + 1);
-        	mult = (mult + 983) % 2213;
-        }
-        
-        for (DummyResourceSpot forest : forests) {
-        	hash ^= mult * forest.amountLeft * (forest.id + 1);
-        	mult = (mult + 983) % 2213;
-        } 
-        
-        for (DummyUnit peasant : peasants) {
-        	hash ^= peasant.hashCode();
-        }
-        
-        // TODO: More XOR once we have more member variables
-        
-        return hash;
-    }
+		for (DummyResourceSpot spot : forests) {
+			if (spot.id == id) {
+				return spot;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Unlike in the first A* assignment there are many possible goal states. As long as the wood and gold requirements
+	 * are met the peasants can be at any location and the capacities of the resource locations can be anything. Use
+	 * this function to check if the goal conditions are met and return true if they are.
+	 *
+	 * @return true if the goal conditions are met in this instance of game state.
+	 */
+	public boolean isGoal() {
+		return (!needMoreGold() && !needMoreWood());
+	}
+
+	/**
+	 * The branching factor of this search graph are much higher than the planning. Generate all of the possible
+	 * successor states and their associated actions in this method.
+	 *
+	 * @return A list of the possible successor states and their associated actions
+	 */
+	public List<GameState> generateChildren() {
+		List<StripsAction> actions = new ArrayList<>();
+
+		if (buildPeasants) {
+			actions.add(new CreatePeasantAction(this));
+		}
+
+		for (DummyUnit unit : peasants) {
+			DummyResourceSpot spot = getAdjacentResource(unit.position);
+			if (spot != null) {
+				actions.add(new HarvestAction(unit.id, spot.id));
+			}
+		}
+		// TODO: Implement me! Basic actions here
+
+		return actions.stream()
+				.filter(action -> action.preconditionsMet(GameState.this))
+				.map(action -> action.apply(GameState.this))
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
+	 * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.
+	 *
+	 * Add a description here in your submission explaining your heuristic.
+	 *
+	 * @return The value estimated remaining cost to reach a goal state from this state.
+	 */
+	public double heuristic() {
+		if (cachedHeuristic != null) {
+			return cachedHeuristic;
+		}
+
+		cachedHeuristic = 0.0;
+
+		int goldCollectionsNeeded = goldMineMovesLeft();
+		int woodCollectionsNeeded = woodMineMovesLeft();
+		cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
+
+		int temp;
+		int max = 0;
+		/*
+		 * TODO:
+		 * This loop figures out what the most expensive peasant is going to be.
+		 * Potentially overestimates as we don't check if resource spot runs out?
+		 * i.e. one very close, one very far, first peasant depletes close one,
+		 * heuristic still treats as if second peasant can go there
+		 */
+		for (DummyUnit peasant: peasants) {
+			temp = 0;
+			if (peasant.hasSomething()) {
+				temp += peasant.position.chebyshevDistance(townHall);
+			} else if (goldCollectionsNeeded > 0) {
+				temp += getShortestRoundtrip(peasant.position, goldmines);
+				goldCollectionsNeeded--;
+			} else if (woodCollectionsNeeded > 0) {
+				temp += getShortestRoundtrip(peasant.position, forests);
+				woodCollectionsNeeded--;
+			}
+
+			if (temp > max) {
+				max = temp;
+			}
+		}
+
+		cachedHeuristic += max;
+		cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * ceilDivide(goldMineMovesLeft(), peasants.size());
+		cachedHeuristic += getShortestRoundtrip(townHall, forests) * ceilDivide(woodMineMovesLeft(), peasants.size());
+
+		return cachedHeuristic;
+	}
+
+	public double getShortestRoundtrip(Position pos, List<DummyResourceSpot> resourceSpots) {
+		return resourceSpots.stream()
+				.filter(resource -> resource.amountLeft > 0)
+				.mapToInt(resource -> {
+					return pos.chebyshevDistance(resource.position) + resource.distanceToTownHall;
+				})
+				.min().getAsInt();
+	}
+
+	public DummyResourceSpot getAdjacentResource(Position pos) {
+		if (goldMineMovesLeft() > 0) {
+			for (DummyResourceSpot mine : goldmines) {
+				if (mine.amountLeft > 0 && pos.isAdjacent(mine.position)) {
+					return mine;
+				}
+			}
+		}
+
+		if (woodMineMovesLeft() > 0) {
+			for (DummyResourceSpot wood : forests) {
+				if (wood.amountLeft > 0 && pos.isAdjacent(wood.position)) {
+					return wood;
+				}
+			}
+		}
+
+		return null;
+	}
+
+	public int goldMineMovesLeft() {
+		return Math.max(ceilDivide(requiredGold - collectedGold, MAX_PEASANT_HOLD), 0);
+	}
+
+	public int woodMineMovesLeft() {
+		return Math.max(ceilDivide(requiredWood - collectedWood, MAX_PEASANT_HOLD), 0);
+	}
+
+	// might be a nicer way of doing this, but otherwise the two above methods underestimate by 1
+	private int ceilDivide(double n, double d) {
+		return (int) Math.ceil(n / d);
+	}
+
+	public boolean needMoreWood() {
+		return collectedWood < requiredWood;
+	}
+
+	public boolean needMoreGold() {
+		return collectedGold < requiredGold;
+	}
+
+	public int getGold() { return this.collectedGold; };
+
+	/**
+	 *
+	 * Write the function that computes the current cost to get to this node. This is combined with your heuristic to
+	 * determine which actions/states are better to explore.
+	 *
+	 * @return The current cost to reach this goal
+	 */
+	public double getCost() {
+		return cachedCost;
+	}
+
+	/**
+	 * This is necessary to use your state in the Java priority queue. See the official priority queue and Comparable
+	 * interface documentation to learn how this function should work.
+	 *
+	 * @param o The other game state to compare
+	 * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
+	 */
+	@Override
+	public int compareTo(GameState o) {
+		return Double.compare(getCost(), o.getCost()); // TODO: this is just a placeholder
+	}
+
+	/**
+	 * This will be necessary to use the GameState as a key in a Set or Map.
+	 *
+	 * @param o The game state to compare
+	 * @return True if this state equals the other state, false otherwise.
+	 */
+	@Override
+	public boolean equals(Object o) {
+		return hashCode() == o.hashCode(); // TODO: might want to additionally enforce type checking
+	}
+
+	/**
+	 * This is necessary to use the GameState as a key in a HashSet or HashMap. Remember that if two objects are
+	 * equal they should hash to the same value.
+	 *
+	 * @return An integer hashcode that is equal for equal states.
+	 */
+	@Override
+	public int hashCode() {
+		int hash = 0;
+
+		hash ^= requiredGold  * 5527 + requiredWood  * 719; // magic primes
+		hash ^= collectedGold * 6763 + collectedWood * 401;
+
+		// using two primes, gives 2213 distributed integers in the cyclic group
+		// of Z\2213Z since gcd(983, 2213) = 1
+		int mult = 983;
+		for (DummyResourceSpot mine : goldmines) {
+			// might need to multiply the ID factor to further distinguish instances 
+			hash ^= mult * mine.amountLeft * (mine.id + 1);
+			mult = (mult + 983) % 2213;
+		}
+
+		for (DummyResourceSpot forest : forests) {
+			hash ^= mult * forest.amountLeft * (forest.id + 1);
+			mult = (mult + 983) % 2213;
+		} 
+
+		for (DummyUnit peasant : peasants) {
+			hash ^= peasant.hashCode();
+		}
+
+		// TODO: More XOR once we have more member variables
+
+		return hash;
+	}
 
 	public Position getTownHall() {
 		return townHall;
 	}
-	
+
 	public int getTownHallId() {
 		return townHallId;
 	}
