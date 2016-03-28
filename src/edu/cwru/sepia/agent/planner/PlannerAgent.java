@@ -96,27 +96,44 @@ public class PlannerAgent extends Agent {
         Set<GameState> explored	  = new HashSet<>();
         
         frontier.add(startState);
-    	
+
         while (!frontier.isEmpty()) {
         	GameState state = frontier.poll();
-        	
+        	explored.add(state);
+
+            if(state.isGoal()) {
+                return reconstructPath(state);
+            }
+
         	for (GameState child : state.generateChildren()) {
         		if (explored.contains(child)) {
         			continue;
         		}
         		
         		if (!frontier.contains(child)) {
-        			
-        		} else if (true) {
-        			continue;
+        			frontier.add(child);
+        		} else if (state.heuristic() >= child.heuristic()) {
+                    continue;
         		}
         	}
         	
         	explored.add(state);
         }
-        
+
+        System.err.println("Cannot achieve goal");
+        System.exit(0);
         return plan;
     }
+
+    private Stack<StripsAction> reconstructPath(GameState state) {
+        Stack<StripsAction> plan = new Stack<>();
+        while(state != null) {
+            plan.add(state.getAction());
+            state = state.getParentState();
+        }
+        return plan;
+    }
+
 
     /**
      * This has been provided for you. Each strips action is converted to a string with the toString method. This means
