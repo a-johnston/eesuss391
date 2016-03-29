@@ -29,7 +29,7 @@ public interface StripsAction {
     public boolean preconditionsMet(GameState state);
 
     /**
-     * Applies the action instance to the given GameState producing a new GameState in the process.
+     * Applies the action instance to the given GameState.
      *
      * As an example consider a Move action that moves peasant 1 in the NORTH direction. The partial game state
      * might specify that peasant 1 is at location (3, 3). The returned GameState should specify
@@ -38,9 +38,8 @@ public interface StripsAction {
      * In the process of updating the peasant state you should also update the GameState's cost and parent pointers.
      *
      * @param state State to apply action to
-     * @return State resulting from successful action appliction.
      */
-    public GameState apply(GameState state);
+    public void apply(GameState state);
     
     /**
      * Returns pairs of Sepia actions that map the acting unit to their action given this StripsAction

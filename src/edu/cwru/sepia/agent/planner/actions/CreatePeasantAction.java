@@ -28,8 +28,8 @@ public class CreatePeasantAction implements StripsAction{
     }
 
     @Override
-    public GameState apply(GameState state) {
-        return new GameState(state, this).makePeasant();
+    public void apply(GameState state) {
+    	state.makePeasant();
     }
 
 	@Override

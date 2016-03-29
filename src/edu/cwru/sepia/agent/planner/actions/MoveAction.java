@@ -33,12 +33,8 @@ public class MoveAction implements StripsAction {
 	}
 
 	@Override
-	public GameState apply(GameState state) {
-		GameState child = new GameState(state, this);
-		
-		child.getUnit(unitID).moveTo(end);
-		
-		return child;
+	public void apply(GameState state) {
+		state.getUnit(unitID).moveTo(end);
 	}
 
 	@Override

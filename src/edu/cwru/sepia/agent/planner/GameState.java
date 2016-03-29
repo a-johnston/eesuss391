@@ -1,7 +1,6 @@
 package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.agent.planner.actions.CreatePeasantAction;
-import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.MultiStripsAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
@@ -210,8 +209,8 @@ public class GameState implements Comparable<GameState> {
 	private int collectedGold;
 	private int collectedWood;
 
-	private GameState parent;		// parent state of this state
-	private StripsAction action;	// action turning parent into this state
+	private GameState parent;			// parent state of this state
+	private MultiStripsAction action;	// action turning parent into this state
 
 	private Double cachedHeuristic;
 	private double cachedCost;
@@ -280,7 +279,7 @@ public class GameState implements Comparable<GameState> {
 		}
 	}
 
-	public GameState(GameState parent, StripsAction action) {
+	public GameState(GameState parent, MultiStripsAction action) {
 		collectedGold = parent.collectedGold;
 		collectedWood = parent.collectedWood;
 
@@ -298,7 +297,7 @@ public class GameState implements Comparable<GameState> {
 		return parent;
 	}
 
-	public StripsAction getAction() {
+	public MultiStripsAction getAction() {
 		return action;
 	}
 
@@ -318,23 +317,17 @@ public class GameState implements Comparable<GameState> {
 		return this;
 	}
 
-	public GameState doHarvest(HarvestAction harvest) {
-		DummyResourceSpot spot = getResourceSpot(harvest.getResourceID());
+	public void doHarvest(int unitId, int resourceId) {
+		DummyResourceSpot spot = getResourceSpot(resourceId);
 
 		int amountGathered = Math.min(spot.amountLeft, GameState.MAX_PEASANT_HOLD);
 		spot.amountLeft -= amountGathered;
 
-		getUnit(harvest.getUnitID()).give(spot.getType(), amountGathered);
-		
-		return this;
+		getUnit(unitId).give(spot.getType(), amountGathered);
 	}
 
-	public void doDeposit() {
-		if (!(action instanceof DepositAction)) {
-			throw new Error("Tried to do a deposit while not depositing");
-		} else {
-
-		}
+	public void doDeposit(int unitId) {
+		
 	}
 
 	public DummyUnit getUnit(int id) {
@@ -409,7 +402,11 @@ public class GameState implements Comparable<GameState> {
 		return CartesianProduct.stream(actionLists)
 				.map(list -> new MultiStripsAction(list))
 				.filter(multiaction -> multiaction.preconditionsMet(GameState.this))
-				.map(multiaction -> multiaction.apply(GameState.this))
+				.map(multiaction -> {
+					GameState child = new GameState(this, multiaction);
+					multiaction.apply(child);
+					return child;
+				})
 				.filter(GameState::isValid)
 				.collect(Collectors.toList());
 	}

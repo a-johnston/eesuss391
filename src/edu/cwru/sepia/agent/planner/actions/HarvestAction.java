@@ -50,8 +50,8 @@ public class HarvestAction implements StripsAction {
     }
 
     @Override
-    public GameState apply(GameState state) {
-        return new GameState(state, this).doHarvest(this);
+    public void apply(GameState state) {
+        state.doHarvest(unitId, resourceId);
     }
 
 	@Override

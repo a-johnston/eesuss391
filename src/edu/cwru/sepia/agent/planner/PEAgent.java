@@ -21,7 +21,7 @@ public class PEAgent extends Agent {
 	private static final long serialVersionUID = 1L;
 
 	// The plan being executed
-    private Stack<StripsAction> plan = null;
+    private Stack<MultiStripsAction> plan = null;
 
     // maps the real unit Ids to the plan's unit ids
     // when you're planning you won't know the true unit IDs that sepia assigns. So you'll use placeholders (1, 2, 3).
@@ -30,7 +30,7 @@ public class PEAgent extends Agent {
     private int townhallId;
     private int peasantTemplateId;
 
-    public PEAgent(int playernum, Stack<StripsAction> plan) {
+    public PEAgent(int playernum, Stack<MultiStripsAction> plan) {
         super(playernum);
         peasantIdMap = new HashMap<>();
         this.plan = plan;

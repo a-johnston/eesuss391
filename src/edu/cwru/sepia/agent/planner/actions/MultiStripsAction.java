@@ -27,11 +27,8 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 	}
 
 	@Override
-	public GameState apply(GameState state) {
-		for (StripsAction action : this) {
-			state = action.apply(state);
-		}
-		return state;
+	public void apply(GameState state) {
+		stream().forEach(action -> action.apply(state));
 	}
 
 	@Override
