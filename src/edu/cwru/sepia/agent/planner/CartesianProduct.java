@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent.planner;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -20,6 +21,11 @@ public class CartesianProduct<T> implements Iterator<List<T>> {
 	private CartesianProduct<T> subproduct;
 	
 	private CartesianProduct(List<List<T>> values) {
+		if (values == null || values.size() == 0) {
+			this.values = Collections.emptyList();
+			return;
+		}
+
 		this.values = new ArrayList<T>(values.get(0));
 		
 		if (values.size() > 1) {

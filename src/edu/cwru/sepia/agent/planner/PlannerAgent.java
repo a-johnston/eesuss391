@@ -103,6 +103,7 @@ public class PlannerAgent extends Agent {
         	explored.add(state);
 
             if(state.isGoal()) {
+                System.out.println("Plan found");
                 return reconstructPath(state);
             }
 
