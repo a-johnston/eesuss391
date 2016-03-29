@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
@@ -52,7 +54,10 @@ public class HarvestAction implements StripsAction {
     }
 
 	@Override
-	public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap) {
-		actionMap.put(unitMap.get(unitId), Action.createPrimitiveGather(unitMap.get(unitId), direction));
+	public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap) {
+		return Collections.singletonList(
+				new ActionPair(
+						unitMap.get(unitId),
+						Action.createPrimitiveGather(unitMap.get(unitId), direction)));
 	}
 }

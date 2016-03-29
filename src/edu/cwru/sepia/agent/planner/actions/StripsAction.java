@@ -1,5 +1,6 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.List;
 import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
@@ -11,6 +12,16 @@ import edu.cwru.sepia.agent.planner.GameState;
  * of a StripsAction.
  */
 public interface StripsAction {
+	
+	public class ActionPair {
+		public final int unitId;
+		public final Action action;
+		
+		public ActionPair(int unitId, Action action) {
+			this.unitId = unitId;
+			this.action = action;
+		}
+	}
 
     /**
      * Returns true if the provided GameState meets all of the necessary conditions for this action to successfully
@@ -42,9 +53,9 @@ public interface StripsAction {
     public GameState apply(GameState state);
     
     /**
-     * Puts a Sepia action equivalent to applying this StripsAction to a given state into the given action map
+     * Returns pairs of Sepia actions that map the acting unit to their action given this StripsAction
      * @param state
      * @return
      */
-    public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap);
+    public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap);
 }

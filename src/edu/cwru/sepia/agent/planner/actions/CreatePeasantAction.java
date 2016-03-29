@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
@@ -30,7 +32,10 @@ public class CreatePeasantAction implements StripsAction{
     }
 
 	@Override
-	public void getSepiaAction(Map<Integer, Action> actionMap, Map<Integer, Integer> unitMap) {
-		actionMap.put(townhallId, Action.createPrimitiveBuild(townhallId, peasantTemplateId));
+	public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap) {
+		return Collections.singletonList(
+				new ActionPair(
+						townhallId,
+						Action.createPrimitiveBuild(townhallId, peasantTemplateId)));
 	}
 }
