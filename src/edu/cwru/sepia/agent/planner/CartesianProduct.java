@@ -3,6 +3,8 @@ package edu.cwru.sepia.agent.planner;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Presents the Cartesian product of a list of lists in an iterable style.
@@ -62,5 +64,15 @@ public class CartesianProduct<T> implements Iterator<List<T>> {
 				return new CartesianProduct<S>(values);
 			}
 		};
+	}
+	
+	/**
+	 * Returns a stream view of the Cartesian product for use in the Streams API
+	 * 
+	 * @param values
+	 * @return
+	 */
+	public static <S> Stream<List<S>> stream(List<List<S>> values) {
+		return StreamSupport.stream(iterate(values).spliterator(), false);
 	}
 }

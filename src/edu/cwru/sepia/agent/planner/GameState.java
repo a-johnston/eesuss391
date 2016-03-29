@@ -3,6 +3,7 @@ package edu.cwru.sepia.agent.planner;
 import edu.cwru.sepia.agent.planner.actions.CreatePeasantAction;
 import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
+import edu.cwru.sepia.agent.planner.actions.MultiStripsAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
@@ -380,23 +381,25 @@ public class GameState implements Comparable<GameState> {
 	 * @return A list of the possible successor states and their associated actions
 	 */
 	public List<GameState> generateChildren() {
-		List<StripsAction> actions = new ArrayList<>();
+		List<List<StripsAction>> actionLists = new ArrayList<>();
 
 		if (buildPeasants) {
-			actions.add(new CreatePeasantAction(this));
+			actionLists.add(Collections.singletonList(new CreatePeasantAction(this)));
 		}
 
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null) {
-				actions.add(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position)));
+				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position))));
+			} else {
+				// TODO : add in peasants moving and depositing resources
 			}
 		}
-		// TODO: Implement me! Basic actions here
 
-		return actions.stream()
-				.filter(action -> action.preconditionsMet(GameState.this))
-				.map(action -> action.apply(GameState.this))
+		return CartesianProduct.stream(actionLists)
+				.map(list -> new MultiStripsAction(list))
+				.filter(multiaction -> multiaction.preconditionsMet(GameState.this))
+				.map(multiaction -> multiaction.apply(GameState.this))
 				.collect(Collectors.toList());
 	}
 
