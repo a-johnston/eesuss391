@@ -373,12 +373,22 @@ public class GameState implements Comparable<GameState> {
 	public boolean isGoal() {
 		return (!needMoreGold() && !needMoreWood());
 	}
+	
+	/**
+	 * Determines if the current GameState is valid or not.
+	 * 
+	 * @return validity of this instance
+	 */
+	public boolean isValid() {
+		// TODO : implement me
+		return true;
+	}
 
 	/**
 	 * The branching factor of this search graph are much higher than the planning. Generate all of the possible
 	 * successor states and their associated actions in this method.
 	 *
-	 * @return A list of the possible successor states and their associated actions
+	 * @return A list of the possible successor states
 	 */
 	public List<GameState> generateChildren() {
 		List<List<StripsAction>> actionLists = new ArrayList<>();
@@ -400,6 +410,7 @@ public class GameState implements Comparable<GameState> {
 				.map(list -> new MultiStripsAction(list))
 				.filter(multiaction -> multiaction.preconditionsMet(GameState.this))
 				.map(multiaction -> multiaction.apply(GameState.this))
+				.filter(GameState::isValid)
 				.collect(Collectors.toList());
 	}
 
