@@ -242,7 +242,7 @@ public class GameState implements Comparable<GameState> {
 			if (unit.getTemplateView().getName().equals(TOWNHALL)) {
 				townHall = new Position(unit.getXPosition(), unit.getYPosition());
 				townHallId = unit.getID();
-			} else if (unit.getTemplateView().equals(PEASANT)) {
+			} else if (unit.getTemplateView().getName().equals(PEASANT)) {
 
 				peasantTemplateId = unit.getTemplateView().getID();
 
@@ -393,7 +393,7 @@ public class GameState implements Comparable<GameState> {
 		if (buildPeasants) {
 			actionLists.add(Collections.singletonList(new CreatePeasantAction(this)));
 		}
-
+        System.out.println(peasants.size());
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null && !unit.hasSomething()) {
@@ -421,6 +421,7 @@ public class GameState implements Comparable<GameState> {
 
     private List<StripsAction> getResourceLocations(DummyUnit unit) {
         List<StripsAction> actions = new ArrayList<>();
+
         for(DummyResourceSpot spot: goldmines) {
             actions.add(new MoveAction(unit.id, unit.position, spot.position));
         }
@@ -575,6 +576,7 @@ public class GameState implements Comparable<GameState> {
 	 */
 	@Override
 	public boolean equals(Object o) {
+        System.out.println("Comparing");
 		return hashCode() == o.hashCode(); // TODO: might want to additionally enforce type checking
 	}
 

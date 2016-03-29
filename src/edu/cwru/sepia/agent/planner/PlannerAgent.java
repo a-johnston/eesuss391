@@ -101,7 +101,7 @@ public class PlannerAgent extends Agent {
         while (!frontier.isEmpty()) {
         	GameState state = frontier.poll();
         	explored.add(state);
-
+            System.out.println("Considering");
             if(state.isGoal()) {
                 System.out.println("Plan found");
                 return reconstructPath(state);

@@ -8,6 +8,7 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
+import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
 
 public class MoveAction implements StripsAction {
@@ -19,7 +20,7 @@ public class MoveAction implements StripsAction {
     public MoveAction(int unitID, Position start, Position end) {
         this.unitID = unitID;
         this.start = start;
-        this.end = end.move(end.getDirection(start));
+        this.end = end.move(Direction.getDirection(start.x - end.x, start.y - end.y));
     }
 
 	@Override
