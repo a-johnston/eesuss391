@@ -1,9 +1,6 @@
 package edu.cwru.sepia.agent.planner;
 
-import edu.cwru.sepia.agent.planner.actions.CreatePeasantAction;
-import edu.cwru.sepia.agent.planner.actions.HarvestAction;
-import edu.cwru.sepia.agent.planner.actions.MultiStripsAction;
-import edu.cwru.sepia.agent.planner.actions.StripsAction;
+import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.ResourceNode.ResourceView;
 import edu.cwru.sepia.environment.model.state.ResourceNode.Type;
@@ -327,7 +324,14 @@ public class GameState implements Comparable<GameState> {
 	}
 
 	public void doDeposit(int unitId) {
-		
+		DummyUnit unit = getUnit(unitId);
+        if (unit.wood > 0) {
+            collectedWood += unit.wood;
+            unit.wood = 0;
+        } else {
+            collectedGold += unit.gold;
+            unit.gold = 0;
+        }
 	}
 
 	public DummyUnit getUnit(int id) {
@@ -392,11 +396,15 @@ public class GameState implements Comparable<GameState> {
 
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
-			if (spot != null) {
+			if (spot != null && !unit.hasSomething()) {
 				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position))));
-			} else {
-				// TODO : add in peasants moving and depositing resources
-			}
+			} else if (unit.hasSomething() && !nextToTownhall(unit)){
+                actionLists.add(Collections.singletonList(new MoveAction(unit.id, unit.position, townHall)));
+            } else if (unit.hasSomething()) {
+                actionLists.add(Collections.singletonList(new DepositAction(unit.id, unit.position.getDirection(townHall))));
+            } else {
+                actionLists.add(getResourceLocations(unit));
+            }
 		}
 
 		return CartesianProduct.stream(actionLists)
@@ -410,6 +418,27 @@ public class GameState implements Comparable<GameState> {
 				.filter(GameState::isValid)
 				.collect(Collectors.toList());
 	}
+
+    private List<StripsAction> getResourceLocations(DummyUnit unit) {
+        List<StripsAction> actions = new ArrayList<>();
+        for(DummyResourceSpot spot: goldmines) {
+            actions.add(new MoveAction(unit.id, unit.position, spot.position));
+        }
+        for(DummyResourceSpot spot: forests) {
+            actions.add(new MoveAction(unit.id, unit.position, spot.position));
+        }
+        return actions;
+    }
+
+    private boolean nextToTownhall(DummyUnit unit) {
+        for(Position p: townHall.getAdjacentPositions()) {
+            if(unit.position.equals(p)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
 	/**
 	 * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
