@@ -8,6 +8,7 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.util.Direction;
+import edu.cwru.sepia.util.Pair;
 
 /**
  * Represents the action of a unit depositing what it is carrying at a town hall
@@ -38,9 +39,9 @@ public class DepositAction implements StripsAction {
     }
 
 	@Override
-	public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap) {
+	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
 		return Collections.singletonList(
-				new ActionPair(
+				new Pair<>(
 						unitMap.get(unitId),
 						Action.createPrimitiveDeposit(unitId, direction)));
 	}

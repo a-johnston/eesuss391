@@ -9,6 +9,7 @@ import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.agent.planner.GameState.DummyResourceSpot;
 import edu.cwru.sepia.util.Direction;
+import edu.cwru.sepia.util.Pair;
 
 /**
  * Represents the action of harvesting from some resource location
@@ -54,9 +55,9 @@ public class HarvestAction implements StripsAction {
     }
 
 	@Override
-	public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap) {
+	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
 		return Collections.singletonList(
-				new ActionPair(
+				new Pair<>(
 						unitMap.get(unitId),
 						Action.createPrimitiveGather(unitMap.get(unitId), direction)));
 	}

@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
+import edu.cwru.sepia.util.Pair;
 
 public class MultiStripsAction extends ArrayList<StripsAction> implements StripsAction {
 	
@@ -25,7 +27,7 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 	}
 
 	@Override
-	public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap) {
+	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
 		return stream()
 				.flatMap(action -> action.getSepiaAction(unitMap).stream())
 				.collect(Collectors.toList());

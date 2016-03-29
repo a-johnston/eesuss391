@@ -8,6 +8,7 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
+import edu.cwru.sepia.util.Pair;
 
 public class MoveAction implements StripsAction {
 
@@ -41,7 +42,8 @@ public class MoveAction implements StripsAction {
 	}
 
 	@Override
-	public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap) {
-		return Collections.singletonList(new ActionPair(unitMap.get(unitID), Action.createCompoundMove(unitMap.get(unitID), end.x, end.y)));
+	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
+		return Collections.singletonList(
+				new Pair<>(unitMap.get(unitID), Action.createCompoundMove(unitMap.get(unitID), end.x, end.y)));
 	}
 }

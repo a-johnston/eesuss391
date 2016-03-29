@@ -6,6 +6,7 @@ import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
+import edu.cwru.sepia.util.Pair;
 
 /**
  * This class checks to see if a new peasant can be made and additionally
@@ -32,10 +33,8 @@ public class CreatePeasantAction implements StripsAction{
     }
 
 	@Override
-	public List<ActionPair> getSepiaAction(Map<Integer, Integer> unitMap) {
+	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
 		return Collections.singletonList(
-				new ActionPair(
-						townhallId,
-						Action.createPrimitiveBuild(townhallId, peasantTemplateId)));
+				new Pair<>(townhallId, Action.createPrimitiveBuild(townhallId, peasantTemplateId)));
 	}
 }
