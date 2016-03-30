@@ -47,6 +47,7 @@ public class GameState implements Comparable<GameState> {
 		private int gold;
 		private int id;
 
+
 		public DummyUnit(Position p) {
 			this.position = p;
 			this.id = (int) (Integer.MAX_VALUE * Math.random());
@@ -248,7 +249,8 @@ public class GameState implements Comparable<GameState> {
 
 				DummyUnit peasant = new DummyUnit(
 						new Position(unit.getXPosition(), unit.getYPosition())
-						);
+				);
+				peasant.id = unit.getID();
 
 				if(unit.getCargoAmount() != 0) {
 					if(unit.getCargoType() == ResourceType.GOLD) {
@@ -393,8 +395,8 @@ public class GameState implements Comparable<GameState> {
 		if (buildPeasants) {
 			actionLists.add(Collections.singletonList(new CreatePeasantAction(this)));
 		}
-        System.out.println(peasants.size());
 		for (DummyUnit unit : peasants) {
+            List<StripsAction> peasantList = new ArrayList<>();
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null && !unit.hasSomething()) {
 				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position))));
@@ -576,7 +578,7 @@ public class GameState implements Comparable<GameState> {
 	 */
 	@Override
 	public boolean equals(Object o) {
-        System.out.println("Comparing");
+        //  System.out.println("Comparing");
 		return hashCode() == o.hashCode(); // TODO: might want to additionally enforce type checking
 	}
 
@@ -627,4 +629,16 @@ public class GameState implements Comparable<GameState> {
 	public int getPeasantTemplateId() {
 		return peasantTemplateId;
 	}
+
+    @Override
+    public String toString() {
+        return "GameState{" +
+                ", peasants=" + peasants.get(0).getId() +
+                ", collectedGold=" + collectedGold +
+                ", collectedWood=" + collectedWood +
+                ", action=" + action +
+                ", cachedHeuristic=" + cachedHeuristic +
+                ", cachedCost=" + cachedCost +
+                '}';
+    }
 }

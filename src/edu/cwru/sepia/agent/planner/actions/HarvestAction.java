@@ -59,6 +59,15 @@ public class HarvestAction implements StripsAction {
 		return Collections.singletonList(
 				new Pair<>(
 						unitMap.get(unitId),
-						Action.createPrimitiveGather(unitMap.get(unitId), direction)));
+						Action.createPrimitiveGather(unitId, direction)));
 	}
+
+    @Override
+    public String toString() {
+        return "HarvestAction{" +
+                "unitId=" + unitId +
+                ", resourceId=" + resourceId +
+                ", direction=" + direction +
+                '}';
+    }
 }

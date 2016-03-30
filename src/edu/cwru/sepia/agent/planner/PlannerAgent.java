@@ -2,6 +2,7 @@ package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
+import edu.cwru.sepia.agent.planner.actions.MoveAction;
 import edu.cwru.sepia.agent.planner.actions.MultiStripsAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.environment.model.history.History;
@@ -50,7 +51,7 @@ public class PlannerAgent extends Agent {
         }
 
         // write the plan to a text file
-        savePlan(plan);
+        //savePlan(plan);
 
         // Instantiates the PEAgent with the specified plan.
         peAgent = new PEAgent(playernum, plan);
@@ -97,29 +98,26 @@ public class PlannerAgent extends Agent {
         Set<GameState> explored	 	  = new HashSet<>();
         
         frontier.add(startState);
+        GameState current;
 
         while (!frontier.isEmpty()) {
-        	GameState state = frontier.poll();
-        	explored.add(state);
-            System.out.println("Considering");
-            if(state.isGoal()) {
-                System.out.println("Plan found");
-                return reconstructPath(state);
+            current = frontier.poll();
+        	explored.add(current);
+            if(current.isGoal()) {
+                return reconstructPath(current);
             }
-
-        	for (GameState child : state.generateChildren()) {
+        	for (GameState child : current.generateChildren()) {
         		if (explored.contains(child)) {
         			continue;
         		}
-        		
-        		if (!frontier.contains(child)) {
+                if (!frontier.contains(child)) {
         			frontier.add(child);
-        		} else if (state.heuristic() >= child.heuristic()) {
+        		} else if (canAddToOpenList(child, frontier)) {
                     continue;
         		}
         	}
         	
-        	explored.add(state);
+        	explored.add(current);
         }
 
         System.err.println("Cannot achieve goal");
@@ -127,10 +125,20 @@ public class PlannerAgent extends Agent {
         return plan;
     }
 
+    private boolean canAddToOpenList(GameState neighbor, Queue<GameState> openList) {
+        for (GameState node : openList) {
+            if (neighbor.heuristic() < node.heuristic()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private Stack<MultiStripsAction> reconstructPath(GameState state) {
         Stack<MultiStripsAction> plan = new Stack<>();
-        while(state != null) {
-            plan.add(state.getAction());
+        while(state.getAction() != null) {
+            plan.push(state.getAction());
             state = state.getParentState();
         }
         return plan;
@@ -146,35 +154,35 @@ public class PlannerAgent extends Agent {
      *
      * @param plan Stack of Strips Actions that are written to the text file.
      */
-    private void savePlan(Stack<MultiStripsAction> plan) {
-        if (plan == null) {
-            System.err.println("Cannot save null plan");
-            return;
-        }
-
-        File outputDir = new File("saves");
-        outputDir.mkdirs();
-
-        File outputFile = new File(outputDir, "plan.txt");
-
-        PrintWriter outputWriter = null;
-        try {
-            outputFile.createNewFile();
-
-            outputWriter = new PrintWriter(outputFile.getAbsolutePath());
-
-            @SuppressWarnings("unchecked")
-			Stack<StripsAction> tempPlan = (Stack<StripsAction>) plan.clone();
-            while(!tempPlan.isEmpty()) {
-                outputWriter.println(tempPlan.pop().toString());
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (outputWriter != null)
-                outputWriter.close();
-        }
-    }
+//    private void savePlan(Stack<MultiStripsAction> plan) {
+//        if (plan == null) {
+//            System.err.println("Cannot save null plan");
+//            return;
+//        }
+//
+//        File outputDir = new File("saves");
+//        outputDir.mkdirs();
+//
+//        File outputFile = new File(outputDir, "plan.txt");
+//
+//        PrintWriter outputWriter = null;
+//        try {
+//            outputFile.createNewFile();
+//
+//            outputWriter = new PrintWriter(outputFile.getAbsolutePath());
+//
+//            @SuppressWarnings("unchecked")
+//			Stack<StripsAction> tempPlan = (Stack<StripsAction>) plan.clone();
+//            while(!tempPlan.isEmpty()) {
+//                outputWriter.println(tempPlan.pop().toString());
+//            }
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (outputWriter != null)
+//                outputWriter.close();
+//        }
+//    }
 }

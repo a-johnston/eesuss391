@@ -27,7 +27,7 @@ public class DepositAction implements StripsAction {
     	DummyUnit unit = state.getUnit(unitId);
     	
         return unit != null
-           && !unit.hasSomething()
+           &&  unit.hasSomething()
            &&  unit.getPosition().move(direction).equals(state.getTownHall());
     }
 

@@ -12,7 +12,6 @@ import edu.cwru.sepia.util.Pair;
 public class MultiStripsAction extends ArrayList<StripsAction> implements StripsAction {
 	
 	private static final long serialVersionUID = 1L;
-	
 	public MultiStripsAction() {
 		super();
 	}

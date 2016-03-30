@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.action.Action;
+import edu.cwru.sepia.action.ActionFeedback;
 import edu.cwru.sepia.action.ActionType;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.agent.planner.actions.*;
@@ -17,6 +18,7 @@ import java.rmi.activation.ActivationID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+import java.util.*;
 
 /**
  * This is an outline of the PEAgent. Implement the provided methods. You may add your own methods and members.
@@ -66,23 +68,26 @@ public class PEAgent extends Agent {
             individualPlans = getIndividualPlans();
         }
 
-        GameState thisState = new GameState(stateView, stateView.getPlayerNumbers()[0], 0, 0, false);
+        GameState thisState = new GameState(stateView, playernum, 0, 0, false);
         // Headquarters case
-        Pair<Action, StripsAction> hqPair = headquartersActions.peek();
-        if(hqPair.b.preconditionsMet(thisState)) {
-            headquartersActions.pop();
-            nextActions.put(thisState.getTownHallId(), hqPair.a);
+        if(!headquartersActions.isEmpty()) {
+            Pair<Action, StripsAction> hqPair = headquartersActions.peek();
+            if (hqPair.b.preconditionsMet(thisState)) {
+                headquartersActions.pop();
+                nextActions.put(thisState.getTownHallId(), hqPair.a);
+            }
         }
-
         for(Integer fakeID: peasantIdMap.keySet()) {
             Integer realID = peasantIdMap.get(fakeID);
             if(!unitIsFree(stateView, historyView, realID)) {
                 continue;
             }
-
+            System.out.println(stateView.getTurnNumber());
             if(unitHasSomethingToDo(realID)) {
-                Pair<Action, StripsAction> actionStripsActionPair = individualPlans.get(realID).pop();
+                Pair<Action, StripsAction> actionStripsActionPair = individualPlans.get(realID).peek();
+                System.out.println(actionStripsActionPair.b);
                 if(actionStripsActionPair.b.preconditionsMet(thisState)) {
+                    individualPlans.get(realID).pop();
                     nextActions.put(realID, actionStripsActionPair.a);
                 }
             }
@@ -91,6 +96,7 @@ public class PEAgent extends Agent {
     }
 
     private boolean unitHasSomethingToDo(int id) {
+
         return individualPlans.keySet().contains(id) && !individualPlans.get(id).isEmpty();
     }
 
@@ -101,8 +107,14 @@ public class PEAgent extends Agent {
 
         Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, stateView.getTurnNumber() - 1);
         for (ActionResult result : actionResults.values()) {
+            System.out.println("Wooooo");
+            System.out.println(result.toString());
             if (result.getAction().getUnitId() == unitID) {
-                return false;
+                if(result.getFeedback().equals(ActionFeedback.COMPLETED)){
+                    return true;
+                } else {
+                    return false;
+                }
             }
 
         }
@@ -113,22 +125,30 @@ public class PEAgent extends Agent {
 
     private Map<Integer, Stack<Pair<Action, StripsAction>>> getIndividualPlans() {
         Map<Integer, Stack<Pair<Action, StripsAction>>> unitPlan = new HashMap<>();
+        Map<Integer, List<Pair<Action, StripsAction>>> reversedPlan = new HashMap<>();
         while(!plan.isEmpty()) {
             MultiStripsAction actions = plan.pop();
             for(StripsAction stripsAction: actions) {
                 Pair<Integer, Action> sepiaActionPair = stripsAction.getSepiaAction(peasantIdMap).get(0);
                 Pair<Action, StripsAction> sepiaStripsPair = new Pair<>(sepiaActionPair.b, stripsAction);
                 if(stripsAction instanceof CreatePeasantAction) {
-                    headquartersActions.push(sepiaStripsPair);
-                } else if(unitPlan.keySet().contains(sepiaActionPair.a)) {
-                    unitPlan.get(sepiaActionPair.a).push(sepiaStripsPair);
+                    headquartersActions.push(sepiaStripsPair); // The headquarters can only do one thing....so we don't really care.
+                } else if(reversedPlan.keySet().contains(sepiaActionPair.a)) {
+                    reversedPlan.get(sepiaActionPair.a).add(sepiaStripsPair);
                 } else {
-                    Stack<Pair<Action, StripsAction>> newStack = new Stack<>();
-                    newStack.push(sepiaStripsPair);
-                    unitPlan.put(sepiaActionPair.a, newStack);
+                    List<Pair<Action, StripsAction>> newArray = new ArrayList<>();
+                    newArray.add(sepiaStripsPair);
+                    reversedPlan.put(sepiaActionPair.a, newArray);
                 }
             }
-
+        }
+        // Correctly put the stack back together
+        for(Integer id: reversedPlan.keySet()) {
+            unitPlan.put(id, new Stack<Pair<Action, StripsAction>>());
+            for(int i = reversedPlan.get(id).size() - 1; i >= 0; i --) {
+                System.out.println(reversedPlan.get(id).get(i).b);
+                unitPlan.get(id).push(reversedPlan.get(id).get(i));
+            }
         }
 
         return unitPlan;
