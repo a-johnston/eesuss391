@@ -30,13 +30,6 @@ import java.util.stream.Collectors;
  */
 public class GameState implements Comparable<GameState> {
 
-	/**
-	 * @author adam
-	 * 
-	 * imo preferable to reflecting to clone
-	 *
-	 * @param <T>
-	 */
 	private abstract class Copyable<T> {
 		abstract public T copy();
 	}
@@ -83,7 +76,7 @@ public class GameState implements Comparable<GameState> {
 				wood = amount;
 			}
 		}
-		
+
 		void setId(int id) {
 			this.id = id;
 		}
@@ -92,17 +85,13 @@ public class GameState implements Comparable<GameState> {
 		public int hashCode() {
 			int hash = position.hashCode();
 
+			hash ^= 83  * id;
 			hash ^= 307 * wood;
 			hash ^= 569	* gold;
 
 			return hash;
 		}
 
-		/*
-		 * TODO: current use case makes it seem like dummies should be equal
-		 * not when their parameters are equal but when they represent the same
-		 * actual unit. Might need to change this as we move forward.
-		 */
 		@Override
 		public boolean equals(Object obj) {
 			if (obj instanceof DummyUnit) {
@@ -415,10 +404,10 @@ public class GameState implements Comparable<GameState> {
 	public List<GameState> generateChildren() {
 		List<List<StripsAction>> actionLists = new ArrayList<>();
 
-		if (buildPeasants && collectedGold >= 400 && peasants.size() < 3) {
+		if (buildPeasants) {
 			actionLists.add(getTownhallActions());
 		}
-		
+
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null && !unit.hasSomething() && spot.amountLeft > 0) {
@@ -457,22 +446,18 @@ public class GameState implements Comparable<GameState> {
 				actions.add(new MoveAction(unit.id, unit.position, spot.position));
 			}
 		}
+		
 		for (DummyResourceSpot spot: forests) {
 			if (spot.amountLeft > 0) {
 				actions.add(new MoveAction(unit.id, unit.position, spot.position));
 			}
 		}
+		
 		return actions;
 	}
 
 	private boolean nextToTownhall(DummyUnit unit) {
-		for(Position p: townHall.getAdjacentPositions()) {
-			if(unit.position.equals(p)) {
-				return true;
-			}
-		}
-
-		return false;
+		return unit.position.isAdjacent(townHall);
 	}
 
 	/**
@@ -492,13 +477,6 @@ public class GameState implements Comparable<GameState> {
 		int goldCollectionsNeeded = goldMineMovesLeft();
 		int woodCollectionsNeeded = woodMineMovesLeft();
 
-		/*
-		 * TODO:
-		 * This loop figures out what the most expensive peasant is going to be.
-		 * Potentially overestimates as we don't check if resource spot runs out?
-		 * i.e. one very close, one very far, first peasant depletes close one,
-		 * heuristic still treats as if second peasant can go there
-		 */
 		for (DummyUnit peasant: peasants) {
 			cachedHeuristic += 50;
 
@@ -599,7 +577,7 @@ public class GameState implements Comparable<GameState> {
 	 */
 	@Override
 	public int compareTo(GameState o) {
-		return Double.compare(o.heuristic(), heuristic()); // TODO: this is just a placeholder
+		return Double.compare(o.heuristic(), heuristic());
 	}
 
 
@@ -611,8 +589,7 @@ public class GameState implements Comparable<GameState> {
 	 */
 	@Override
 	public boolean equals(Object o) {
-		//  System.out.println("Comparing");
-		return hashCode() == o.hashCode(); // TODO: might want to additionally enforce type checking
+		return o instanceof GameState && hashCode() == o.hashCode();
 	}
 
 	/**
@@ -645,8 +622,6 @@ public class GameState implements Comparable<GameState> {
 		for (DummyUnit peasant : peasants) {
 			hash ^= peasant.hashCode();
 		}
-
-		// TODO: More XOR once we have more member variables
 
 		return hash;
 	}
