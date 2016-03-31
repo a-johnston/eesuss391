@@ -19,6 +19,13 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 	public MultiStripsAction(List<StripsAction> actions) {
 		super(actions);
 	}
+	
+	public List<Pair<Integer, Action>> getActions(Map<Integer, Integer> unitMap) {
+		return stream()
+				.filter(action -> action.getID() != -1)
+				.map(action -> new Pair<>(action.getID(), action.getSepiaAction(unitMap)))
+				.collect(Collectors.toList());
+	}
 
 	@Override
 	public boolean preconditionsMet(GameState state) {
@@ -33,15 +40,13 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 	}
 
 	@Override
-	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
-		return stream()
-				.flatMap(action -> action.getSepiaAction(unitMap).stream())
-				.collect(Collectors.toList());
+	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
+		return null;
 	}
 
 	@Override
 	public int getID() {
-		return 0;
+		return -1;
 	}
 
 	@Override

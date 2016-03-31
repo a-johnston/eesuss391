@@ -74,7 +74,7 @@ public class PEAgent extends Agent {
                 headquartersActions.pop();
                 CreatePeasantAction temp = (CreatePeasantAction) hqStripsAction;
                 this.lastFakeId = temp.getFakeId();
-                nextActions.put(thisState.getTownHallId(), hqStripsAction.getSepiaAction(peasantIdMap).get(0).b);
+                nextActions.put(thisState.getTownHallId(), hqStripsAction.getSepiaAction(peasantIdMap));
             }
         }
         System.out.println(stateView.getTurnNumber());
@@ -101,7 +101,7 @@ public class PEAgent extends Agent {
 //                System.out.println(unitAction.preconditionsMet(thisState));
                 if(unitAction.preconditionsMet(thisState)) {
                     individualPlans.get(fakeID).pop();
-                    nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap).get(0).b);
+                    nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap));
                 } else {
                     if (unitAction instanceof HarvestAction) {
                         nextActions.put(realID, ((HarvestAction) unitAction).preconditionAction(thisState, peasantIdMap));
@@ -207,10 +207,6 @@ public class PEAgent extends Agent {
         Stack<StripsAction> reversedHQPlan = new Stack<>();
         while(!plan.isEmpty()) {
             for(StripsAction stripsAction: plan.pop()) {
-            	if (stripsAction.getID() == -1) {
-            		continue;
-            	}
-            	
                 if(stripsAction instanceof CreatePeasantAction) {
                     reversedHQPlan.push(stripsAction); // The headquarters can only do one thing....so we don't really care.
                 } else if(reversedPlan.keySet().contains(stripsAction.getID())) {
