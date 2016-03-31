@@ -39,7 +39,7 @@ public interface StripsAction {
      *
      * @param state State to apply action to
      */
-    public void apply(GameState state);
+    public GameState apply(GameState state);
     
     /**
      * Returns pairs of Sepia actions that map the acting unit to their action given this StripsAction
