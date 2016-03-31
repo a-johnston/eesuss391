@@ -36,4 +36,9 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 				.flatMap(action -> action.getSepiaAction(unitMap).stream())
 				.collect(Collectors.toList());
 	}
+
+	@Override
+	public int getID() {
+		return 0;
+	}
 }

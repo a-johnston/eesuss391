@@ -43,7 +43,7 @@ public class MoveAction implements StripsAction {
         }
 
         DummyUnit unit = state.getUnit(unitID);
-        return unit != null && unit.getPosition().equals(start);
+        return unit != null;
 	}
 
 	@Override
@@ -54,8 +54,13 @@ public class MoveAction implements StripsAction {
 	@Override
 	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
         return Collections.singletonList(
-				new Pair<>(unitID, Action.createCompoundMove(unitID, end.x, end.y)));
+				new Pair<>(unitMap.get(unitID), Action.createCompoundMove(unitMap.get(unitID), end.x, end.y)));
 	}
+
+    @Override
+    public int getID() {
+        return this.unitID;
+    }
 
     @Override
     public String toString() {

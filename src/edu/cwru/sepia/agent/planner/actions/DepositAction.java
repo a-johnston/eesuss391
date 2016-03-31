@@ -25,10 +25,19 @@ public class DepositAction implements StripsAction {
     @Override
     public boolean preconditionsMet(GameState state) {
     	DummyUnit unit = state.getUnit(unitId);
-    	
-        return unit != null
-           &&  unit.hasSomething()
-           &&  unit.getPosition().move(direction).equals(state.getTownHall());
+    	if (unit == null) {
+            return false;
+        }
+
+        if(!unit.hasSomething()) {
+            return false;
+        }
+
+        if (unit.getPosition().isAdjacent(state.getTownHall())) {
+            this.direction = unit.getPosition().getDirection(state.getTownHall());
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -38,9 +47,15 @@ public class DepositAction implements StripsAction {
 
 	@Override
 	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
+
 		return Collections.singletonList(
 				new Pair<>(
 						unitMap.get(unitId),
-						Action.createPrimitiveDeposit(unitId, direction)));
+						Action.createPrimitiveDeposit(unitMap.get(unitId), direction)));
 	}
+
+    @Override
+    public int getID() {
+        return this.unitId;
+    }
 }

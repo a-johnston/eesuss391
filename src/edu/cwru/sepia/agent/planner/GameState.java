@@ -45,6 +45,11 @@ public class GameState implements Comparable<GameState> {
 		private Position position;
 		private int wood;
 		private int gold;
+
+		public void setId(int id) {
+			this.id = id;
+		}
+
 		private int id;
 
 
@@ -304,16 +309,18 @@ public class GameState implements Comparable<GameState> {
 		return list.stream().map(Copyable::copy).collect(Collectors.toList());
 	}
 
-	public GameState makePeasant() {
+	// Returns the fake id of the built peasant
+	public int makePeasant() {
 		if (collectedGold < GameState.PEASANT_GOLD_COST) {
 			throw new Error("Tried to create peasant with not enough gold!");
 		}
 
 		collectedGold -= PEASANT_GOLD_COST;
 
-		// CREATE PEASANT HERE
-		
-		return this;
+		DummyUnit newPeasant = new DummyUnit(new Position(townHall.x, townHall.y-1)); // Kinda arbitrary but the best we can do I think.
+		peasants.add(newPeasant);
+
+		return newPeasant.id;
 	}
 
 	public void doHarvest(int unitId, int resourceId) {
@@ -321,9 +328,29 @@ public class GameState implements Comparable<GameState> {
 
 		int amountGathered = Math.min(spot.amountLeft, GameState.MAX_PEASANT_HOLD);
 		spot.amountLeft -= amountGathered;
+		if (spot.amountLeft <= 0) {
+			//deleteResourceSpot(spot);
+		}
 
 		getUnit(unitId).give(spot.getType(), amountGathered);
 	}
+
+	public void deleteResourceSpot(DummyResourceSpot spot){
+		for(DummyResourceSpot possibleSpot: forests) {
+			if(spot.position.equals(possibleSpot.position)) {
+				forests.remove(spot);
+				return;
+			}
+		}
+
+		for(DummyResourceSpot possibleSpot: goldmines) {
+			if(spot.position.equals(possibleSpot.position)) {
+				goldmines.remove(spot);
+				return;
+			}
+		}
+	}
+
 
 	public void doDeposit(int unitId) {
 		DummyUnit unit = getUnit(unitId);
@@ -392,7 +419,7 @@ public class GameState implements Comparable<GameState> {
 	public List<GameState> generateChildren() {
 		List<List<StripsAction>> actionLists = new ArrayList<>();
 
-		if (buildPeasants) {
+		if (buildPeasants && collectedGold >= 400 && peasants.size() < 3) {
 			actionLists.add(Collections.singletonList(new CreatePeasantAction(this)));
 		}
 		for (DummyUnit unit : peasants) {
@@ -457,9 +484,10 @@ public class GameState implements Comparable<GameState> {
 		}
 
 		cachedHeuristic = 0.0;
-
 		int goldCollectionsNeeded = goldMineMovesLeft();
 		int woodCollectionsNeeded = woodMineMovesLeft();
+		cachedHeuristic += goldCollectionsNeeded * 100;
+		cachedHeuristic += woodCollectionsNeeded * 100;
 		cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
 
 		int temp;
@@ -567,8 +595,9 @@ public class GameState implements Comparable<GameState> {
 	 */
 	@Override
 	public int compareTo(GameState o) {
-		return Double.compare(getCost(), o.getCost()); // TODO: this is just a placeholder
+		return Double.compare(heuristic(), o.heuristic()); // TODO: this is just a placeholder
 	}
+
 
 	/**
 	 * This will be necessary to use the GameState as a key in a Set or Map.
@@ -599,7 +628,7 @@ public class GameState implements Comparable<GameState> {
 		// of Z\2213Z since gcd(983, 2213) = 1
 		int mult = 983;
 		for (DummyResourceSpot mine : goldmines) {
-			// might need to multiply the ID factor to further distinguish instances 
+			// might need to multiply the ID factor to further distinguish instances
 			hash ^= mult * mine.amountLeft * (mine.id + 1);
 			mult = (mult + 983) % 2213;
 		}
@@ -607,7 +636,7 @@ public class GameState implements Comparable<GameState> {
 		for (DummyResourceSpot forest : forests) {
 			hash ^= mult * forest.amountLeft * (forest.id + 1);
 			mult = (mult + 983) % 2213;
-		} 
+		}
 
 		for (DummyUnit peasant : peasants) {
 			hash ^= peasant.hashCode();

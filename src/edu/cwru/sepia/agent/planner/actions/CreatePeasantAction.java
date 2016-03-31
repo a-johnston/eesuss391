@@ -16,6 +16,14 @@ public class CreatePeasantAction implements StripsAction{
 
 	int townhallId;
 	int peasantTemplateId;
+
+	public int getFakeId() {
+		System.out.println("Fake id: " + fakeId);
+		System.out.println(fakeId);
+		return fakeId;
+	}
+
+	int fakeId = 0;
 	
 	public CreatePeasantAction(GameState state) {
 		townhallId = state.getTownHallId();
@@ -29,12 +37,17 @@ public class CreatePeasantAction implements StripsAction{
 
     @Override
     public void apply(GameState state) {
-    	state.makePeasant();
+    	fakeId = state.makePeasant();
     }
 
 	@Override
 	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
 		return Collections.singletonList(
 				new Pair<>(townhallId, Action.createPrimitiveBuild(townhallId, peasantTemplateId)));
+	}
+
+	@Override
+	public int getID() {
+		return this.townhallId;
 	}
 }

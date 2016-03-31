@@ -102,6 +102,7 @@ public class PlannerAgent extends Agent {
 
         while (!frontier.isEmpty()) {
             current = frontier.poll();
+            // System.out.println(frontier.size());
         	explored.add(current);
             if(current.isGoal()) {
                 return reconstructPath(current);
@@ -110,10 +111,8 @@ public class PlannerAgent extends Agent {
         		if (explored.contains(child)) {
         			continue;
         		}
-                if (!frontier.contains(child)) {
+                if (!frontier.contains(child) && !explored.contains(child)) {
         			frontier.add(child);
-        		} else if (canAddToOpenList(child, frontier)) {
-                    continue;
         		}
         	}
         	
@@ -123,16 +122,6 @@ public class PlannerAgent extends Agent {
         System.err.println("Cannot achieve goal");
         System.exit(0);
         return plan;
-    }
-
-    private boolean canAddToOpenList(GameState neighbor, Queue<GameState> openList) {
-        for (GameState node : openList) {
-            if (neighbor.heuristic() < node.heuristic()) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private Stack<MultiStripsAction> reconstructPath(GameState state) {

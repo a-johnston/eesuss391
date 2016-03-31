@@ -47,4 +47,6 @@ public interface StripsAction {
      * @return
      */
     public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap);
+
+    public int getID();
 }
