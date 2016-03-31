@@ -156,18 +156,18 @@ public class PEAgent extends Agent {
                 System.out.println(result);
                 if(result.getFeedback().equals(ActionFeedback.COMPLETED)){
                     // Solving some sepia bug
-//                    if(result.getAction() instanceof LocatedAction) {
-//                        LocatedAction lastAction = (LocatedAction) result.getAction();
-//                        if(stateView.getUnit(unitID).getXPosition() != lastAction.getX() ||
-//                            stateView.getUnit(unitID).getYPosition() != lastAction.getY()) {
-//                            actionMap.put(unitID, Action.createCompoundMove(
-//                                unitID,
-//                                lastAction.getX(),
-//                                lastAction.getY()
-//                            ));
-//                            return false;
-//                        }
-//                    }
+                    if(result.getAction() instanceof LocatedAction) {
+                        LocatedAction lastAction = (LocatedAction) result.getAction();
+                        if(stateView.getUnit(unitID).getXPosition() != lastAction.getX() ||
+                            stateView.getUnit(unitID).getYPosition() != lastAction.getY()) {
+                            actionMap.put(unitID, Action.createCompoundMove(
+                                unitID,
+                                lastAction.getX(),
+                                lastAction.getY()
+                            ));
+                            return false;
+                        }
+                    }
                     return true;
                 }
                 else if(result.getFeedback().equals(ActionFeedback.FAILED)){
