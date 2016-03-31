@@ -19,7 +19,6 @@ public class CreatePeasantAction implements StripsAction{
 
 	public int getFakeId() {
 		System.out.println("Fake id: " + fakeId);
-		System.out.println(fakeId);
 		return fakeId;
 	}
 

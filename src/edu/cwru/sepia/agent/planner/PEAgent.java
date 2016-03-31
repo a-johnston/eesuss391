@@ -142,6 +142,7 @@ public class PEAgent extends Agent {
 
         for(BirthLog log: historyView.getBirthLogs(stateView.getTurnNumber() - 1)) {
             peasantIdMap.put(lastFakeId, log.getNewUnitID());
+            lastFakeId = null;
             System.out.println("Added unit to map");
             break;
         }
@@ -187,11 +188,12 @@ public class PEAgent extends Agent {
     private Map<Integer, Stack<StripsAction>> getIndividualPlans() {
         Map<Integer, Stack<StripsAction>> unitPlan = new HashMap<>();
         Map<Integer, List<StripsAction>> reversedPlan = new HashMap<>();
+        Stack<StripsAction> reversedHQPlan = new Stack<>();
         while(!plan.isEmpty()) {
             MultiStripsAction actions = plan.pop();
             for(StripsAction stripsAction: actions) {
                 if(stripsAction instanceof CreatePeasantAction) {
-                    headquartersActions.push(stripsAction); // The headquarters can only do one thing....so we don't really care.
+                    reversedHQPlan.push(stripsAction); // The headquarters can only do one thing....so we don't really care.
                 } else if(reversedPlan.keySet().contains(stripsAction.getID())) {
                     reversedPlan.get(stripsAction.getID()).add(stripsAction);
                 } else {
@@ -201,6 +203,7 @@ public class PEAgent extends Agent {
                 }
             }
         }
+
         // Correctly put the stack back together
         System.out.println("Plan ids:");
         for(Integer id: reversedPlan.keySet()) {
@@ -210,6 +213,11 @@ public class PEAgent extends Agent {
             for(int i = reversedPlan.get(id).size() - 1; i >= 0; i --) {
                 unitPlan.get(id).push(reversedPlan.get(id).get(i));
             }
+        }
+        System.out.println("New built fake ids: ");
+        while(!reversedHQPlan.isEmpty()) {
+            System.out.println(((CreatePeasantAction) reversedHQPlan.peek()).getFakeId()); 
+            headquartersActions.push(reversedHQPlan.pop());
         }
 
         return unitPlan;
