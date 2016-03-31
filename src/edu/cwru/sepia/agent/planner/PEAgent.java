@@ -24,8 +24,8 @@ public class PEAgent extends Agent {
 
 	// The plan being executed
     private Stack<MultiStripsAction> plan = null;
-    private Map<Integer, Stack<StripsAction>> individualPlans = null;
-    private Stack<StripsAction> headquartersActions = new Stack<>();
+    private Map<Integer, Stack<StripsAction>> individualPlans;
+    private Stack<StripsAction> headquartersActions;
     // maps the real unit Ids to the plan's unit ids
     // when you're planning you won't know the true unit IDs that sepia assigns. So you'll use placeholders (1, 2, 3).
     // this maps those placeholders to the actual unit IDs.
@@ -36,7 +36,6 @@ public class PEAgent extends Agent {
         super(playernum);
         peasantIdMap = new HashMap<>();
         this.plan = plan;
-
     }
 
     @Override
@@ -60,6 +59,7 @@ public class PEAgent extends Agent {
         this.addToUnitMap(stateView, historyView);
 
         Map<Integer, Action> nextActions = new HashMap<Integer, Action>();
+        
         if(individualPlans == null) {
             individualPlans = getIndividualPlans();
         }
@@ -190,38 +190,32 @@ public class PEAgent extends Agent {
 
     private Map<Integer, Stack<StripsAction>> getIndividualPlans() {
         Map<Integer, Stack<StripsAction>> unitPlan = new HashMap<>();
-        Map<Integer, List<StripsAction>> reversedPlan = new HashMap<>();
-        Stack<StripsAction> reversedHQPlan = new Stack<>();
+        headquartersActions = new Stack<>();
+        
         while(!plan.isEmpty()) {
             for(StripsAction stripsAction: plan.pop()) {
                 if(stripsAction instanceof CreatePeasantAction) {
-                    reversedHQPlan.push(stripsAction); // The headquarters can only do one thing....so we don't really care.
-                } else if(reversedPlan.keySet().contains(stripsAction.getID())) {
-                    reversedPlan.get(stripsAction.getID()).add(stripsAction);
-                } else {
-                    List<StripsAction> newArray = new ArrayList<>();
-                    newArray.add(stripsAction);
-                    reversedPlan.put(stripsAction.getID(), newArray);
+                    headquartersActions.push(stripsAction);
+                    continue;
                 }
+                
+                Stack<StripsAction> stack = unitPlan.get(stripsAction.getID());
+                
+                if (stack == null) {
+                	stack = new Stack<>();
+                    unitPlan.put(stripsAction.getID(), stack);
+                }
+                
+                unitPlan.get(stripsAction.getID()).add(stripsAction);
             }
         }
 
         // Correctly put the stack back together
-        System.out.println("Plan ids:");
-        for(Integer id: reversedPlan.keySet()) {
-            System.out.println(id);
-            System.out.println(reversedPlan.get(id).size());
-            unitPlan.put(id, new Stack<StripsAction>());
-            for(int i = reversedPlan.get(id).size() - 1; i >= 0; i --) {
-                System.out.println(reversedPlan.get(id).get(i));
-                unitPlan.get(id).push(reversedPlan.get(id).get(i));
-            }
+        for (Stack<StripsAction> stack : unitPlan.values()) {
+        	Collections.reverse(stack);
         }
-        System.out.println("New built fake ids: ");
-        while(!reversedHQPlan.isEmpty()) {
-            System.out.println(((CreatePeasantAction) reversedHQPlan.peek()).getFakeId());
-            headquartersActions.push(reversedHQPlan.pop());
-        }
+        
+        Collections.reverse(headquartersActions);
 
         return unitPlan;
     }
