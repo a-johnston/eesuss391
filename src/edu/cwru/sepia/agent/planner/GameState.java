@@ -421,7 +421,7 @@ public class GameState implements Comparable<GameState> {
 		List<List<StripsAction>> actionLists = new ArrayList<>();
 
 		if (buildPeasants && collectedGold >= 400 && peasants.size() < 3) {
-			actionLists.add(Collections.singletonList(new CreatePeasantAction(this)));
+			actionLists.add(getTownhallActions());
 		}
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
@@ -448,6 +448,13 @@ public class GameState implements Comparable<GameState> {
 				})
 				.filter(GameState::isValid)
 				.collect(Collectors.toList());
+	}
+	
+	private List<StripsAction> getTownhallActions() {
+		List<StripsAction> townhallActions = new ArrayList<>();
+		townhallActions.add(new CreatePeasantAction(this));
+		townhallActions.add(new NullAction());
+		return townhallActions;
 	}
 
     private List<StripsAction> getMoveToResourceActions(DummyUnit unit) {
@@ -501,6 +508,8 @@ public class GameState implements Comparable<GameState> {
 		 * heuristic still treats as if second peasant can go there
 		 */
 		for (DummyUnit peasant: peasants) {
+			cachedHeuristic += 50;
+			
 			if (peasant.hasSomething()) {
 				cachedHeuristic -= peasant.position.chebyshevDistance(townHall);
 				
@@ -518,7 +527,7 @@ public class GameState implements Comparable<GameState> {
 			}
 		}
 		
-		cachedHeuristic -= goldCollectionsNeeded * 10;
+		cachedHeuristic -= goldCollectionsNeeded * 15;
 		cachedHeuristic -= woodCollectionsNeeded * 10;
 		
 		System.out.println(cachedHeuristic);
