@@ -370,8 +370,26 @@ public class GameState implements Comparable<GameState> {
 				return spot;
 			}
 		}
+		
+		if (parent != null) {
+			DummyResourceSpot spot = parent.getResourceSpot(id);
+			
+			if (spot.type == Type.TREE) {
+				return forests.get(0);
+			} else {
+				return goldmines.get(0);
+			}
+		}
 
 		return null;
+	}
+	
+	public DummyResourceSpot getResourceOfType(Type type) {
+		if (type == Type.GOLD_MINE) {
+			return goldmines.get(0);
+		} else {
+			return forests.get(0);
+		}
 	}
 
 	/**
@@ -411,7 +429,7 @@ public class GameState implements Comparable<GameState> {
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null && !unit.hasSomething() && spot.amountLeft > 0) {
-				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position))));
+				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, spot.type, unit.position.getDirection(spot.position))));
 			} else if (unit.hasSomething()) {
 				if (nextToTownhall(unit)) {
 					actionLists.add(Collections.singletonList(new DepositAction(unit.id, unit.position.getDirection(townHall))));

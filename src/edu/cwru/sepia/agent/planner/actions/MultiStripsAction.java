@@ -28,7 +28,11 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 	public GameState apply(GameState state) {
 		// streams API doesn't cover this use case
 		GameState child = new GameState(state, this);
-		stream().forEach(action -> action.apply(child));
+		stream().forEach(action -> {
+			if (action.preconditionsMet(state)) {
+				action.apply(child);
+			}
+		});
 		return child;
 	}
 

@@ -7,6 +7,7 @@ import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.agent.planner.GameState.DummyResourceSpot;
 import edu.cwru.sepia.agent.planner.Position;
+import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.util.Direction;
 
 /**
@@ -16,11 +17,13 @@ public class HarvestAction implements StripsAction {
     int unitId;
     int resourceId;
     Direction direction;
+    ResourceNode.Type type;
 
-    public HarvestAction(int unitID, int resourceID, Direction direction) {
+    public HarvestAction(int unitID, int resourceID, ResourceNode.Type type, Direction direction) {
         this.unitId 	= unitID;
         this.resourceId = resourceID;
         this.direction	= direction;
+        this.type		= type;
     }
 
     @Override
@@ -36,8 +39,14 @@ public class HarvestAction implements StripsAction {
     }
 
     public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
-        Position spot = state.getResourceSpot(resourceId).getPosition();
-        DummyUnit unit = state.getUnit(unitId);
+        DummyResourceSpot resource = state.getResourceSpot(resourceId);
+        
+        if (resource == null) {
+        	resource = state.getResourceOfType(type);
+        }
+        
+        Position spot = resource.getPosition();
+
         Position newPos;
         if(direction.equals(Direction.EAST)){
             newPos = new Position(spot.x-1, spot.y);
