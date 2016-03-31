@@ -155,7 +155,7 @@ public class GameState implements Comparable<GameState> {
 		public Type getType() {
 			return type;
 		}
-		
+
 		public int getAmount() {
 			return amountLeft;
 		}
@@ -254,7 +254,7 @@ public class GameState implements Comparable<GameState> {
 
 				DummyUnit peasant = new DummyUnit(
 						new Position(unit.getXPosition(), unit.getYPosition())
-				);
+						);
 				peasant.id = unit.getID();
 
 				if(unit.getCargoAmount() != 0) {
@@ -354,14 +354,14 @@ public class GameState implements Comparable<GameState> {
 
 	public void doDeposit(int unitId) {
 		DummyUnit unit = getUnit(unitId);
-		
-        if (unit.wood > 0) {
-            collectedWood += unit.wood;
-            unit.wood = 0;
-        } else {
-            collectedGold += unit.gold;
-            unit.gold = 0;
-        }
+
+		if (unit.wood > 0) {
+			collectedWood += unit.wood;
+			unit.wood = 0;
+		} else {
+			collectedGold += unit.gold;
+			unit.gold = 0;
+		}
 	}
 
 	public DummyUnit getUnit(int id) {
@@ -400,7 +400,7 @@ public class GameState implements Comparable<GameState> {
 	public boolean isGoal() {
 		return (!needMoreGold() && !needMoreWood());
 	}
-	
+
 	/**
 	 * Determines if the current GameState is valid or not.
 	 * 
@@ -433,9 +433,9 @@ public class GameState implements Comparable<GameState> {
 				} else {
 					actionLists.add(Collections.singletonList(new MoveAction(unit.id, unit.position, townHall)));
 				}
-            } else {
-                actionLists.add(getMoveToResourceActions(unit));
-            }
+			} else {
+				actionLists.add(getMoveToResourceActions(unit));
+			}
 		}
 
 		return CartesianProduct.stream(actionLists)
@@ -449,7 +449,7 @@ public class GameState implements Comparable<GameState> {
 				.filter(GameState::isValid)
 				.collect(Collectors.toList());
 	}
-	
+
 	private List<StripsAction> getTownhallActions() {
 		List<StripsAction> townhallActions = new ArrayList<>();
 		townhallActions.add(new CreatePeasantAction(this));
@@ -457,31 +457,31 @@ public class GameState implements Comparable<GameState> {
 		return townhallActions;
 	}
 
-    private List<StripsAction> getMoveToResourceActions(DummyUnit unit) {
-        List<StripsAction> actions = new ArrayList<>();
+	private List<StripsAction> getMoveToResourceActions(DummyUnit unit) {
+		List<StripsAction> actions = new ArrayList<>();
 
-        for(DummyResourceSpot spot: goldmines) {
+		for (DummyResourceSpot spot: goldmines) {
 			if(spot.amountLeft > 0) {
 				actions.add(new MoveAction(unit.id, unit.position, spot.position));
 			}
-        }
-        for(DummyResourceSpot spot: forests) {
+		}
+		for (DummyResourceSpot spot: forests) {
 			if (spot.amountLeft > 0) {
 				actions.add(new MoveAction(unit.id, unit.position, spot.position));
 			}
 		}
-        return actions;
-    }
+		return actions;
+	}
 
-    private boolean nextToTownhall(DummyUnit unit) {
-        for(Position p: townHall.getAdjacentPositions()) {
-            if(unit.position.equals(p)) {
-                return true;
-            }
-        }
+	private boolean nextToTownhall(DummyUnit unit) {
+		for(Position p: townHall.getAdjacentPositions()) {
+			if(unit.position.equals(p)) {
+				return true;
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 
 	/**
 	 * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
@@ -509,14 +509,14 @@ public class GameState implements Comparable<GameState> {
 		 */
 		for (DummyUnit peasant: peasants) {
 			cachedHeuristic += 50;
-			
+
 			if (peasant.hasSomething()) {
 				cachedHeuristic -= peasant.position.chebyshevDistance(townHall);
-				
-				if(peasant.gold >0 ) {
-					goldCollectionsNeeded --;
+
+				if (peasant.gold > 0 ) {
+					goldCollectionsNeeded--;
 				} else {
-					woodCollectionsNeeded --;
+					woodCollectionsNeeded--;
 				}
 			} else if (goldCollectionsNeeded > 0) {
 				cachedCost -= getShortestRoundtrip(peasant.position, goldmines);
@@ -526,10 +526,10 @@ public class GameState implements Comparable<GameState> {
 				woodCollectionsNeeded--;
 			}
 		}
-		
+
 		cachedHeuristic -= goldCollectionsNeeded * 15;
 		cachedHeuristic -= woodCollectionsNeeded * 10;
-		
+
 		System.out.println(cachedHeuristic);
 
 		return cachedHeuristic;
@@ -619,7 +619,7 @@ public class GameState implements Comparable<GameState> {
 	 */
 	@Override
 	public boolean equals(Object o) {
-        //  System.out.println("Comparing");
+		//  System.out.println("Comparing");
 		return hashCode() == o.hashCode(); // TODO: might want to additionally enforce type checking
 	}
 
@@ -671,15 +671,15 @@ public class GameState implements Comparable<GameState> {
 		return peasantTemplateId;
 	}
 
-    @Override
-    public String toString() {
-        return "GameState{" +
-                ", peasants=" + peasants.get(0).getId() +
-                ", collectedGold=" + collectedGold +
-                ", collectedWood=" + collectedWood +
-                ", action=" + action +
-                ", cachedHeuristic=" + cachedHeuristic +
-                ", cachedCost=" + cachedCost +
-                '}';
-    }
+	@Override
+	public String toString() {
+		return "GameState{" +
+				", peasants=" + peasants.get(0).getId() +
+				", collectedGold=" + collectedGold +
+				", collectedWood=" + collectedWood +
+				", action=" + action +
+				", cachedHeuristic=" + cachedHeuristic +
+				", cachedCost=" + cachedCost +
+				'}';
+	}
 }
