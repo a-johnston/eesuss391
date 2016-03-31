@@ -21,18 +21,19 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 
 	@Override
 	public boolean preconditionsMet(GameState state) {
-		return stream().allMatch(action -> action.preconditionsMet(state));
+		GameState child = new GameState(state, this);
+		return stream().allMatch(action -> {
+			boolean met = action.preconditionsMet(child);
+			if (met) action.apply(child);
+			return met;
+		});
 	}
 
 	@Override
 	public GameState apply(GameState state) {
 		// streams API doesn't cover this use case
 		GameState child = new GameState(state, this);
-		stream().forEach(action -> {
-			if (action.preconditionsMet(state)) {
-				action.apply(child);
-			}
-		});
+		stream().forEach(action -> action.apply(child));
 		return child;
 	}
 
