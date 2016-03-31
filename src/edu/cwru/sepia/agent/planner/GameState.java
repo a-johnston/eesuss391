@@ -511,7 +511,7 @@ public class GameState implements Comparable<GameState> {
 				.mapToInt(resource -> {
 					return pos.chebyshevDistance(resource.position) + resource.distanceToTownHall;
 				})
-				.min().getAsInt();
+				.min().orElse(0);
 	}
 
 	public DummyResourceSpot getAdjacentResource(Position pos) {
