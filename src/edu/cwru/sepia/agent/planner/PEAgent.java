@@ -84,37 +84,17 @@ public class PEAgent extends Agent {
             if(!unitIsFree(stateView, historyView, realID, nextActions)) {
                 continue;
             }
-//            System.out.println("Unit:" + fakeID.toString());
-//            try {
-//                System.out.println(individualPlans.get(fakeID).isEmpty());
-//            } catch (Exception e) {
-//                System.err.println(e);
-//                System.err.println(individualPlans.get(fakeID));
-//                for(Integer fake: peasantIdMap.keySet()) {
-//                    System.err.println(fake);
-//                }
-//                System.exit(0);
-//            }
+            
             if(unitHasSomethingToDo(fakeID)) {
                 StripsAction unitAction = individualPlans.get(fakeID).peek();
-//                System.out.println(unitAction);
-//                System.out.println(unitAction.preconditionsMet(thisState));
+                
                 if(unitAction.preconditionsMet(thisState)) {
                     individualPlans.get(fakeID).pop();
                     nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap));
-                } else {
-                    if (unitAction instanceof HarvestAction) {
-                        nextActions.put(realID, ((HarvestAction) unitAction).preconditionAction(thisState, peasantIdMap));
-                    } else if (unitAction instanceof DepositAction) {
-                        nextActions.put(realID, ((DepositAction) unitAction).preconditionAction(thisState, peasantIdMap));
-                    }
                 }
             }
         }
-//        System.out.println(stateView.getTurnNumber());
-//        for(Integer i: nextActions.keySet()) {
-//            System.out.println(nextActions.get(i));
-//        }
+        
         return nextActions;
     }
 
@@ -179,8 +159,7 @@ public class PEAgent extends Agent {
                         }
                     }
                     return true;
-                }
-                else if(result.getFeedback().equals(ActionFeedback.FAILED)){
+                } else if (result.getAction() instanceof LocatedAction && result.getFeedback().equals(ActionFeedback.FAILED)){
                     LocatedAction lastAction = (LocatedAction) result.getAction();
 
                     actionMap.put(unitID, Action.createCompoundMove(

@@ -474,6 +474,12 @@ public class GameState implements Comparable<GameState> {
 		if (cachedHeuristic != null) {
 			return cachedHeuristic;
 		}
+		
+		if (collectedGold >= requiredGold + MAX_PEASANT_HOLD
+		 || collectedWood >= requiredWood + MAX_PEASANT_HOLD) {
+			cachedHeuristic = -1000.0;
+			return cachedHeuristic;
+		}
 
 		cachedHeuristic = 100.0;
 		double goldCollectionsNeeded = goldMineMovesLeft();
@@ -499,7 +505,7 @@ public class GameState implements Comparable<GameState> {
 			}
 		}
 
-		cachedHeuristic -= goldCollectionsNeeded * 15;
+		cachedHeuristic -= goldCollectionsNeeded * 12;
 		cachedHeuristic -= woodCollectionsNeeded * 10;
 
 		System.out.println(cachedHeuristic);
