@@ -440,18 +440,20 @@ public class GameState implements Comparable<GameState> {
 
 	private List<StripsAction> getMoveToResourceActions(DummyUnit unit) {
 		List<StripsAction> actions = new ArrayList<>();
-
-		for (DummyResourceSpot spot: goldmines) {
-			if(spot.amountLeft > 0) {
-				actions.add(new MoveAction(unit.id, unit.position, spot.position));
+		//if(needMoreGold()) {
+			for (DummyResourceSpot spot : goldmines) {
+				if (spot.amountLeft > 0) {
+					actions.add(new MoveAction(unit.id, unit.position, spot.position));
+				}
 			}
-		}
-		
-		for (DummyResourceSpot spot: forests) {
-			if (spot.amountLeft > 0) {
-				actions.add(new MoveAction(unit.id, unit.position, spot.position));
+		//}
+		//if(needMoreWood()) {
+			for (DummyResourceSpot spot : forests) {
+				if (spot.amountLeft > 0) {
+					actions.add(new MoveAction(unit.id, unit.position, spot.position));
+				}
 			}
-		}
+		//}
 		
 		return actions;
 	}

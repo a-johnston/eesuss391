@@ -102,6 +102,12 @@ public class PEAgent extends Agent {
                 if(unitAction.preconditionsMet(thisState)) {
                     individualPlans.get(fakeID).pop();
                     nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap));
+                } else {
+                    if (unitAction instanceof HarvestAction) {
+                        nextActions.put(realID, ((HarvestAction) unitAction).preconditionAction(thisState, peasantIdMap));
+                    } else if (unitAction instanceof DepositAction) {
+                        nextActions.put(realID, ((DepositAction) unitAction).preconditionAction(thisState, peasantIdMap));
+                    }
                 }
             }
         }
@@ -160,6 +166,10 @@ public class PEAgent extends Agent {
                         LocatedAction lastAction = (LocatedAction) result.getAction();
                         if(stateView.getUnit(unitID).getXPosition() != lastAction.getX() ||
                             stateView.getUnit(unitID).getYPosition() != lastAction.getY()) {
+                            System.err.println("Retrying");
+                            System.err.println(unitID);
+                            System.err.println(lastAction.getX());
+                            System.err.println(lastAction.getY());
                             actionMap.put(unitID, Action.createCompoundMove(
                                 unitID,
                                 lastAction.getX(),

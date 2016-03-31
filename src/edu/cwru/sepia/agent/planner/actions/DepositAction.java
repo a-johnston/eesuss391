@@ -5,6 +5,7 @@ import java.util.Map;
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
+import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.util.Direction;
 
 /**
@@ -28,6 +29,17 @@ public class DepositAction implements StripsAction {
         }
 
         return unit.getPosition().isAdjacent(state.getTownHall());
+    }
+
+    public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
+        Position spot = state.getTownHall();
+        DummyUnit unit = state.getUnit(unitId);
+        for(Position p: spot.getAdjacentPositions()){
+            if(direction.equals(unit.getPosition().getDirection(p))){
+                return Action.createCompoundMove(unitMap.get(unitId), p.x, p.y);
+            }
+        }
+        return null;
     }
 
     @Override
