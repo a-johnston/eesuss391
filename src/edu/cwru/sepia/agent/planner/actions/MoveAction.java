@@ -43,7 +43,13 @@ public class MoveAction implements StripsAction {
         }
 
         DummyUnit unit = state.getUnit(unitID);
-        return unit != null;
+        if (unit == null) {
+            return false;
+        } else {
+            return true;
+        }
+
+
 	}
 
 	@Override

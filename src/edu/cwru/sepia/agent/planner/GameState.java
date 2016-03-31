@@ -43,8 +43,8 @@ public class GameState implements Comparable<GameState> {
 
 	public class DummyUnit extends Copyable<DummyUnit> {
 		private Position position;
-		private int wood;
-		private int gold;
+		private int wood = 0;
+		private int gold = 0;
 
 		public void setId(int id) {
 			this.id = id;
@@ -83,9 +83,9 @@ public class GameState implements Comparable<GameState> {
 
 		public void give(Type type, int amount) {
 			if (type == Type.GOLD_MINE) {
-				gold += amount;
+				gold = amount;
 			} else {
-				wood += amount;
+				wood = amount;
 			}
 		}
 
@@ -310,7 +310,7 @@ public class GameState implements Comparable<GameState> {
 	}
 
 	// Returns the fake id of the built peasant
-	public int makePeasant() {
+	public void makePeasant(int id) {
 		if (collectedGold < GameState.PEASANT_GOLD_COST) {
 			throw new Error("Tried to create peasant with not enough gold!");
 		}
@@ -318,9 +318,9 @@ public class GameState implements Comparable<GameState> {
 		collectedGold -= PEASANT_GOLD_COST;
 
 		DummyUnit newPeasant = new DummyUnit(new Position(townHall.x, townHall.y-1)); // Kinda arbitrary but the best we can do I think.
+		newPeasant.setId(id);
 		peasants.add(newPeasant);
 
-		return newPeasant.id;
 	}
 
 	public void doHarvest(int unitId, int resourceId) {
@@ -425,7 +425,7 @@ public class GameState implements Comparable<GameState> {
 		for (DummyUnit unit : peasants) {
             List<StripsAction> peasantList = new ArrayList<>();
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
-			if (spot != null && !unit.hasSomething()) {
+			if (spot != null && !unit.hasSomething() && spot.amountLeft > 0) {
 				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position))));
 			} else if (unit.hasSomething() && !nextToTownhall(unit)){
                 actionLists.add(Collections.singletonList(new MoveAction(unit.id, unit.position, townHall)));
@@ -452,11 +452,15 @@ public class GameState implements Comparable<GameState> {
         List<StripsAction> actions = new ArrayList<>();
 
         for(DummyResourceSpot spot: goldmines) {
-            actions.add(new MoveAction(unit.id, unit.position, spot.position));
+			if(spot.amountLeft > 0) {
+				actions.add(new MoveAction(unit.id, unit.position, spot.position));
+			}
         }
         for(DummyResourceSpot spot: forests) {
-            actions.add(new MoveAction(unit.id, unit.position, spot.position));
-        }
+			if (spot.amountLeft > 0) {
+				actions.add(new MoveAction(unit.id, unit.position, spot.position));
+			}
+		}
         return actions;
     }
 
@@ -486,9 +490,8 @@ public class GameState implements Comparable<GameState> {
 		cachedHeuristic = 0.0;
 		int goldCollectionsNeeded = goldMineMovesLeft();
 		int woodCollectionsNeeded = woodMineMovesLeft();
-		cachedHeuristic += goldCollectionsNeeded * 100;
-		cachedHeuristic += woodCollectionsNeeded * 100;
-		cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
+//		cachedHeuristic += goldCollectionsNeeded * 100;
+//		cachedHeuristic += woodCollectionsNeeded * 100;
 
 		int temp;
 		int max = 0;
@@ -503,6 +506,11 @@ public class GameState implements Comparable<GameState> {
 			temp = 0;
 			if (peasant.hasSomething()) {
 				temp += peasant.position.chebyshevDistance(townHall);
+				if(peasant.gold >0 ) {
+					goldCollectionsNeeded --;
+				} else {
+					woodCollectionsNeeded --;
+				}
 			} else if (goldCollectionsNeeded > 0) {
 				temp += getShortestRoundtrip(peasant.position, goldmines);
 				goldCollectionsNeeded--;
@@ -517,8 +525,13 @@ public class GameState implements Comparable<GameState> {
 		}
 
 		cachedHeuristic += max;
-		cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * ceilDivide(goldMineMovesLeft(), peasants.size());
-		cachedHeuristic += getShortestRoundtrip(townHall, forests) * ceilDivide(woodMineMovesLeft(), peasants.size());
+		cachedHeuristic += (goldCollectionsNeeded + woodCollectionsNeeded)/peasants.size(); // Not sure if i can divide this value by the number of units left and still have it admissible
+		if (goldCollectionsNeeded > 0 ) {
+			cachedHeuristic += getShortestRoundtrip(townHall, goldmines) * ceilDivide(goldCollectionsNeeded, peasants.size());
+		}
+		if (woodCollectionsNeeded > 0) {
+			cachedHeuristic += getShortestRoundtrip(townHall, forests) * ceilDivide(woodCollectionsNeeded, peasants.size());
+		}
 
 		return cachedHeuristic;
 	}

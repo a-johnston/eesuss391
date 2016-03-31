@@ -34,7 +34,7 @@ public class DepositAction implements StripsAction {
         }
 
         if (unit.getPosition().isAdjacent(state.getTownHall())) {
-            this.direction = unit.getPosition().getDirection(state.getTownHall());
+            //this.direction = unit.getPosition().getDirection(state.getTownHall());
             return true;
         }
         return false;

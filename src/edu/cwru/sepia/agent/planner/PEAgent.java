@@ -86,7 +86,7 @@ public class PEAgent extends Agent {
                 nextActions.put(thisState.getTownHallId(), hqStripsAction.getSepiaAction(peasantIdMap).get(0).b);
             }
         }
-        //System.out.println(stateView.getTurnNumber());
+        System.out.println(stateView.getTurnNumber());
 
         for(Integer fakeID: peasantIdMap.keySet()) {
             Integer realID = peasantIdMap.get(fakeID);
@@ -162,14 +162,29 @@ public class PEAgent extends Agent {
         Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, stateView.getTurnNumber() - 1);
         for (ActionResult result : actionResults.values()) {
             if (result.getAction().getUnitId() == unitID) {
-                //System.out.println(result);
+                System.out.println(result);
                 if(result.getFeedback().equals(ActionFeedback.COMPLETED)){
+                    // Solving some sepia bug
+//                    if(result.getAction() instanceof LocatedAction) {
+//                        LocatedAction lastAction = (LocatedAction) result.getAction();
+//                        if(stateView.getUnit(unitID).getXPosition() != lastAction.getX() ||
+//                            stateView.getUnit(unitID).getYPosition() != lastAction.getY()) {
+//                            actionMap.put(unitID, Action.createCompoundMove(
+//                                unitID,
+//                                lastAction.getX(),
+//                                lastAction.getY()
+//                            ));
+//                            return false;
+//                        }
+//                    }
                     return true;
-                } else if(result.getFeedback().equals(ActionFeedback.FAILED)){
+                }
+                else if(result.getFeedback().equals(ActionFeedback.FAILED)){
                     LocatedAction lastAction = (LocatedAction) result.getAction();
+
                     actionMap.put(unitID, Action.createCompoundMove(
                             unitID,
-                            lastAction.getX()-1,
+                            lastAction.getX(),
                             lastAction.getY()
                     ));
                     return false;
@@ -211,12 +226,13 @@ public class PEAgent extends Agent {
             System.out.println(reversedPlan.get(id).size());
             unitPlan.put(id, new Stack<StripsAction>());
             for(int i = reversedPlan.get(id).size() - 1; i >= 0; i --) {
+                System.out.println(reversedPlan.get(id).get(i));
                 unitPlan.get(id).push(reversedPlan.get(id).get(i));
             }
         }
         System.out.println("New built fake ids: ");
         while(!reversedHQPlan.isEmpty()) {
-            System.out.println(((CreatePeasantAction) reversedHQPlan.peek()).getFakeId()); 
+            System.out.println(((CreatePeasantAction) reversedHQPlan.peek()).getFakeId());
             headquartersActions.push(reversedHQPlan.pop());
         }
 

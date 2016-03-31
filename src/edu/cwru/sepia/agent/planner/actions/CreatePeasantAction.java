@@ -22,11 +22,12 @@ public class CreatePeasantAction implements StripsAction{
 		return fakeId;
 	}
 
-	int fakeId = 0;
+	int fakeId;
 	
 	public CreatePeasantAction(GameState state) {
 		townhallId = state.getTownHallId();
 		peasantTemplateId = state.getPeasantTemplateId();
+		fakeId = (int) (Integer.MAX_VALUE * Math.random());
 	}
 	
     @Override
@@ -36,7 +37,7 @@ public class CreatePeasantAction implements StripsAction{
 
     @Override
     public void apply(GameState state) {
-    	fakeId = state.makePeasant();
+    	state.makePeasant(fakeId);
     }
 
 	@Override
