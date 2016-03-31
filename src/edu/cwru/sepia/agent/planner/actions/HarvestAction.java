@@ -36,7 +36,7 @@ public class HarvestAction implements StripsAction {
     }
 
     public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
-        Position spot = state.getTownHall();
+        Position spot = state.getResourceSpot(resourceId).getPosition();
         DummyUnit unit = state.getUnit(unitId);
         Position newPos;
         if(direction.equals(Direction.EAST)){
