@@ -486,7 +486,7 @@ public class GameState implements Comparable<GameState> {
 		double woodCollectionsNeeded = woodMineMovesLeft();
 
 		for (DummyUnit peasant: peasants) {
-			cachedHeuristic += 50;
+			cachedHeuristic += 100;
 
 			if (peasant.hasSomething()) {
 				cachedHeuristic -= peasant.position.chebyshevDistance(townHall);
@@ -504,10 +504,12 @@ public class GameState implements Comparable<GameState> {
 				woodCollectionsNeeded--;
 			}
 		}
-
-		cachedHeuristic -= goldCollectionsNeeded * 12;
-		cachedHeuristic -= woodCollectionsNeeded * 10;
-
+		if(goldCollectionsNeeded > 0) {
+			cachedHeuristic -= (goldCollectionsNeeded * 40)/(peasants.size());
+		}
+		if(woodCollectionsNeeded > 0) {
+			cachedHeuristic -= (woodCollectionsNeeded * 10)/(peasants.size());
+		}
 		System.out.println(cachedHeuristic);
 
 		return cachedHeuristic;

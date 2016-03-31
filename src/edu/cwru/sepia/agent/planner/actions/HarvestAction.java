@@ -6,6 +6,7 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.agent.planner.GameState.DummyResourceSpot;
+import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.util.Direction;
 
 /**
@@ -32,6 +33,31 @@ public class HarvestAction implements StripsAction {
         }
         
         return canHarvest(spot, unit);
+    }
+
+    public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
+        Position spot = state.getTownHall();
+        DummyUnit unit = state.getUnit(unitId);
+        Position newPos;
+        if(direction.equals(Direction.EAST)){
+            newPos = new Position(spot.x-1, spot.y);
+        } else if(direction.equals(Direction.SOUTHEAST)) {
+            newPos = new Position(spot.x-1, spot.y-1);
+        } else if (direction.equals(Direction.SOUTH)) {
+            newPos = new Position(spot.x, spot.y-1);
+        } else if (direction.equals(Direction.SOUTHWEST)) {
+            newPos = new Position(spot.x + 1, spot.y-1);
+        } else if (direction.equals(Direction.WEST)) {
+            newPos = new Position(spot.x + 1, spot.y);
+        } else if (direction.equals(Direction.NORTHWEST)) {
+            newPos = new Position(spot.x + 1, spot.y + 1);
+        } else if (direction.equals(Direction.NORTHEAST)){
+            newPos = new Position(spot.x + 1, spot.y - 1);
+        } else { // North
+            newPos = new Position(spot.x , spot.y + 1);
+        }
+
+        return Action.createCompoundMove(unitMap.get(unitId), newPos.x, newPos.y);
     }
 
     private boolean canHarvest(GameState.DummyResourceSpot harvestSpot, GameState.DummyUnit unit) {

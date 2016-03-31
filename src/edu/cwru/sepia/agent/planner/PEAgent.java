@@ -87,11 +87,19 @@ public class PEAgent extends Agent {
             
             if(unitHasSomethingToDo(fakeID)) {
                 StripsAction unitAction = individualPlans.get(fakeID).peek();
-                
+                System.out.println(unitAction);
                 if(unitAction.preconditionsMet(thisState)) {
                     individualPlans.get(fakeID).pop();
                     nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap));
+                } else {
+                    if(unitAction instanceof HarvestAction) {
+                        nextActions.put(realID, ((HarvestAction) unitAction).preconditionAction(thisState, peasantIdMap));
+                    } else if (unitAction instanceof DepositAction) {
+                        nextActions.put(realID, ((DepositAction) unitAction).preconditionAction(thisState, peasantIdMap));
+                    }
                 }
+            } else {
+                nextActions.put(realID, Action.createCompoundMove(realID, 0, 0));
             }
         }
         
@@ -150,12 +158,12 @@ public class PEAgent extends Agent {
                             System.err.println(unitID);
                             System.err.println(lastAction.getX());
                             System.err.println(lastAction.getY());
-                            actionMap.put(unitID, Action.createCompoundMove(
-                                unitID,
-                                lastAction.getX(),
-                                lastAction.getY()
-                            ));
-                            return false;
+//                            actionMap.put(unitID, Action.createCompoundMove(
+//                                unitID,
+//                                lastAction.getX(),
+//                                lastAction.getY()
+//                            ));
+                            return true;
                         }
                     }
                     return true;

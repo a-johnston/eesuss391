@@ -55,6 +55,9 @@ public class CartesianProduct<T> implements Iterator<List<T>> {
 	@Override
 	public List<T> next() {
 		List<T> returnList = new ArrayList<T>();
+		if(values.size() == 0) {
+			return returnList;
+		}
 		returnList.add(values.get(0));
 		if (subproduct == null) {
 			// if there's no subproduct, just iterate over this list

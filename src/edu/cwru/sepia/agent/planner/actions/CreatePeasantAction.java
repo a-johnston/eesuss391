@@ -29,7 +29,7 @@ public class CreatePeasantAction implements StripsAction{
 	
     @Override
     public boolean preconditionsMet(GameState state) {
-        return state.getGold() >= 400 && state.getPeasants().size() < 2;
+        return state.getGold() >= 400 && state.getPeasants().size() < 3;
     }
 
     @Override
