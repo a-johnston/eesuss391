@@ -474,8 +474,8 @@ public class GameState implements Comparable<GameState> {
 		}
 
 		cachedHeuristic = 100.0;
-		int goldCollectionsNeeded = goldMineMovesLeft();
-		int woodCollectionsNeeded = woodMineMovesLeft();
+		double goldCollectionsNeeded = goldMineMovesLeft();
+		double woodCollectionsNeeded = woodMineMovesLeft();
 
 		for (DummyUnit peasant: peasants) {
 			cachedHeuristic += 50;
@@ -534,17 +534,12 @@ public class GameState implements Comparable<GameState> {
 		return null;
 	}
 
-	public int goldMineMovesLeft() {
-		return Math.max(ceilDivide(requiredGold - collectedGold, MAX_PEASANT_HOLD), 0);
+	public double goldMineMovesLeft() {
+		return Math.max(requiredGold - collectedGold, 0) / (double) MAX_PEASANT_HOLD;
 	}
 
-	public int woodMineMovesLeft() {
-		return Math.max(ceilDivide(requiredWood - collectedWood, MAX_PEASANT_HOLD), 0);
-	}
-
-	// might be a nicer way of doing this, but otherwise the two above methods underestimate by 1
-	private int ceilDivide(double n, double d) {
-		return (int) Math.ceil(n / d);
+	public double woodMineMovesLeft() {
+		return Math.max(requiredWood - collectedWood, 0) / (double) MAX_PEASANT_HOLD;
 	}
 
 	public boolean needMoreWood() {
