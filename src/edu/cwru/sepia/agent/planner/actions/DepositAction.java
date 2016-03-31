@@ -59,4 +59,12 @@ public class DepositAction implements StripsAction {
     public int getID() {
         return this.unitId;
     }
+
+    @Override
+    public String toString() {
+        return "DepositAction{" +
+                "unitId=" + unitId +
+                ", direction=" + direction +
+                '}';
+    }
 }

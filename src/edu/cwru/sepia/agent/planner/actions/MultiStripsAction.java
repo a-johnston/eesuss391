@@ -43,4 +43,14 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 	public int getID() {
 		return 0;
 	}
+
+	@Override
+	public String toString() {
+		String output = "";
+		for(StripsAction action: this){
+			output += action.toString() + "\n";
+		}
+
+		return output;
+	}
 }

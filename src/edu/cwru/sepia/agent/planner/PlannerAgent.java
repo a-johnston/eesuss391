@@ -49,7 +49,7 @@ public class PlannerAgent extends Agent {
         }
 
         // write the plan to a text file
-        //savePlan(plan);
+        savePlan(plan);
 
         // Instantiates the PEAgent with the specified plan.
         peAgent = new PEAgent(playernum, plan);
@@ -141,35 +141,35 @@ public class PlannerAgent extends Agent {
      *
      * @param plan Stack of Strips Actions that are written to the text file.
      */
-//    private void savePlan(Stack<MultiStripsAction> plan) {
-//        if (plan == null) {
-//            System.err.println("Cannot save null plan");
-//            return;
-//        }
-//
-//        File outputDir = new File("saves");
-//        outputDir.mkdirs();
-//
-//        File outputFile = new File(outputDir, "plan.txt");
-//
-//        PrintWriter outputWriter = null;
-//        try {
-//            outputFile.createNewFile();
-//
-//            outputWriter = new PrintWriter(outputFile.getAbsolutePath());
-//
-//            @SuppressWarnings("unchecked")
-//			Stack<StripsAction> tempPlan = (Stack<StripsAction>) plan.clone();
-//            while(!tempPlan.isEmpty()) {
-//                outputWriter.println(tempPlan.pop().toString());
-//            }
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (outputWriter != null)
-//                outputWriter.close();
-//        }
-//    }
+    private void savePlan(Stack<MultiStripsAction> plan) {
+        if (plan == null) {
+            System.err.println("Cannot save null plan");
+            return;
+        }
+
+        File outputDir = new File("saves");
+        outputDir.mkdirs();
+
+        File outputFile = new File(outputDir, "plan.txt");
+
+        PrintWriter outputWriter = null;
+        try {
+            outputFile.createNewFile();
+
+            outputWriter = new PrintWriter(outputFile.getAbsolutePath());
+
+            @SuppressWarnings("unchecked")
+			Stack<MultiStripsAction> tempPlan = (Stack<MultiStripsAction>) plan.clone();
+            while(!tempPlan.isEmpty()) {
+                outputWriter.println(tempPlan.pop().toString());
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (outputWriter != null)
+                outputWriter.close();
+        }
+    }
 }
