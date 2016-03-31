@@ -1,7 +1,5 @@
 package edu.cwru.sepia.agent.planner.actions;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
@@ -9,7 +7,6 @@ import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.util.Direction;
-import edu.cwru.sepia.util.Pair;
 
 public class MoveAction implements StripsAction {
 
@@ -46,9 +43,8 @@ public class MoveAction implements StripsAction {
 	}
 
 	@Override
-	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
-        return Collections.singletonList(
-				new Pair<>(unitMap.get(unitID), Action.createCompoundMove(unitMap.get(unitID), end.x, end.y)));
+	public Action getSepiaAction(Map<Integer, Integer> unitMap) {
+        return Action.createCompoundMove(unitMap.get(unitID), end.x, end.y);
 	}
 
     @Override
