@@ -20,20 +20,7 @@ public class MoveAction implements StripsAction {
     public MoveAction(int unitID, Position start, Position end) {
         this.unitID = unitID;
         this.start = start;
-        this.end = nearestAdjacentPosition(start, end);
-    }
-
-    public Position nearestAdjacentPosition(Position start, Position end) {
-        double minDistance = Double.POSITIVE_INFINITY;
-        Position closestAdjacent = new Position(start.x, start.y);
-        for (Position p: end.getAdjacentPositions()) {
-            if(p.chebyshevDistance(start) < minDistance) {
-                closestAdjacent = p;
-                minDistance = p.chebyshevDistance(start);
-            }
-        }
-
-        return closestAdjacent;
+        this.end = end.move(Direction.getDirection(start.x - end.x, start.y - end.y));
     }
 
 	@Override

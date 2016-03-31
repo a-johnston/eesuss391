@@ -7,15 +7,10 @@ import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.environment.model.history.BirthLog;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
-import edu.cwru.sepia.environment.model.state.Template;
 import edu.cwru.sepia.environment.model.state.Unit;
-import edu.cwru.sepia.util.Pair;
 
-import javax.swing.*;
-import java.awt.datatransfer.StringSelection;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.rmi.activation.ActivationID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -35,8 +30,6 @@ public class PEAgent extends Agent {
     // when you're planning you won't know the true unit IDs that sepia assigns. So you'll use placeholders (1, 2, 3).
     // this maps those placeholders to the actual unit IDs.
     private Map<Integer, Integer> peasantIdMap;
-    private int townhallId;
-    private int peasantTemplateId;
     private Integer lastFakeId = null;
 
     public PEAgent(int playernum, Stack<MultiStripsAction> plan) {
@@ -52,11 +45,9 @@ public class PEAgent extends Agent {
         for(int unitId : stateView.getUnitIds(playernum)) {
             Unit.UnitView unit = stateView.getUnit(unitId);
             String unitType = unit.getTemplateView().getName().toLowerCase();
-            if(unitType.equals("townhall")) {
-                townhallId = unitId;
-            } else if(unitType.equals("peasant")) {
+            
+            if (unitType.equals("peasant")) {
                 peasantIdMap.put(unitId, unitId);
-                peasantTemplateId = unit.getTemplateView().getID();
             }
         }
 
@@ -205,8 +196,11 @@ public class PEAgent extends Agent {
         Map<Integer, List<StripsAction>> reversedPlan = new HashMap<>();
         Stack<StripsAction> reversedHQPlan = new Stack<>();
         while(!plan.isEmpty()) {
-            MultiStripsAction actions = plan.pop();
-            for(StripsAction stripsAction: actions) {
+            for(StripsAction stripsAction: plan.pop()) {
+            	if (stripsAction.getID() == -1) {
+            		continue;
+            	}
+            	
                 if(stripsAction instanceof CreatePeasantAction) {
                     reversedHQPlan.push(stripsAction); // The headquarters can only do one thing....so we don't really care.
                 } else if(reversedPlan.keySet().contains(stripsAction.getID())) {
@@ -237,15 +231,6 @@ public class PEAgent extends Agent {
         }
 
         return unitPlan;
-    }
-
-    /**
-     * Returns a SEPIA version of the specified Strips Action.
-     * @param action StripsAction
-     * @return SEPIA representation of same action
-     */
-    private Action createSepiaAction(StripsAction action) {
-        return null;
     }
 
     @Override

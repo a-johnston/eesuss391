@@ -423,14 +423,15 @@ public class GameState implements Comparable<GameState> {
 			actionLists.add(Collections.singletonList(new CreatePeasantAction(this)));
 		}
 		for (DummyUnit unit : peasants) {
-            List<StripsAction> peasantList = new ArrayList<>();
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null && !unit.hasSomething() && spot.amountLeft > 0) {
 				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, unit.position.getDirection(spot.position))));
-			} else if (unit.hasSomething() && !nextToTownhall(unit)){
-                actionLists.add(Collections.singletonList(new MoveAction(unit.id, unit.position, townHall)));
-            } else if (unit.hasSomething()) {
-                actionLists.add(Collections.singletonList(new DepositAction(unit.id, unit.position.getDirection(townHall))));
+			} else if (unit.hasSomething()) {
+				if (nextToTownhall(unit)) {
+					actionLists.add(Collections.singletonList(new DepositAction(unit.id, unit.position.getDirection(townHall))));
+				} else {
+					actionLists.add(Collections.singletonList(new MoveAction(unit.id, unit.position, townHall)));
+				}
             } else {
                 actionLists.add(getResourceLocations(unit));
             }
