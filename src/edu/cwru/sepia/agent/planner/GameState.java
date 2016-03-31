@@ -36,14 +36,15 @@ public class GameState implements Comparable<GameState> {
 
 	public class DummyUnit extends Copyable<DummyUnit> {
 		private Position position;
-		private int wood = 0;
-		private int gold = 0;
-
+		private int wood;
+		private int gold;
 		private int id;
 
 		public DummyUnit(Position p, int id) {
 			this.position = p;
 			this.id = id;
+			this.wood = 0;
+			this.gold = 0;
 		}
 
 		public DummyUnit(DummyUnit parent) {
@@ -54,7 +55,7 @@ public class GameState implements Comparable<GameState> {
 		}
 
 		public boolean hasSomething() {
-			return wood + gold != 0;
+			return (wood + gold) != 0;
 		}
 
 		public Position getPosition() {
@@ -70,6 +71,9 @@ public class GameState implements Comparable<GameState> {
 		}
 
 		public void give(Type type, int amount) {
+			assert gold == 0;
+			assert wood == 0;
+			
 			if (type == Type.GOLD_MINE) {
 				gold = amount;
 			} else {
@@ -312,37 +316,21 @@ public class GameState implements Comparable<GameState> {
 
 		int amountGathered = Math.min(spot.amountLeft, GameState.MAX_PEASANT_HOLD);
 		spot.amountLeft -= amountGathered;
-		if (spot.amountLeft <= 0) {
-			//deleteResourceSpot(spot);
-		}
 
 		getUnit(unitId).give(spot.getType(), amountGathered);
 	}
-
-	public void deleteResourceSpot(DummyResourceSpot spot){
-		for(DummyResourceSpot possibleSpot: forests) {
-			if(spot.position.equals(possibleSpot.position)) {
-				forests.remove(spot);
-				return;
-			}
-		}
-
-		for(DummyResourceSpot possibleSpot: goldmines) {
-			if(spot.position.equals(possibleSpot.position)) {
-				goldmines.remove(spot);
-				return;
-			}
-		}
-	}
-
 
 	public void doDeposit(int unitId) {
 		DummyUnit unit = getUnit(unitId);
 
 		if (unit.wood > 0) {
+			assert unit.gold == 0;
+			
 			collectedWood += unit.wood;
 			unit.wood = 0;
 		} else {
+			assert unit.wood == 0;
+			
 			collectedGold += unit.gold;
 			unit.gold = 0;
 		}
@@ -427,17 +415,22 @@ public class GameState implements Comparable<GameState> {
 		}
 
 		for (DummyUnit unit : peasants) {
-			DummyResourceSpot spot = getAdjacentResource(unit.position);
-			if (spot != null && !unit.hasSomething() && spot.amountLeft > 0) {
-				actionLists.add(Collections.singletonList(new HarvestAction(unit.id, spot.id, spot.type, unit.position.getDirection(spot.position))));
-			} else if (unit.hasSomething()) {
+			if (unit.hasSomething()) {
 				if (nextToTownhall(unit)) {
-					actionLists.add(Collections.singletonList(new DepositAction(unit.id, unit.position.getDirection(townHall))));
+					actionLists.add(Collections.singletonList(
+							new DepositAction(unit.id, unit.position.getDirection(townHall))));
 				} else {
-					actionLists.add(Collections.singletonList(new MoveAction(unit.id, unit.position, townHall)));
+					actionLists.add(Collections.singletonList(
+							new MoveAction(unit.id, unit.position, townHall)));
 				}
 			} else {
-				actionLists.add(getMoveToResourceActions(unit));
+				DummyResourceSpot spot = getAdjacentResource(unit.position);
+				if (spot == null) {
+					actionLists.add(getMoveToResourceActions(unit));
+				} else {
+					actionLists.add(Collections.singletonList(
+							new HarvestAction(unit.id, spot.id, spot.type, unit.position.getDirection(spot.position))));
+				}
 			}
 		}
 
@@ -458,14 +451,16 @@ public class GameState implements Comparable<GameState> {
 
 	private List<StripsAction> getMoveToResourceActions(DummyUnit unit) {
 		List<StripsAction> actions = new ArrayList<>();
-		if(needMoreGold() || peasants.size() < 3) {
+		
+		if (needMoreGold()) {
 			for (DummyResourceSpot spot : goldmines) {
 				if (spot.amountLeft > 0) {
 					actions.add(new MoveAction(unit.id, unit.position, spot.position));
 				}
 			}
 		}
-		if(needMoreWood()) {
+		
+		if (needMoreWood()) {
 			for (DummyResourceSpot spot : forests) {
 				if (spot.amountLeft > 0) {
 					actions.add(new MoveAction(unit.id, unit.position, spot.position));

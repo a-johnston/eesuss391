@@ -46,26 +46,7 @@ public class HarvestAction implements StripsAction {
         }
         
         Position spot = resource.getPosition();
-
-        Position newPos;
-        if(direction.equals(Direction.EAST)){
-            newPos = new Position(spot.x-1, spot.y);
-        } else if(direction.equals(Direction.SOUTHEAST)) {
-            newPos = new Position(spot.x-1, spot.y-1);
-        } else if (direction.equals(Direction.SOUTH)) {
-            newPos = new Position(spot.x, spot.y-1);
-        } else if (direction.equals(Direction.SOUTHWEST)) {
-            newPos = new Position(spot.x + 1, spot.y-1);
-        } else if (direction.equals(Direction.WEST)) {
-            newPos = new Position(spot.x + 1, spot.y);
-        } else if (direction.equals(Direction.NORTHWEST)) {
-            newPos = new Position(spot.x + 1, spot.y + 1);
-        } else if (direction.equals(Direction.NORTHEAST)){
-            newPos = new Position(spot.x + 1, spot.y - 1);
-        } else { // North
-            newPos = new Position(spot.x , spot.y + 1);
-        }
-
+        Position newPos = new Position(spot.x - direction.xComponent(), spot.y - direction.yComponent());
         return Action.createCompoundMove(unitMap.get(unitId), newPos.x, newPos.y);
     }
 
