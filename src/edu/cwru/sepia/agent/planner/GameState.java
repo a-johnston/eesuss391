@@ -46,16 +46,11 @@ public class GameState implements Comparable<GameState> {
 		private int wood = 0;
 		private int gold = 0;
 
-		public void setId(int id) {
-			this.id = id;
-		}
-
 		private int id;
 
-
-		public DummyUnit(Position p) {
+		public DummyUnit(Position p, int id) {
 			this.position = p;
-			this.id = (int) (Integer.MAX_VALUE * Math.random());
+			this.id = id;
 		}
 
 		public DummyUnit(DummyUnit parent) {
@@ -87,6 +82,10 @@ public class GameState implements Comparable<GameState> {
 			} else {
 				wood = amount;
 			}
+		}
+		
+		void setId(int id) {
+			this.id = id;
 		}
 
 		@Override
@@ -252,10 +251,7 @@ public class GameState implements Comparable<GameState> {
 
 				peasantTemplateId = unit.getTemplateView().getID();
 
-				DummyUnit peasant = new DummyUnit(
-						new Position(unit.getXPosition(), unit.getYPosition())
-						);
-				peasant.id = unit.getID();
+				DummyUnit peasant = new DummyUnit(new Position(unit.getXPosition(), unit.getYPosition()), unit.getID());
 
 				if(unit.getCargoAmount() != 0) {
 					if(unit.getCargoType() == ResourceType.GOLD) {
@@ -317,8 +313,7 @@ public class GameState implements Comparable<GameState> {
 
 		collectedGold -= PEASANT_GOLD_COST;
 
-		DummyUnit newPeasant = new DummyUnit(new Position(townHall.x, townHall.y-1)); // Kinda arbitrary but the best we can do I think.
-		newPeasant.setId(id);
+		DummyUnit newPeasant = new DummyUnit(new Position(townHall.x, townHall.y-1), id);
 		peasants.add(newPeasant);
 
 	}
@@ -423,6 +418,7 @@ public class GameState implements Comparable<GameState> {
 		if (buildPeasants && collectedGold >= 400 && peasants.size() < 3) {
 			actionLists.add(getTownhallActions());
 		}
+		
 		for (DummyUnit unit : peasants) {
 			DummyResourceSpot spot = getAdjacentResource(unit.position);
 			if (spot != null && !unit.hasSomething() && spot.amountLeft > 0) {
@@ -441,11 +437,7 @@ public class GameState implements Comparable<GameState> {
 		return CartesianProduct.stream(actionLists)
 				.map(list -> new MultiStripsAction(list))
 				.filter(multiaction -> multiaction.preconditionsMet(GameState.this))
-				.map(multiaction -> {
-					GameState child = new GameState(this, multiaction);
-					multiaction.apply(child);
-					return child;
-				})
+				.map(multiaction -> multiaction.apply(this))
 				.filter(GameState::isValid)
 				.collect(Collectors.toList());
 	}

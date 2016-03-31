@@ -15,7 +15,8 @@ public class NullAction implements StripsAction {
 	}
 
 	@Override
-	public void apply(GameState state) {
+	public GameState apply(GameState state) {
+		return state;
 	}
 
 	@Override

@@ -113,9 +113,9 @@ public class PEAgent extends Agent {
     }
 
     private void replaceRealWithFake(GameState state) {
-        for (GameState.DummyUnit unit: state.getPeasants()) {
-            for(Integer fakeID: peasantIdMap.keySet()) {
-                if(unit.getId() == peasantIdMap.get(fakeID)) {
+        for (GameState.DummyUnit unit : state.getPeasants()) {
+            for (Integer fakeID: peasantIdMap.keySet()) {
+                if (unit.getId() == peasantIdMap.get(fakeID)) {
                     unit.setId(fakeID);
                 }
             }
