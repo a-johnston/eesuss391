@@ -22,19 +22,12 @@ public class DepositAction implements StripsAction {
     @Override
     public boolean preconditionsMet(GameState state) {
     	DummyUnit unit = state.getUnit(unitId);
-    	if (unit == null) {
+    	
+    	if (unit == null || !unit.hasSomething()) {
             return false;
         }
 
-        if(!unit.hasSomething()) {
-            return false;
-        }
-
-        if (unit.getPosition().isAdjacent(state.getTownHall())) {
-            //this.direction = unit.getPosition().getDirection(state.getTownHall());
-            return true;
-        }
-        return false;
+        return unit.getPosition().isAdjacent(state.getTownHall());
     }
 
     @Override

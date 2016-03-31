@@ -3,28 +3,20 @@ package edu.cwru.sepia.agent.planner.actions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
-import edu.cwru.sepia.util.Pair;
 
 public class MultiStripsAction extends ArrayList<StripsAction> implements StripsAction {
 	
 	private static final long serialVersionUID = 1L;
+	
 	public MultiStripsAction() {
 		super();
 	}
 	
 	public MultiStripsAction(List<StripsAction> actions) {
 		super(actions);
-	}
-	
-	public List<Pair<Integer, Action>> getActions(Map<Integer, Integer> unitMap) {
-		return stream()
-				.filter(action -> action.getID() != -1)
-				.map(action -> new Pair<>(action.getID(), action.getSepiaAction(unitMap)))
-				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -34,6 +26,7 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 
 	@Override
 	public GameState apply(GameState state) {
+		// streams API doesn't cover this use case
 		GameState child = new GameState(state, this);
 		stream().forEach(action -> action.apply(child));
 		return child;
@@ -51,11 +44,6 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 
 	@Override
 	public String toString() {
-		String output = "";
-		for(StripsAction action: this){
-			output += action.toString() + "\n";
-		}
-
-		return output;
+		return "MultiStripsAction" + super.toString();
 	}
 }

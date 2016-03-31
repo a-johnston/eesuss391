@@ -46,5 +46,8 @@ public interface StripsAction {
      */
     public Action getSepiaAction(Map<Integer, Integer> unitMap);
 
+    /**
+     * @return the GameState ID of the actor of this action
+     */
     public int getID();
 }
