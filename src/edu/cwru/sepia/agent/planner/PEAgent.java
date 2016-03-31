@@ -197,10 +197,6 @@ public class PEAgent extends Agent {
         Stack<StripsAction> reversedHQPlan = new Stack<>();
         while(!plan.isEmpty()) {
             for(StripsAction stripsAction: plan.pop()) {
-            	if (stripsAction.getID() == -1) {
-            		continue;
-            	}
-            	
                 if(stripsAction instanceof CreatePeasantAction) {
                     reversedHQPlan.push(stripsAction); // The headquarters can only do one thing....so we don't really care.
                 } else if(reversedPlan.keySet().contains(stripsAction.getID())) {

@@ -35,13 +35,14 @@ public class MultiStripsAction extends ArrayList<StripsAction> implements Strips
 	@Override
 	public List<Pair<Integer, Action>> getSepiaAction(Map<Integer, Integer> unitMap) {
 		return stream()
+				.filter(action -> action.getID() != -1)
 				.flatMap(action -> action.getSepiaAction(unitMap).stream())
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	public int getID() {
-		return 0;
+		return -1;
 	}
 
 	@Override
