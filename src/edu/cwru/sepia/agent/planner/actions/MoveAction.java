@@ -35,9 +35,8 @@ public class MoveAction implements StripsAction {
         } else {
             return true;
         }
-
-
 	}
+
 
 	@Override
 	public GameState apply(GameState state) {

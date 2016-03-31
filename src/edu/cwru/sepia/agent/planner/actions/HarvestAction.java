@@ -10,6 +10,7 @@ import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.agent.planner.GameState.DummyResourceSpot;
 import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.util.Pair;
+import edu.cwru.sepia.agent.planner.Position;
 
 /**
  * Represents the action of harvesting from some resource location
@@ -35,6 +36,17 @@ public class HarvestAction implements StripsAction {
         }
         
         return canHarvest(spot, unit);
+    }
+
+    public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
+        DummyResourceSpot spot = state.getResourceSpot(resourceId);
+        DummyUnit unit = state.getUnit(unitId);
+        for(Position p: spot.getPosition().getAdjacentPositions()){
+            if(direction.equals(unit.getPosition().getDirection(p))){
+                return Action.createCompoundMove(unitMap.get(unitId), p.x, p.y);
+            }
+        }
+        return null;
     }
 
     private boolean canHarvest(GameState.DummyResourceSpot harvestSpot, GameState.DummyUnit unit) {
