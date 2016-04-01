@@ -31,8 +31,9 @@ public class DepositAction implements StripsAction {
     }
 
     public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
-        Position spot = state.getTownHall();
-        Position newPos = new Position(spot.x - direction.xComponent(), spot.y - direction.yComponent());
+        Position newPos = new Position(
+        		state.getTownHall().x - direction.xComponent(),
+        		state.getTownHall().y - direction.yComponent());
         return Action.createCompoundMove(unitMap.get(unitId), newPos.x, newPos.y);
     }
 

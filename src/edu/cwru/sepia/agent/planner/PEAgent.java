@@ -17,18 +17,21 @@ import java.util.Stack;
 import java.util.*;
 
 /**
- * This is an outline of the PEAgent. Implement the provided methods. You may add your own methods and members.
+ * This PEAgent class takes a stack of MultiStripsActions and unwraps that plan
+ * into the action plans for individual units. The class handles translating
+ * between the unit IDs used in the plan and the unit IDs in the actual game
+ * execution, as well as recovering the current action when preconditions are
+ * not met during game execution. 
  */
 public class PEAgent extends Agent {
 	private static final long serialVersionUID = 1L;
 
-	// The plan being executed
+	// The plans being executed
 	private Stack<MultiStripsAction> plan = null;
 	private Map<Integer, Stack<StripsAction>> individualPlans;
 	private Stack<StripsAction> headquartersActions;
+
 	// maps the real unit Ids to the plan's unit ids
-	// when you're planning you won't know the true unit IDs that sepia assigns. So you'll use placeholders (1, 2, 3).
-	// this maps those placeholders to the actual unit IDs.
 	private Map<Integer, Integer> peasantIdMap;
 	private Integer lastFakeId = null;
 
@@ -40,12 +43,11 @@ public class PEAgent extends Agent {
 
 	@Override
 	public Map<Integer, Action> initialStep(State.StateView stateView, History.HistoryView historyView) {
-		// gets the townhall ID and the peasant ID
+		// maps the existing units within the peasant ID map
 		for(int unitId : stateView.getUnitIds(playernum)) {
 			Unit.UnitView unit = stateView.getUnit(unitId);
-			String unitType = unit.getTemplateView().getName().toLowerCase();
 
-			if (unitType.equals("peasant")) {
+			if (unit.getTemplateView().getName().toLowerCase().equals("peasant")) {
 				peasantIdMap.put(unitId, unitId);
 			}
 		}
@@ -56,7 +58,7 @@ public class PEAgent extends Agent {
 	@Override
 	public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
 
-		this.addToUnitMap(stateView, historyView);
+		addToUnitMap(stateView, historyView);
 
 		Map<Integer, Action> nextActions = new HashMap<Integer, Action>();
 
@@ -92,13 +94,14 @@ public class PEAgent extends Agent {
 					individualPlans.get(fakeID).pop();
 					nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap));
 				} else {
-					if(unitAction instanceof HarvestAction) {
-						nextActions.put(realID, ((HarvestAction) unitAction).preconditionAction(thisState, peasantIdMap));
-					} else if (unitAction instanceof DepositAction) {
-						nextActions.put(realID, ((DepositAction) unitAction).preconditionAction(thisState, peasantIdMap));
-					}
+					nextActions.put(realID, unitAction.preconditionAction(thisState, peasantIdMap));
 				}
 			} else {
+				// get units that are done acting out of the way
+				// our planner reduces the branching factor by not generating
+				// child states for each move, so units can finish behind or
+				// in front of others time wise
+
 				nextActions.put(realID, Action.createCompoundMove(realID, 0, 0));
 			}
 		}
@@ -117,25 +120,17 @@ public class PEAgent extends Agent {
 	}
 
 	private void addToUnitMap(State.StateView stateView, History.HistoryView historyView) {
-		if(this.lastFakeId == null || stateView.getTurnNumber() == 0) {
+		if (this.lastFakeId == null || stateView.getTurnNumber() == 0) {
 			return;
 		}
 
-		if(historyView.getBirthLogs(stateView.getTurnNumber()).size() > 1) {
-			System.err.println("Something wonky happened");
-		}
-
-		for(BirthLog log: historyView.getBirthLogs(stateView.getTurnNumber() - 1)) {
+		for (BirthLog log : historyView.getBirthLogs(stateView.getTurnNumber() - 1)) {
 			peasantIdMap.put(lastFakeId, log.getNewUnitID());
 			lastFakeId = null;
 			System.out.println("Added unit to map");
-			break;
 		}
-
-		lastFakeId = null;
 	}
 	private boolean unitHasSomethingToDo(int id) {
-
 		return individualPlans.keySet().contains(id) && !individualPlans.get(id).isEmpty();
 	}
 
@@ -146,11 +141,13 @@ public class PEAgent extends Agent {
 
 		Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, stateView.getTurnNumber() - 1);
 		ActionResult result = actionResults.get(unitID);
-		
+
 		if (result != null && result.getAction().getUnitId() == unitID) {
 			System.out.println(result);
 			if(result.getFeedback().equals(ActionFeedback.COMPLETED)){
-				// Solving some sepia bug
+				// Solving some Sepia bug. An action can be "completed" when
+				// it has really failed due to being blocked or some similar
+				// reason..
 				if(result.getAction() instanceof LocatedAction) {
 					LocatedAction lastAction = (LocatedAction) result.getAction();
 					if(stateView.getUnit(unitID).getXPosition() != lastAction.getX() ||
@@ -159,29 +156,26 @@ public class PEAgent extends Agent {
 						System.err.println(unitID);
 						System.err.println(lastAction.getX());
 						System.err.println(lastAction.getY());
-						return true;
 					}
 				}
+
 				return true;
 			} else if (result.getAction() instanceof LocatedAction && result.getFeedback().equals(ActionFeedback.FAILED)){
 				LocatedAction lastAction = (LocatedAction) result.getAction();
-
-				actionMap.put(unitID, Action.createCompoundMove(
-						unitID,
-						lastAction.getX(),
-						lastAction.getY()
-						));
-				return false;
+				actionMap.put(unitID, Action.createCompoundMove(unitID, lastAction.getX(), lastAction.getY()));
 			}
-			else {
-				return false;
-			}
+			return false;
 		}
+
 		// Unit not in map
 		return true;
 	}
 
-
+	/**
+	 * Breaks the given plan into plans for individual units. Handles the
+	 * townhall as a special case.
+	 * @return
+	 */
 	private Map<Integer, Stack<StripsAction>> getIndividualPlans() {
 		Map<Integer, Stack<StripsAction>> unitPlan = new HashMap<>();
 		headquartersActions = new Stack<>();
@@ -204,7 +198,7 @@ public class PEAgent extends Agent {
 			}
 		}
 
-		// Correctly put the stack back together
+		// Reverse the stack so it happens in the correct order.
 		for (Stack<StripsAction> stack : unitPlan.values()) {
 			Collections.reverse(stack);
 		}

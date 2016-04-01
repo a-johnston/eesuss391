@@ -45,6 +45,17 @@ public interface StripsAction {
      * @return
      */
     public Action getSepiaAction(Map<Integer, Integer> unitMap);
+    
+    /**
+     * In the event that this StripsAction cannot be immediately executed, continues trying!
+     * 
+     * @param state
+     * @param unitMap
+     * @return
+     */
+    public default Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
+    	return getSepiaAction(unitMap);
+    }
 
     /**
      * @return the GameState ID of the actor of this action
