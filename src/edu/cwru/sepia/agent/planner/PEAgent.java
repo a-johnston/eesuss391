@@ -69,7 +69,7 @@ public class PEAgent extends Agent {
 		GameState thisState = new GameState(stateView, playernum, 0, 0, false);
 		replaceRealWithFake(thisState);
 
-		// Headquarters case
+		// Handles doing the headquarters actions
 		if(!headquartersActions.isEmpty()) {
 			StripsAction hqStripsAction = headquartersActions.peek();
 			if (hqStripsAction.preconditionsMet(thisState)) {
@@ -79,8 +79,8 @@ public class PEAgent extends Agent {
 				nextActions.put(thisState.getTownHallId(), hqStripsAction.getSepiaAction(peasantIdMap));
 			}
 		}
-		System.out.println(stateView.getTurnNumber());
 
+		// Handles doing all of the peasants actions
 		for(Integer fakeID: peasantIdMap.keySet()) {
 			Integer realID = peasantIdMap.get(fakeID);
 			if(!unitIsFree(stateView, historyView, realID, nextActions)) {
@@ -94,6 +94,10 @@ public class PEAgent extends Agent {
 					individualPlans.get(fakeID).pop();
 					nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap));
 				} else {
+					// This state is entered only on a SEPIA bug
+					// The specific bug is the history view reporting a move action as completed before actual completion
+					// (i.e. the unit is not at the place we told it to go)
+					// This handles correcting that bug so that the unit can move on to its next action
 					nextActions.put(realID, unitAction.preconditionAction(thisState, peasantIdMap));
 				}
 			} else {

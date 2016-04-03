@@ -40,6 +40,6 @@ public class NullAction implements StripsAction {
 
 	@Override
 	public String toString() {
-		return "Do not build peasant";
+		return "NullAction{NoPeasantBuilts}";
 	}
 }

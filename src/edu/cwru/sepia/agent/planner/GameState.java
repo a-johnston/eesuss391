@@ -34,12 +34,20 @@ public class GameState implements Comparable<GameState> {
 		abstract public T copy();
 	}
 
+	/**
+	 * Represents a fake peasant for the purposes of planning
+	 */
 	public class DummyUnit extends Copyable<DummyUnit> {
 		private Position position;
 		private int wood;
 		private int gold;
 		private int id;
 
+		/**
+		 * Create a fresh dummy unit from scratch
+		 * @param p
+         * @param id
+         */
 		public DummyUnit(Position p, int id) {
 			this.position = p;
 			this.id = id;
@@ -47,6 +55,10 @@ public class GameState implements Comparable<GameState> {
 			this.gold = 0;
 		}
 
+		/**
+		 * Used for copying a dummy unit to a new dummy unit
+		 * @param parent
+         */
 		public DummyUnit(DummyUnit parent) {
 			this.position = parent.position;
 			this.wood	  = parent.wood;
@@ -54,6 +66,10 @@ public class GameState implements Comparable<GameState> {
 			this.id = parent.id;
 		}
 
+		/**
+		 * Determines if the unit is carrying something
+		 * @return
+         */
 		public boolean hasSomething() {
 			return (wood + gold) != 0;
 		}
@@ -66,10 +82,19 @@ public class GameState implements Comparable<GameState> {
 			return id;
 		}
 
+		/**
+		 * Moves the unit to the given position
+		 * @param position
+         */
 		public void moveTo(Position position) {
 			this.position = position;
 		}
 
+		/**
+		 * Gives the unit the specified amount of that resource type
+		 * @param type
+         * @param amount
+         */
 		public void give(Type type, int amount) {
 			assert gold == 0;
 			assert wood == 0;
@@ -110,6 +135,9 @@ public class GameState implements Comparable<GameState> {
 		}
 	}
 
+	/**
+	 * Represents a resource spot for the purposes of planning
+	 */
 	public class DummyResourceSpot extends Copyable<DummyResourceSpot> {
 		private Position position;
 		private int amountLeft;
@@ -118,6 +146,11 @@ public class GameState implements Comparable<GameState> {
 
 		private int id;
 
+		/**
+		 * Create a resource spot from scratch
+		 * @param node
+		 * @param townHall
+         */
 		public DummyResourceSpot(ResourceView node, Position townHall) {
 			this.position 	= new Position(node.getXPosition(), node.getYPosition());
 			this.amountLeft = node.getAmountRemaining();
@@ -127,6 +160,11 @@ public class GameState implements Comparable<GameState> {
 			this.distanceToTownHall = this.position.chebyshevDistance(townHall);
 		}
 
+		/**
+		 * Create a resource spot representation from another resource spot
+		 * Useful for copying resource spots.
+		 * @param parent
+         */
 		public DummyResourceSpot(DummyResourceSpot parent) {
 			this.position 	= parent.position;
 			this.amountLeft = parent.amountLeft;
@@ -162,41 +200,18 @@ public class GameState implements Comparable<GameState> {
 	private static final String PEASANT = "Peasant";
 	private static final int PEASANT_GOLD_COST = 400;
 	private static final int MAX_PEASANT_HOLD = 100;
-
-	public static int getMapXExtent() {
-		return mapXExtent;
-	}
-
 	private static int mapXExtent;
-
-	public static int getMapYExtent() {
-		return mapYExtent;
-	}
-
 	private static int mapYExtent;
 	private static boolean buildPeasants;
 	private static int playerNum;
 	private static int requiredGold;
 	private static int requiredWood;
-
 	private static Position townHall;
 	private static int townHallId;
 
-	public List<DummyResourceSpot> getGoldmines() {
-		return goldmines;
-	}
 
 	private List<DummyResourceSpot> goldmines;
-
-	public List<DummyResourceSpot> getForests() {
-		return forests;
-	}
-
 	private List<DummyResourceSpot> forests;
-
-	public List<DummyUnit> getPeasants() {
-		return peasants;
-	}
 
 	private List<DummyUnit> peasants;
 	private static int peasantTemplateId;
@@ -258,11 +273,13 @@ public class GameState implements Comparable<GameState> {
 			}
 		}
 
+		// Check if a townhall was found. If not exit.
 		if (townHall == null) {
 			System.err.println("No townhall found");
 			System.exit(1);
 		}
 
+		// Construct internal gamestate representation of resource nodes
 		for(ResourceNode.ResourceView node: state.getAllResourceNodes()) {
 			if (node.getType() == ResourceNode.Type.GOLD_MINE) {
 				goldmines.add(new DummyResourceSpot(node, townHall));
@@ -272,6 +289,11 @@ public class GameState implements Comparable<GameState> {
 		}
 	}
 
+	/**
+	 * Used for creating a new game state from a game state and a set of actions
+	 * @param parent
+	 * @param action
+     */
 	public GameState(GameState parent, MultiStripsAction action) {
 		collectedGold = parent.collectedGold;
 		collectedWood = parent.collectedWood;
@@ -286,19 +308,15 @@ public class GameState implements Comparable<GameState> {
 		cachedCost = parent.cachedCost + 1;
 	}
 
-	public GameState getParentState() {
-		return parent;
-	}
-
-	public MultiStripsAction getAction() {
-		return action;
-	}
 
 	private <T extends Copyable<T>> List<T> deepCopyList(List<T> list) {
 		return list.stream().map(Copyable::copy).collect(Collectors.toList());
 	}
 
-	// Returns the fake id of the built peasant
+	/**
+	 * Used to apply a CreatePeaseantAction to a gamestate and mutate the gamestate based on that action
+	 * @param id
+     */
 	public void makePeasant(int id) {
 		if (collectedGold < GameState.PEASANT_GOLD_COST) {
 			throw new Error("Tried to create peasant with not enough gold!");
@@ -311,6 +329,11 @@ public class GameState implements Comparable<GameState> {
 
 	}
 
+	/**
+	 * Used to apply a HarvestAction to a gamestate and mutate the gamestate based on that action
+	 * @param unitId
+	 * @param resourceId
+     */
 	public void doHarvest(int unitId, int resourceId) {
 		DummyResourceSpot spot = getResourceSpot(resourceId);
 
@@ -320,6 +343,10 @@ public class GameState implements Comparable<GameState> {
 		getUnit(unitId).give(spot.getType(), amountGathered);
 	}
 
+	/**
+	 * Used to apply a DepositAction to a gamestate and mutate the gamestate based on that action
+	 * @param unitId
+     */
 	public void doDeposit(int unitId) {
 		DummyUnit unit = getUnit(unitId);
 
@@ -441,6 +468,10 @@ public class GameState implements Comparable<GameState> {
 				.collect(Collectors.toList());
 	}
 
+	/**
+	 * Returns a list of StripsActions that the townhall is capable of doing
+	 * @return
+     */
 	private List<StripsAction> getTownhallActions() {
 		List<StripsAction> townhallActions = new ArrayList<>();
 		townhallActions.add(new CreatePeasantAction(this));
@@ -448,6 +479,11 @@ public class GameState implements Comparable<GameState> {
 		return townhallActions;
 	}
 
+	/**
+	 * Returns a list of all resource nodes that a unit could move to
+	 * @param unit
+	 * @return
+     */
 	private List<StripsAction> getMoveToResourceActions(DummyUnit unit) {
 		List<StripsAction> actions = new ArrayList<>();
 		
@@ -470,6 +506,11 @@ public class GameState implements Comparable<GameState> {
 		return actions;
 	}
 
+	/**
+	 * Helper method for determining if a unit is next to the townhall
+	 * @param unit
+	 * @return
+     */
 	private boolean nextToTownhall(DummyUnit unit) {
 		return unit.position.isAdjacent(townHall);
 	}
@@ -479,7 +520,13 @@ public class GameState implements Comparable<GameState> {
 	 * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.
 	 *
 	 * Add a description here in your submission explaining your heuristic.
-	 * TODO: Explain heuristic
+	 * The heuristic determines the number of gold collections need (The amount of gold needed / 100) and the
+	 * amount of wood collections needed. It then estimates the number of round trips needed based on the current
+	 * number of peaants available and what phase of collection the peasants are currently in (i.e. peasant returning to
+	 * townhall is generally better than not having yet reached the resource spot).
+	 * The heuristic also gives higher negative weight to needing gold as opposed to wood
+	 * because gold is generally more useful (i.e. to build units) so that states which explore gold first are better.
+	 * It also will heavily devalue states which over collect as these states are clearly non optimal.
 	 *
 	 * @return The value estimated remaining cost to reach a goal state from this state.
 	 */
@@ -499,7 +546,6 @@ public class GameState implements Comparable<GameState> {
 		double woodCollectionsNeeded = woodMineMovesLeft();
 
 		for (DummyUnit peasant: peasants) {
-			cachedHeuristic += 100;
 
 			if (peasant.hasSomething()) {
 				cachedHeuristic -= peasant.position.chebyshevDistance(townHall);
@@ -543,6 +589,11 @@ public class GameState implements Comparable<GameState> {
 				.min().orElse(0);
 	}
 
+	/**
+	 * Gets an adjacent resource spot to this position
+	 * @param pos
+	 * @return
+     */
 	public DummyResourceSpot getAdjacentResource(Position pos) {
 		if (goldMineMovesLeft() > 0) {
 			for (DummyResourceSpot mine : goldmines) {
@@ -579,7 +630,6 @@ public class GameState implements Comparable<GameState> {
 		return collectedGold < requiredGold;
 	}
 
-	public int getGold() { return this.collectedGold; };
 
 	/**
 	 *
@@ -650,17 +700,17 @@ public class GameState implements Comparable<GameState> {
 		return hash;
 	}
 
-	public Position getTownHall() {
-		return townHall;
-	}
-
-	public int getTownHallId() {
-		return townHallId;
-	}
-
-	public int getPeasantTemplateId() {
-		return peasantTemplateId;
-	}
+	public Position getTownHall() { return townHall; }
+	public int getTownHallId() { return townHallId; }
+	public int getPeasantTemplateId() { return peasantTemplateId; }
+	public static int getMapXExtent() { return mapXExtent; }
+	public static int getMapYExtent() { return mapYExtent; }
+	public List<DummyResourceSpot> getGoldmines() { return goldmines; }
+	public List<DummyResourceSpot> getForests() { return forests; }
+	public List<DummyUnit> getPeasants() { return peasants; }
+	public GameState getParentState() { return parent; }
+	public MultiStripsAction getAction() { return action; }
+	public int getGold() { return this.collectedGold; };
 
 	@Override
 	public String toString() {
