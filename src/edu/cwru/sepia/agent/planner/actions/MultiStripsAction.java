@@ -14,7 +14,8 @@ import edu.cwru.sepia.agent.planner.GameState;
  * generate the resulting GameState instances.
  * 
  * Fundamentally, this class is an ArrayList of StripsActions that can check
- * preconditions and be applied to a GameState.
+ * preconditions and be applied to a GameState. The precondition is satisfying
+ * all preconditions of the array. The effect is applying all of the actions
  */
 public class MultiStripsAction extends ArrayList<StripsAction> implements StripsAction {
 	

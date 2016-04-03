@@ -8,6 +8,9 @@ import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.GameState.DummyUnit;
 import edu.cwru.sepia.util.Direction;
 
+/**
+ * Represents a move action in sepia to move a unit 
+ */
 public class MoveAction implements StripsAction {
 
     int unitID;

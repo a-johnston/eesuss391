@@ -109,6 +109,10 @@ public class PEAgent extends Agent {
 		return nextActions;
 	}
 
+	/**
+	 * Takes a state constructed using the stateView constructor and converts all dummy unit ids to the fake ids used in planning
+	 * @param state a gamestate to convert
+     */
 	private void replaceRealWithFake(GameState state) {
 		for (GameState.DummyUnit unit : state.getPeasants()) {
 			for (Integer fakeID: peasantIdMap.keySet()) {
@@ -119,6 +123,11 @@ public class PEAgent extends Agent {
 		}
 	}
 
+	/**
+	 * Whenever a unit is created, we need to add it to the peasantIdMap
+	 * @param stateView the stateView so we can get the turn number
+	 * @param historyView the history view so we can get birth logs
+     */
 	private void addToUnitMap(State.StateView stateView, History.HistoryView historyView) {
 		if (this.lastFakeId == null || stateView.getTurnNumber() == 0) {
 			return;
@@ -130,10 +139,24 @@ public class PEAgent extends Agent {
 			System.out.println("Added unit to map");
 		}
 	}
+
+	/**
+	 * Determines if the specified unit has anything left to accomplish
+	 * @param id the unit id to check
+	 * @return true if there is work to be done, false otherwise
+     */
 	private boolean unitHasSomethingToDo(int id) {
 		return individualPlans.keySet().contains(id) && !individualPlans.get(id).isEmpty();
 	}
 
+	/**
+	 * Determines if a unit is free to accept more work
+	 * @param stateView the current state
+	 * @param historyView the history
+	 * @param unitID the unit in question
+	 * @param actionMap an action map which we can add actions to
+     * @return
+     */
 	private boolean unitIsFree(State.StateView stateView, History.HistoryView historyView, int unitID, Map<Integer, Action> actionMap) {
 		if (stateView.getTurnNumber() == 0) {
 			return true;
@@ -145,36 +168,22 @@ public class PEAgent extends Agent {
 		if (result != null && result.getAction().getUnitId() == unitID) {
 			System.out.println(result);
 			if(result.getFeedback().equals(ActionFeedback.COMPLETED)){
-				// Solving some Sepia bug. An action can be "completed" when
-				// it has really failed due to being blocked or some similar
-				// reason..
-				if(result.getAction() instanceof LocatedAction) {
-					LocatedAction lastAction = (LocatedAction) result.getAction();
-					if(stateView.getUnit(unitID).getXPosition() != lastAction.getX() ||
-							stateView.getUnit(unitID).getYPosition() != lastAction.getY()) {
-						System.err.println("Retrying");
-						System.err.println(unitID);
-						System.err.println(lastAction.getX());
-						System.err.println(lastAction.getY());
-					}
-				}
-
 				return true;
 			} else if (result.getAction() instanceof LocatedAction && result.getFeedback().equals(ActionFeedback.FAILED)){
+				// Action failed... try again
 				LocatedAction lastAction = (LocatedAction) result.getAction();
 				actionMap.put(unitID, Action.createCompoundMove(unitID, lastAction.getX(), lastAction.getY()));
 			}
 			return false;
 		}
-
 		// Unit not in map
 		return true;
 	}
 
 	/**
 	 * Breaks the given plan into plans for individual units. Handles the
-	 * townhall as a special case.
-	 * @return
+	 * townhall as a special case. This will also create the acton plan for the townhall (called the headquarters)
+	 * @return a map of stakes. Each stake corresponds to one unit
 	 */
 	private Map<Integer, Stack<StripsAction>> getIndividualPlans() {
 		Map<Integer, Stack<StripsAction>> unitPlan = new HashMap<>();

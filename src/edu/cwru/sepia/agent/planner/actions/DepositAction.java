@@ -9,6 +9,9 @@ import edu.cwru.sepia.util.Direction;
 import edu.cwru.sepia.agent.planner.Position;
 /**
  * Represents the action of a unit depositing what it is carrying at a town hall
+ * Action: Deposit(UnitID, Direction)
+ * Preconditions: CarryingSomething(UnitID), AdjacentTo(UnitID, Townhall, Direction)
+ * Effect: Carrying(UnitID, 0), AddToCollected(100, GetCarriedResource(UnitID)
  */
 public class DepositAction implements StripsAction {
     private int unitId;
@@ -30,6 +33,13 @@ public class DepositAction implements StripsAction {
         return unit.getPosition().isAdjacent(state.getTownHall());
     }
 
+    /**
+     * Sometimes move actions are reported as completed before they are in SEPIA
+     * This just handles that and allows the plan executer to get the ncessary action to do before executing this one
+     * @param state
+     * @param unitMap
+     * @return
+     */
     public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
         Position newPos = new Position(
         		state.getTownHall().x - direction.xComponent(),

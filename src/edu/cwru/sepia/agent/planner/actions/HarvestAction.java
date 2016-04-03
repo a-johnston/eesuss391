@@ -12,6 +12,10 @@ import edu.cwru.sepia.util.Direction;
 
 /**
  * Represents the action of harvesting from some resource location
+ *
+ * Action: Harvest(UnitID, ResourceID, Direction, ResourceType)
+ * Preconditions: NotCarryingAnything(UnitID), AdjacentTo(UnitID, ResourceID, Direction)
+ * Effect: Carrying(UnitID, 100, ResourceType)
  */
 public class HarvestAction implements StripsAction {
     int unitId;
@@ -26,6 +30,13 @@ public class HarvestAction implements StripsAction {
         this.type		= type;
     }
 
+    /**
+     * Checks if this action can be successfully done.
+     * Needs the unit and resource spot to exist and the unit to not be carrying anything and the resource spot to have something
+     * Also requires that the unit be adjacent to the spot (with the correct direction of adjacency).
+     * @param state GameState to check if action is applicable
+     * @return
+     */
     @Override
     public boolean preconditionsMet(GameState state) {
         DummyUnit unit = state.getUnit(unitId);
@@ -38,6 +49,13 @@ public class HarvestAction implements StripsAction {
         return canHarvest(spot, unit);
     }
 
+    /**
+     * Used by the plan executer to overcome SEPIA bugs (i.e. returning a successful move before actually reaching the compound move destination)
+     * Returns the necessary action to achieve the precondition to this action
+     * @param state
+     * @param unitMap
+     * @return
+     */
     public Action preconditionAction(GameState state, Map<Integer, Integer> unitMap) {
         DummyResourceSpot resource = state.getResourceSpot(resourceId);
         
@@ -84,6 +102,7 @@ public class HarvestAction implements StripsAction {
                 "unitId=" + unitId +
                 ", resourceId=" + resourceId +
                 ", direction=" + direction +
+                ", type=" + type +
                 '}';
     }
 }

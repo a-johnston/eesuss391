@@ -9,7 +9,11 @@ import edu.cwru.sepia.agent.planner.GameState;
  * An action that does nothing. Used for when a unit can be generated because
  * we might not always want to build a unit, so this allows that branch of the
  * graph to be explored.
- * 
+ *
+ * Represents the action of not building a peasant on the specified turn
+ * Action: DoNotBuildPeasant()
+ * Preconditions -> None
+ * Effects -> None
  * @author adam
  *
  */
@@ -34,4 +38,8 @@ public class NullAction implements StripsAction {
 		return -1; // Nobody does anything (filtered out by MultiStripsAction)
 	}
 
+	@Override
+	public String toString() {
+		return "Do not build peasant";
+	}
 }

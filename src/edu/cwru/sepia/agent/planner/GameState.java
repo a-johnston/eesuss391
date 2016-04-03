@@ -393,11 +393,10 @@ public class GameState implements Comparable<GameState> {
 
 	/**
 	 * Determines if the current GameState is valid or not.
-	 * 
+	 *
 	 * @return validity of this instance
 	 */
 	public boolean isValid() {
-		// TODO : implement me
 		return true;
 	}
 
@@ -480,6 +479,7 @@ public class GameState implements Comparable<GameState> {
 	 * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.
 	 *
 	 * Add a description here in your submission explaining your heuristic.
+	 * TODO: Explain heuristic
 	 *
 	 * @return The value estimated remaining cost to reach a goal state from this state.
 	 */
@@ -528,6 +528,12 @@ public class GameState implements Comparable<GameState> {
 		return cachedHeuristic;
 	}
 
+	/**
+	 * Finds the shortest round trip from a given position
+	 * @param pos
+	 * @param resourceSpots
+     * @return
+     */
 	public double getShortestRoundtrip(Position pos, List<DummyResourceSpot> resourceSpots) {
 		return resourceSpots.stream()
 				.filter(resource -> resource.amountLeft > 0)

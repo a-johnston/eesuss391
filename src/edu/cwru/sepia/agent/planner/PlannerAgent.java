@@ -123,6 +123,11 @@ public class PlannerAgent extends Agent {
 		return null;
 	}
 
+	/**
+	 * Reconstructs the path created from A*
+	 * @param state the ending game state which is a goal
+	 * @return a stack of multistripsactions to accomplish this goal
+     */
 	private Stack<MultiStripsAction> reconstructPath(GameState state) {
 		Stack<MultiStripsAction> plan = new Stack<>();
 		while(state.getAction() != null) {
