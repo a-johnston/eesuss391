@@ -150,8 +150,7 @@ public class Position {
         }
 
         System.err.println("Position not adjacent. Could not determine direction");
-        throw new NullPointerException();
-        //return null;
+        return null;
     }
 
     /**

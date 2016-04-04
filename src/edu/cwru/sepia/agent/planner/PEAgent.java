@@ -89,7 +89,6 @@ public class PEAgent extends Agent {
 
 			if(unitHasSomethingToDo(fakeID)) {
 				StripsAction unitAction = individualPlans.get(fakeID).peek();
-				System.out.println(unitAction);
 				if(unitAction.preconditionsMet(thisState)) {
 					individualPlans.get(fakeID).pop();
 					nextActions.put(realID, unitAction.getSepiaAction(peasantIdMap));
@@ -140,7 +139,6 @@ public class PEAgent extends Agent {
 		for (BirthLog log : historyView.getBirthLogs(stateView.getTurnNumber() - 1)) {
 			peasantIdMap.put(lastFakeId, log.getNewUnitID());
 			lastFakeId = null;
-			System.out.println("Added unit to map");
 		}
 	}
 
@@ -170,7 +168,6 @@ public class PEAgent extends Agent {
 		ActionResult result = actionResults.get(unitID);
 
 		if (result != null && result.getAction().getUnitId() == unitID) {
-			System.out.println(result);
 			if(result.getFeedback().equals(ActionFeedback.COMPLETED)){
 				return true;
 			} else if (result.getAction() instanceof LocatedAction && result.getFeedback().equals(ActionFeedback.FAILED)){

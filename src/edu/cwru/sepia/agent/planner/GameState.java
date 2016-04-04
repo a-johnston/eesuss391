@@ -552,8 +552,6 @@ public class GameState implements Comparable<GameState> {
 		if(woodCollectionsNeeded > 0) {
 			cachedHeuristic -= (woodCollectionsNeeded * 10)/(peasants.size());
 		}
-		System.out.println(cachedHeuristic);
-
 		return cachedHeuristic;
 	}
 
