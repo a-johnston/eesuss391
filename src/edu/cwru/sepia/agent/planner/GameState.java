@@ -12,21 +12,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * This class is used to represent the state of the game after applying one of the avaiable actions. It will also
- * track the A* specific information such as the parent pointer and the cost and heuristic function. Remember that
- * unlike the path planning A* from the first assignment the cost of an action may be more than 1. Specifically the cost
- * of executing a compound action such as move can be more than 1. You will need to account for this in your heuristic
- * and your cost function.
- *
- * The first instance is constructed from the StateView object (like in PA2). Implement the methods provided and
- * add any other methods and member variables you need.
- *
- * Some useful API calls for the state view are
- *
- * state.getXExtent() and state.getYExtent() to get the map size
- *
- * I recommend storing the actions that generated the instance of the GameState in this class using whatever
- * class/structure you use to represent actions.
+ * The state of the game at a given point. Maintains dummies of resources and
+ * unit information, as well as end-game goals and other information for
+ * planning. Can generate child states to allow for A* searching of the game.
  */
 public class GameState implements Comparable<GameState> {
 
@@ -516,19 +504,14 @@ public class GameState implements Comparable<GameState> {
 	}
 
 	/**
-	 * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
-	 * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.
-	 *
-	 * Add a description here in your submission explaining your heuristic.
-	 * The heuristic determines the number of gold collections need (The amount of gold needed / 100) and the
-	 * amount of wood collections needed. It then estimates the number of round trips needed based on the current
-	 * number of peaants available and what phase of collection the peasants are currently in (i.e. peasant returning to
-	 * townhall is generally better than not having yet reached the resource spot).
-	 * The heuristic also gives higher negative weight to needing gold as opposed to wood
-	 * because gold is generally more useful (i.e. to build units) so that states which explore gold first are better.
-	 * It also will heavily devalue states which over collect as these states are clearly non optimal.
-	 *
-	 * @return The value estimated remaining cost to reach a goal state from this state.
+	 * Computes a heuristic value for this state. Our heuristic is based on the
+	 * minimum number of turns it would take to achieve victors in the current
+	 * state. It pretends that optimal distances and quantities are achieved
+	 * for a perfect game.
+	 * 
+	 * The heuristic is cached for quick lookup when used in a priority queue.
+	 * 
+	 * @return
 	 */
 	public double heuristic() {
 		if (cachedHeuristic != null) {
@@ -632,9 +615,8 @@ public class GameState implements Comparable<GameState> {
 
 
 	/**
-	 *
-	 * Write the function that computes the current cost to get to this node. This is combined with your heuristic to
-	 * determine which actions/states are better to explore.
+	 * The number of game state moves, which is what is estimated by the
+	 * heuristic, to reach this state from the state searched from.
 	 *
 	 * @return The current cost to reach this goal
 	 */
@@ -654,24 +636,11 @@ public class GameState implements Comparable<GameState> {
 		return Double.compare(o.heuristic(), heuristic());
 	}
 
-
-	/**
-	 * This will be necessary to use the GameState as a key in a Set or Map.
-	 *
-	 * @param o The game state to compare
-	 * @return True if this state equals the other state, false otherwise.
-	 */
 	@Override
 	public boolean equals(Object o) {
 		return o instanceof GameState && hashCode() == o.hashCode();
 	}
 
-	/**
-	 * This is necessary to use the GameState as a key in a HashSet or HashMap. Remember that if two objects are
-	 * equal they should hash to the same value.
-	 *
-	 * @return An integer hashcode that is equal for equal states.
-	 */
 	@Override
 	public int hashCode() {
 		int hash = 0;

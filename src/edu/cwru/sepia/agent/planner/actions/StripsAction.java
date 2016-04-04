@@ -6,9 +6,8 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 
 /**
- * A useful start of an interface representing strips actions. You may add new methods to this interface if needed, but
- * you should implement the ones provided. You may also find it useful to specify a method that returns the effects
- * of a StripsAction.
+ * Representation of an in-game action with required preconditions. Maps directly to allowed
+ * Sepia actions.
  */
 public interface StripsAction {
     /**
