@@ -1,21 +1,18 @@
 package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
-import edu.cwru.sepia.action.ActionFeedback;
-import edu.cwru.sepia.action.ActionResult;
-import edu.cwru.sepia.action.TargetedAction;
-import edu.cwru.sepia.environment.model.history.DamageLog;
-import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
-import edu.cwru.sepia.environment.model.state.Unit;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RLAgent extends Agent {
 
-    /**
+	private static final long serialVersionUID = 1L;
+
+	/**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
      * When starting an episode. If the count is greater than this value print a message
      * and call sys.exit(0)
@@ -47,7 +44,7 @@ public class RLAgent extends Agent {
     /**
      * Your Q-function weights.
      */
-    public Double[] weights;
+    public double[] weights;
 
     /**
      * These variables are set for you according to the assignment definition. You can change them,
@@ -80,7 +77,7 @@ public class RLAgent extends Agent {
             weights = loadWeights();
         } else {
             // initialize weights to random values between -1 and 1
-            weights = new Double[NUM_FEATURES];
+            weights = new double[NUM_FEATURES];
             for (int i = 0; i < weights.length; i++) {
                 weights[i] = random.nextDouble() * 2 - 1;
             }
@@ -96,30 +93,16 @@ public class RLAgent extends Agent {
         // You will need to add code to check if you are in a testing or learning episode
 
         // Find all of your units
-        myFootmen = new LinkedList<>();
-        for (Integer unitId : stateView.getUnitIds(playernum)) {
-            Unit.UnitView unit = stateView.getUnit(unitId);
-
-            String unitName = unit.getTemplateView().getName().toLowerCase();
-            if (unitName.equals("footman")) {
-                myFootmen.add(unitId);
-            } else {
-                System.err.println("Unknown unit type: " + unitName);
-            }
-        }
+        myFootmen = stateView.getUnits(playernum).stream()
+        				.filter(unit -> unit.getTemplateView().getName().toLowerCase().equals("footman"))
+        				.map(unit -> unit.getID())
+        				.collect(Collectors.toList());
 
         // Find all of the enemy units
-        enemyFootmen = new LinkedList<>();
-        for (Integer unitId : stateView.getUnitIds(ENEMY_PLAYERNUM)) {
-            Unit.UnitView unit = stateView.getUnit(unitId);
-
-            String unitName = unit.getTemplateView().getName().toLowerCase();
-            if (unitName.equals("footman")) {
-                enemyFootmen.add(unitId);
-            } else {
-                System.err.println("Unknown unit type: " + unitName);
-            }
-        }
+        enemyFootmen = stateView.getUnits(ENEMY_PLAYERNUM).stream()
+				.filter(unit -> unit.getTemplateView().getName().toLowerCase().equals("footman"))
+				.map(unit -> unit.getID())
+				.collect(Collectors.toList());
 
         return middleStep(stateView, historyView);
     }
@@ -309,27 +292,23 @@ public class RLAgent extends Agent {
      * DO NOT CHANGE THIS!
      *
      * This function will take your set of weights and save them to a file. Overwriting whatever file is
-     * currently there. You will use this when training your agents. You will include th output of this function
+     * currently there. You will use this when training your agents. You will include the output of this function
      * from your trained agent with your submission.
      *
      * Look in the agent_weights folder for the output.
      *
      * @param weights Array of weights
      */
-    public void saveWeights(Double[] weights) {
+    public void saveWeights(double[] weights) {
         File path = new File("agent_weights/weights.txt");
         // create the directories if they do not already exist
         path.getAbsoluteFile().getParentFile().mkdirs();
 
-        try {
-            // open a new file writer. Set append to false
-            BufferedWriter writer = new BufferedWriter(new FileWriter(path, false));
-
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path, false))) {
             for (double weight : weights) {
                 writer.write(String.format("%f\n", weight));
             }
             writer.flush();
-            writer.close();
         } catch(IOException ex) {
             System.err.println("Failed to write weights to file. Reason: " + ex.getMessage());
         }
@@ -344,27 +323,23 @@ public class RLAgent extends Agent {
      *
      * @return The array of weights
      */
-    public Double[] loadWeights() {
+    public double[] loadWeights() {
         File path = new File("agent_weights/weights.txt");
         if (!path.exists()) {
             System.err.println("Failed to load weights. File does not exist");
             return null;
         }
 
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(path));
-            String line;
-            List<Double> weights = new LinkedList<>();
-            while((line = reader.readLine()) != null) {
-                weights.add(Double.parseDouble(line));
-            }
-            reader.close();
-
-            return weights.toArray(new Double[weights.size()]);
+        double[] weights = null;
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            reader.lines().map(line -> Double.parseDouble(line)).collect(Collectors.toList());
+            weights = reader.lines().mapToDouble(line -> Double.parseDouble(line)).toArray();
         } catch(IOException ex) {
             System.err.println("Failed to load weights from file. Reason: " + ex.getMessage());
         }
-        return null;
+        
+        return weights;
     }
 
     @Override
