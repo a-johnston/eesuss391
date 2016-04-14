@@ -1,8 +1,9 @@
 package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
-import edu.cwru.sepia.environment.model.history.History;
-import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.history.History.HistoryView;
+import edu.cwru.sepia.environment.model.state.State.StateView;
+import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 import java.io.*;
 import java.util.*;
@@ -51,9 +52,15 @@ public class RLAgent extends Agent {
      * but it is not recommended. If you do change them please let us know and explain your reasoning for
      * changing them.
      */
-    public final double gamma = 0.9;
+    public final double gamma = 0.9;			// discount factor
     public final double learningRate = .0001;
     public final double epsilon = .02;
+    
+    private final double UNIT_BONUS = 100.0;
+    private final double HP_BONUS = 1.0;
+    private final double TURN_PENALTY = 0.1;
+    
+    private double sumReward = 0.0; // used to store the summed reward of the current/previous step
 
     public RLAgent(int playernum, String[] args) {
         super(playernum);
@@ -88,7 +95,7 @@ public class RLAgent extends Agent {
      * We've implemented some setup code for your convenience. Change what you need to.
      */
     @Override
-    public Map<Integer, Action> initialStep(State.StateView stateView, History.HistoryView historyView) {
+    public Map<Integer, Action> initialStep(StateView stateView, HistoryView historyView) {
 
         // You will need to add code to check if you are in a testing or learning episode
 
@@ -134,7 +141,10 @@ public class RLAgent extends Agent {
      * @return New actions to execute or nothing if an event has not occurred.
      */
     @Override
-    public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
+    public Map<Integer, Action> middleStep(StateView stateView, HistoryView historyView) {
+    	double newReward = 0.0;
+    	
+    	sumReward = newReward;
         return null;
     }
 
@@ -145,7 +155,7 @@ public class RLAgent extends Agent {
      * It is also a good idea to save your weights with the saveWeights function.
      */
     @Override
-    public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
+    public void terminalStep(StateView stateView, HistoryView historyView) {
 
         // MAKE SURE YOU CALL printTestData after you finish a test episode.
 
@@ -164,7 +174,7 @@ public class RLAgent extends Agent {
      * @param footmanId The footman we are updating the weights for
      * @return The updated weight vector.
      */
-    public double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, State.StateView stateView, History.HistoryView historyView, int footmanId) {
+    public double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, StateView stateView, HistoryView historyView, int footmanId) {
         return null;
     }
 
@@ -177,7 +187,7 @@ public class RLAgent extends Agent {
      * @param attackerId The footman that will be attacking
      * @return The enemy footman ID this unit should attack
      */
-    public int selectAction(State.StateView stateView, History.HistoryView historyView, int attackerId) {
+    public int selectAction(StateView stateView, HistoryView historyView, int attackerId) {
         return -1;
     }
 
@@ -214,8 +224,35 @@ public class RLAgent extends Agent {
      * @param footmanId The footman ID you are looking for the reward from.
      * @return The current reward
      */
-    public double calculateReward(State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        return 0;
+    public double calculateReward(StateView stateView, HistoryView historyView, int footmanId) {
+    	double newSumReward = 0.0;
+    	
+    	// TODO : account for TURN_PENALTY
+    	
+    	for (UnitView unit : getUnitViews(stateView, true)) {
+    		newSumReward += UNIT_BONUS + HP_BONUS * unit.getHP();
+    	}
+    	
+    	for (UnitView unit : getUnitViews(stateView, false)) {
+    		newSumReward -= UNIT_BONUS + HP_BONUS * unit.getHP();
+    	}
+    	
+    	double delta = newSumReward - sumReward;
+    	sumReward = newSumReward;
+    	
+        return delta;
+    }
+    
+    /**
+     * Returns the respective UnitViews for a given side for a given stateView
+     * @param stateView
+     * @param ourUnits if true, returns player units, else enemy units
+     * @return
+     */
+    private List<UnitView> getUnitViews(StateView stateView, boolean ourUnits) {
+    	return (ourUnits ? myFootmen : enemyFootmen).stream()
+    			.map(id -> stateView.getUnit(id))
+    			.collect(Collectors.toList());
     }
 
     /**
@@ -232,8 +269,8 @@ public class RLAgent extends Agent {
      * @param defenderId An enemy footman that your footman would be attacking
      * @return The approximate Q-value
      */
-    public double calcQValue(State.StateView stateView,
-                             History.HistoryView historyView,
+    public double calcQValue(StateView stateView,
+                             HistoryView historyView,
                              int attackerId,
                              int defenderId) {
         return 0;
@@ -256,8 +293,8 @@ public class RLAgent extends Agent {
      * @param defenderId An enemy footman. The one you are considering attacking.
      * @return The array of feature function outputs.
      */
-    public double[] calculateFeatureVector(State.StateView stateView,
-                                           History.HistoryView historyView,
+    public double[] calculateFeatureVector(StateView stateView,
+                                           HistoryView historyView,
                                            int attackerId,
                                            int defenderId) {
         return null;
