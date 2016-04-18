@@ -99,13 +99,13 @@ public class RLAgent extends Agent {
 
         // You will need to add code to check if you are in a testing or learning episode
 
-        // Find all of your units
+        // Find all of your unit IDs
         myFootmen = stateView.getUnits(playernum).stream()
         				.filter(unit -> unit.getTemplateView().getName().toLowerCase().equals("footman"))
         				.map(unit -> unit.getID())
         				.collect(Collectors.toList());
 
-        // Find all of the enemy units
+        // Find all of the enemy unit IDs
         enemyFootmen = stateView.getUnits(ENEMY_PLAYERNUM).stream()
 				.filter(unit -> unit.getTemplateView().getName().toLowerCase().equals("footman"))
 				.map(unit -> unit.getID())
@@ -229,11 +229,11 @@ public class RLAgent extends Agent {
     	
     	// TODO : account for TURN_PENALTY
     	
-    	for (UnitView unit : getUnitViews(stateView, true)) {
+    	for (UnitView unit : getUnitViews(stateView, myFootmen)) {
     		newSumReward += UNIT_BONUS + HP_BONUS * unit.getHP();
     	}
     	
-    	for (UnitView unit : getUnitViews(stateView, false)) {
+    	for (UnitView unit : getUnitViews(stateView, enemyFootmen)) {
     		newSumReward -= UNIT_BONUS + HP_BONUS * unit.getHP();
     	}
     	
@@ -249,8 +249,8 @@ public class RLAgent extends Agent {
      * @param ourUnits if true, returns player units, else enemy units
      * @return
      */
-    private List<UnitView> getUnitViews(StateView stateView, boolean ourUnits) {
-    	return (ourUnits ? myFootmen : enemyFootmen).stream()
+    private List<UnitView> getUnitViews(StateView stateView, List<Integer> unitIds) {
+    	return unitIds.stream()
     			.map(id -> stateView.getUnit(id))
     			.collect(Collectors.toList());
     }
