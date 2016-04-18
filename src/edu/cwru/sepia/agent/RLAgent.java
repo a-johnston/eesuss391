@@ -4,10 +4,13 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
+import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.history.History;
 
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RLAgent extends Agent {
 
@@ -141,9 +144,24 @@ public class RLAgent extends Agent {
      * @return New actions to execute or nothing if an event has not occurred.
      */
     @Override
-    public Map<Integer, Action> middleStep(StateView stateView, HistoryView historyView) {
-    	
-        return null;
+    public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
+        Map<Integer, Action> actionMap = new HashMap<>();
+        if (stateView.getTurnNumber() == 1 || unitDied(historyView, stateView) || actionCompleted(historyView, stateView)) {
+            // Do some fun reevaluation stuff
+
+        }
+        return actionMap;
+    }
+
+
+    private boolean unitDied(History.HistoryView historyView, State.StateView stateView) {
+        return historyView.getDeathLogs(stateView.getTurnNumber() - 1).size() > 0;
+    }
+
+    private boolean actionCompleted(History.HistoryView historyView, State.StateView stateView) {
+        for(historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1)) {
+
+        }
     }
 
     /**
