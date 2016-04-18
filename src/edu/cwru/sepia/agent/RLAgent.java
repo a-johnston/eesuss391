@@ -162,6 +162,7 @@ public class RLAgent extends Agent {
         for(historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1)) {
 
         }
+
     }
 
     /**
@@ -243,7 +244,7 @@ public class RLAgent extends Agent {
     public double calculateReward(StateView stateView, HistoryView historyView, int footmanId) {
     	double newSumReward = 0.0;
     	
-    	// TODO : account for TURN_PENALTY
+    	// TODO : confirm that this is correct
     	
     	for (UnitView unit : getUnitViews(stateView, myFootmen)) {
     		newSumReward += UNIT_BONUS + HP_BONUS * unit.getHP();
@@ -256,7 +257,7 @@ public class RLAgent extends Agent {
     	double delta = newSumReward - sumReward;
     	sumReward = newSumReward;
     	
-        return delta;
+        return TURN_PENALTY + delta;
     }
     
     /**
@@ -268,6 +269,7 @@ public class RLAgent extends Agent {
     private List<UnitView> getUnitViews(StateView stateView, List<Integer> unitIds) {
     	return unitIds.stream()
     			.map(id -> stateView.getUnit(id))
+    			.filter(unit -> unit != null)
     			.collect(Collectors.toList());
     }
 
