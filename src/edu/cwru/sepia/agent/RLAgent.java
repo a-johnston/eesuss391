@@ -142,9 +142,7 @@ public class RLAgent extends Agent {
      */
     @Override
     public Map<Integer, Action> middleStep(StateView stateView, HistoryView historyView) {
-    	double newReward = 0.0;
     	
-    	sumReward = newReward;
         return null;
     }
 
