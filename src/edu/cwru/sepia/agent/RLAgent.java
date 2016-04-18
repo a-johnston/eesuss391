@@ -273,7 +273,15 @@ public class RLAgent extends Agent {
                              HistoryView historyView,
                              int attackerId,
                              int defenderId) {
-        return 0;
+    	
+    	double q = 0.0;
+    	double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
+    	
+    	for (int i = 0; i < features.length; i++) {
+    		q += weights[i] * features[i];
+    	}
+    	
+        return q;
     }
 
     /**
@@ -297,7 +305,11 @@ public class RLAgent extends Agent {
                                            HistoryView historyView,
                                            int attackerId,
                                            int defenderId) {
-        return null;
+    	double[] features = new double[NUM_FEATURES];
+    	
+    	// TODO : all of this
+    	
+        return features;
     }
 
     /**
