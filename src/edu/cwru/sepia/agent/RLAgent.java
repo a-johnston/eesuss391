@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
+import edu.cwru.sepia.action.ActionResult;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
@@ -9,6 +10,7 @@ import edu.cwru.sepia.environment.model.history.History;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -159,10 +161,11 @@ public class RLAgent extends Agent {
     }
 
     private boolean actionCompleted(History.HistoryView historyView, State.StateView stateView) {
-        for(historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1)) {
-
+        for(Entry<Integer, ActionResult> result : historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1).entrySet()) {
+        	// TODO : do something with result
         }
-
+        
+        return false;
     }
 
     /**
