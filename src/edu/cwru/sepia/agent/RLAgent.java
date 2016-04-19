@@ -39,6 +39,9 @@ public class RLAgent extends Agent {
 
     /**
      * Set this to whatever size your feature vector is.
+     * Current features:
+     * Attacking the closest unit
+     * Attacking the lowest health unit
      */
     public static final int NUM_FEATURES = 2;
     
@@ -78,14 +81,14 @@ public class RLAgent extends Agent {
             System.out.println("Running " + numEpisodes + " episodes.");
         } else {
             numEpisodes = 10;
-            System.out.println("Warning! Number of episodes not specified. Defaulting to 10 episodes.");
+            System.err.println("Warning! Number of episodes not specified. Defaulting to 10 episodes.");
         }
 
         boolean loadWeights = false;
         if (args.length >= 2) {
             loadWeights = Boolean.parseBoolean(args[1]);
         } else {
-            System.out.println("Warning! Load weights argument not specified. Defaulting to not loading.");
+            System.err.println("Warning! Load weights argument not specified. Defaulting to not loading.");
         }
 
         if (loadWeights) {
@@ -251,7 +254,8 @@ public class RLAgent extends Agent {
     	double newSumReward = 0.0;
     	
     	// TODO : confirm that this is correct
-    	
+        // TODO: Are we supposed to implement the reward spec'd in the assignment?!?!
+
     	for (UnitView unit : getUnitViews(stateView, myFootmen)) {
     		newSumReward += UNIT_BONUS + HP_BONUS * unit.getHP();
     	}
