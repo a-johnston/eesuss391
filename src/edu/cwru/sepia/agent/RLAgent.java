@@ -279,34 +279,41 @@ public class RLAgent extends Agent {
     			.collect(Collectors.toList());
     }
     
-    private int getClosestUnitId(UnitView unit, List<UnitView> units) {
-    	UnitView closest = null;
-    	int bestDistance = Integer.MAX_VALUE;
+    /**
+     * Calculates a normalized weight for a given enemy unit based on distance
+     * Returns 1.0 for the closest unit and 0.0 for the farthest unit,
+     * linearly decreasing as distance increases.
+     * 
+     * @param us	Our unit
+     * @param them	Enemy unit
+     * @param all	All enemy units
+     * @return		Normalized weight for distance
+     */
+    private double getNormalizedDistance(UnitView us, UnitView them, List<UnitView> all) {
+    	// TODO : does default of MAX_VALUE and 0 make sense here? only hit when units is empty, so should be ok?
+    	double closest  = all.stream().mapToInt(u -> getDistance(us, u)).min().orElse(Integer.MAX_VALUE);
+    	double farthest = all.stream().mapToInt(u -> getDistance(us, u)).max().orElse(0);
     	
-    	for (UnitView u : units) {
-    		int temp = getDistance(unit, u);
-    		
-    		if (temp < bestDistance) {
-    			bestDistance = temp;
-    			closest = u;
-    		}
-    	}
+    	double dist = getDistance(us, them);
     	
-    	return closest == null ? -1 : closest.getID();
+    	return 1.0 - ((dist - closest) / (farthest - closest));
     }
     
-    private int getWeakestUnitId(List<UnitView> units) {
-    	UnitView weakest = null;
-    	int lowestHP = Integer.MAX_VALUE;
+    /**
+     * Calculates a normalized weight for a given unit based on HP. The weakest
+     * enemy is assigned a weight of 1.0 and the strongest a weight of 0.0,
+     * with all in between weighted linearly between them.
+     * 
+     * @param target	Target to generate weight for
+     * @param units		All targets to consider for normalization
+     * @return 			Normalized weight for HP
+     */
+    private double getNormalizedWeakness(UnitView target, List<UnitView> units) {
+    	// TODO : does default of MAX_VALUE and 0 make sense here? only hit when units is empty, so should be ok?
+    	double weakest   = units.stream().mapToInt(UnitView::getHP).min().orElse(Integer.MAX_VALUE);
+    	double strongest = units.stream().mapToInt(UnitView::getHP).max().orElse(0);
     	
-    	for (UnitView unit : units) {
-    		if (unit.getHP() < lowestHP) {
-    			lowestHP = unit.getHP();
-    			weakest = unit;
-    		}
-    	}
-    	
-    	return weakest == null ? -1 : weakest.getID();
+    	return 1.0 - ((target.getHP() - weakest) / (strongest - weakest));
     }
     
     private int getDistance(UnitView a, UnitView b) {
@@ -368,14 +375,13 @@ public class RLAgent extends Agent {
     	double[] features = new double[NUM_FEATURES];
     	
     	UnitView attacker = stateView.getUnit(attackerId);
+    	UnitView target = stateView.getUnit(defenderId);
     	
     	List<UnitView> targets = getUnitViews(stateView, enemyFootmen);
     	
-    	int closestId = getClosestUnitId(attacker, targets);
-    	int weakestId = getWeakestUnitId(targets);
-    	
-    	features[CLOSEST_ENEMY_FEATURE] = defenderId == closestId ? 1.0 : 0.0;
-    	features[WEAKEST_ENEMY_FEATURE] = defenderId == weakestId ? 1.0 : 0.0;
+    	// TODO : consider if linear functions are more or less appropriate here
+    	features[CLOSEST_ENEMY_FEATURE] = getNormalizedDistance(attacker, target, targets);
+    	features[WEAKEST_ENEMY_FEATURE] = getNormalizedWeakness(target, targets);
     	
     	// TODO : more of this
     	
