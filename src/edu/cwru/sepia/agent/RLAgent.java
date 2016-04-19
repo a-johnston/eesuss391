@@ -40,7 +40,10 @@ public class RLAgent extends Agent {
     /**
      * Set this to whatever size your feature vector is.
      */
-    public static final int NUM_FEATURES = 5;
+    public static final int NUM_FEATURES = 2;
+    
+    public static final int CLOSEST_ENEMY_FEATURE = 0;
+    public static final int WEAKEST_ENEMY_FEATURE = 1;
 
     /** Use this random number generator for your epsilon exploration. When you submit we will
      * change this seed so make sure that your agent works for more than the default seed.
@@ -275,6 +278,42 @@ public class RLAgent extends Agent {
     			.filter(unit -> unit != null)
     			.collect(Collectors.toList());
     }
+    
+    private int getClosestUnitId(UnitView unit, List<UnitView> units) {
+    	UnitView closest = null;
+    	int bestDistance = Integer.MAX_VALUE;
+    	
+    	for (UnitView u : units) {
+    		int temp = getDistance(unit, u);
+    		
+    		if (temp < bestDistance) {
+    			bestDistance = temp;
+    			closest = u;
+    		}
+    	}
+    	
+    	return closest == null ? -1 : closest.getID();
+    }
+    
+    private int getWeakestUnitId(List<UnitView> units) {
+    	UnitView weakest = null;
+    	int lowestHP = Integer.MAX_VALUE;
+    	
+    	for (UnitView unit : units) {
+    		if (unit.getHP() < lowestHP) {
+    			lowestHP = unit.getHP();
+    			weakest = unit;
+    		}
+    	}
+    	
+    	return weakest == null ? -1 : weakest.getID();
+    }
+    
+    private int getDistance(UnitView a, UnitView b) {
+    	return Math.min(
+    			Math.abs(a.getXPosition() - b.getXPosition()),
+    			Math.abs(a.getYPosition() - b.getYPosition()));
+    }
 
     /**
      * Calculate the Q-Value for a given state action pair. The state in this scenario is the current
@@ -328,7 +367,17 @@ public class RLAgent extends Agent {
                                            int defenderId) {
     	double[] features = new double[NUM_FEATURES];
     	
-    	// TODO : all of this
+    	UnitView attacker = stateView.getUnit(attackerId);
+    	
+    	List<UnitView> targets = getUnitViews(stateView, enemyFootmen);
+    	
+    	int closestId = getClosestUnitId(attacker, targets);
+    	int weakestId = getWeakestUnitId(targets);
+    	
+    	features[CLOSEST_ENEMY_FEATURE] = defenderId == closestId ? 1.0 : 0.0;
+    	features[WEAKEST_ENEMY_FEATURE] = defenderId == weakestId ? 1.0 : 0.0;
+    	
+    	// TODO : more of this
     	
         return features;
     }
