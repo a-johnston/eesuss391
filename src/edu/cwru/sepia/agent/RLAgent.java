@@ -198,6 +198,7 @@ public class RLAgent extends Agent {
      * @return The updated weight vector.
      */
     public double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, StateView stateView, HistoryView historyView, int footmanId) {
+    	// TODO : this
         return null;
     }
 
@@ -208,10 +209,21 @@ public class RLAgent extends Agent {
      * @param stateView Current state of the game
      * @param historyView The entire history of this episode
      * @param attackerId The footman that will be attacking
-     * @return The enemy footman ID this unit should attack
+     * @return The enemy footman ID this unit should attack	
      */
     public int selectAction(StateView stateView, HistoryView historyView, int attackerId) {
-        return -1;
+        int bestEnemy = -1;
+        double bestQ = Integer.MIN_VALUE;
+        
+        for (int enemy : enemyFootmen) {
+        	double temp = calcQValue(stateView, historyView, attackerId, enemy);
+        	if (temp > bestQ) {
+        		bestQ = temp;
+        		bestEnemy = enemy;
+        	}
+        }
+        
+        return bestEnemy;
     }
 
     /**
@@ -382,8 +394,6 @@ public class RLAgent extends Agent {
     	// TODO : consider if linear functions are more or less appropriate here
     	features[CLOSEST_ENEMY_FEATURE] = getNormalizedDistance(attacker, target, targets);
     	features[WEAKEST_ENEMY_FEATURE] = getNormalizedWeakness(target, targets);
-    	
-    	// TODO : more of this
     	
         return features;
     }
