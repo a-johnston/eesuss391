@@ -152,8 +152,17 @@ public class RLAgent extends Agent {
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
         if (stateView.getTurnNumber() == 1 || unitDied(historyView, stateView) || actionCompleted(historyView, stateView)) {
-            // Do some fun reevaluation stuff
-
+            for (int unit : myFootmen) {
+            	if (stateView.getUnit(unit) == null) {
+            		continue;
+            	}
+            	
+            	int enemy = selectAction(stateView, historyView, unit);
+            	
+            	if (enemy != -1) {
+            		actionMap.put(unit, Action.createCompoundAttack(unit, enemy));
+            	}
+            }
         }
         return actionMap;
     }
@@ -213,7 +222,7 @@ public class RLAgent extends Agent {
      */
     public int selectAction(StateView stateView, HistoryView historyView, int attackerId) {
         int bestEnemy = -1;
-        double bestQ = Integer.MIN_VALUE;
+        double bestQ = Double.NEGATIVE_INFINITY;
         
         for (int enemy : enemyFootmen) {
         	double temp = calcQValue(stateView, historyView, attackerId, enemy);
@@ -356,6 +365,10 @@ public class RLAgent extends Agent {
     	double q = 0.0;
     	double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
     	
+    	if (features == null) {
+    		return Double.NEGATIVE_INFINITY;
+    	}
+    	
     	for (int i = 0; i < features.length; i++) {
     		q += weights[i] * features[i];
     	}
@@ -388,6 +401,10 @@ public class RLAgent extends Agent {
     	
     	UnitView attacker = stateView.getUnit(attackerId);
     	UnitView target = stateView.getUnit(defenderId);
+    	
+    	if (target == null) {
+    		return null;
+    	}
     	
     	List<UnitView> targets = getUnitViews(stateView, enemyFootmen);
     	
