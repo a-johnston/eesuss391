@@ -151,12 +151,8 @@ public class RLAgent extends Agent {
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
-        if (stateView.getTurnNumber() == 1 || unitDied(historyView, stateView) || actionCompleted(historyView, stateView)) {
+        if (stateView.getTurnNumber() == 1 || updateUnitLists(historyView, stateView) || actionCompleted(historyView, stateView)) {
             for (int unit : myFootmen) {
-            	if (stateView.getUnit(unit) == null) {
-            		continue;
-            	}
-            	
             	int enemy = selectAction(stateView, historyView, unit);
             	
             	if (enemy != -1) {
@@ -168,7 +164,10 @@ public class RLAgent extends Agent {
     }
 
 
-    private boolean unitDied(History.HistoryView historyView, State.StateView stateView) {
+    private boolean updateUnitLists(History.HistoryView historyView, State.StateView stateView) {
+    	myFootmen = myFootmen.stream().filter(unit -> stateView.getUnit(unit) != null).collect(Collectors.toList());
+    	enemyFootmen = enemyFootmen.stream().filter(unit -> stateView.getUnit(unit) != null).collect(Collectors.toList());
+    	
         return historyView.getDeathLogs(stateView.getTurnNumber() - 1).size() > 0;
     }
 
@@ -221,6 +220,12 @@ public class RLAgent extends Agent {
      * @return The enemy footman ID this unit should attack	
      */
     public int selectAction(StateView stateView, HistoryView historyView, int attackerId) {
+    	// Returns a random enemy to attack with probability epsilon
+        if (random.nextDouble() < epsilon) {
+        	return enemyFootmen.get((int) random.nextDouble() * enemyFootmen.size());
+        }
+        
+        // Otherwise returns the enemy that maximizes the Q value
         int bestEnemy = -1;
         double bestQ = Double.NEGATIVE_INFINITY;
         
@@ -365,10 +370,6 @@ public class RLAgent extends Agent {
     	double q = 0.0;
     	double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
     	
-    	if (features == null) {
-    		return Double.NEGATIVE_INFINITY;
-    	}
-    	
     	for (int i = 0; i < features.length; i++) {
     		q += weights[i] * features[i];
     	}
@@ -401,10 +402,6 @@ public class RLAgent extends Agent {
     	
     	UnitView attacker = stateView.getUnit(attackerId);
     	UnitView target = stateView.getUnit(defenderId);
-    	
-    	if (target == null) {
-    		return null;
-    	}
     	
     	List<UnitView> targets = getUnitViews(stateView, enemyFootmen);
     	
