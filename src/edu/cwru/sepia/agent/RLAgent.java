@@ -230,7 +230,7 @@ public class RLAgent extends Agent {
     }
 
     public double getBestQValue(StateView stateView, HistoryView historyView, int footmanId) {
-        int bestEnemy = selectAction(stateView, historyView, footmanId);
+        int bestEnemy = selectBestEnemy(stateView, historyView, footmanId);
         return calcQValue(stateView, historyView, footmanId, bestEnemy);
     }
 
@@ -248,22 +248,25 @@ public class RLAgent extends Agent {
         if (random.nextDouble() < epsilon) {
         	return enemyFootmen.get((int) random.nextDouble() * enemyFootmen.size());
         }
-        
+
+        return selectBestEnemy(stateView, historyView, attackerId);
+    }
+
+    public int selectBestEnemy(StateView stateView, HistoryView historyView, int attackerId) {
         // Otherwise returns the enemy that maximizes the Q value
         int bestEnemy = -1;
         double bestQ = Double.NEGATIVE_INFINITY;
-        
+
         for (int enemy : enemyFootmen) {
-        	double temp = calcQValue(stateView, historyView, attackerId, enemy);
-        	if (temp > bestQ) {
-        		bestQ = temp;
-        		bestEnemy = enemy;
-        	}
+            double temp = calcQValue(stateView, historyView, attackerId, enemy);
+            if (temp > bestQ) {
+                bestQ = temp;
+                bestEnemy = enemy;
+            }
         }
-        
+
         return bestEnemy;
     }
-
     /**
      * Given the current state and the footman in question calculate the reward received on the last turn.
      * This is where you will check for things like Did this footman take or give damage? Did this footman die
@@ -402,11 +405,7 @@ public class RLAgent extends Agent {
     	double q = 0.0;
     	double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
     	
-    	for (int i = 0; i < features.length; i++) {
-    		q += weights[i] * features[i];
-    	}
-    	
-        return q;
+        return dotProduct(weights, features);
     }
 
     /**
