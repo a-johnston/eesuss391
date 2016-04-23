@@ -154,15 +154,23 @@ public class RLAgent extends Agent {
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
-        if (stateView.getTurnNumber() == 1 || unitDied(historyView, stateView) || actionCompleted(historyView, stateView)) {
-            // Do some fun reevaluation stuff
-
+        if (stateView.getTurnNumber() == 1 || updateUnitLists(historyView, stateView) || actionCompleted(historyView, stateView)) {
+            for (int unit : myFootmen) {
+            	int enemy = selectAction(stateView, historyView, unit);
+            	
+            	if (enemy != -1) {
+            		actionMap.put(unit, Action.createCompoundAttack(unit, enemy));
+            	}
+            }
         }
         return actionMap;
     }
 
 
-    private boolean unitDied(History.HistoryView historyView, State.StateView stateView) {
+    private boolean updateUnitLists(History.HistoryView historyView, State.StateView stateView) {
+    	myFootmen = myFootmen.stream().filter(unit -> stateView.getUnit(unit) != null).collect(Collectors.toList());
+    	enemyFootmen = enemyFootmen.stream().filter(unit -> stateView.getUnit(unit) != null).collect(Collectors.toList());
+    	
         return historyView.getDeathLogs(stateView.getTurnNumber() - 1).size() > 0;
     }
 
@@ -201,6 +209,7 @@ public class RLAgent extends Agent {
      * @return The updated weight vector.
      */
     public double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, StateView stateView, HistoryView historyView, int footmanId) {
+    	// TODO : this
         return null;
     }
 
@@ -211,10 +220,27 @@ public class RLAgent extends Agent {
      * @param stateView Current state of the game
      * @param historyView The entire history of this episode
      * @param attackerId The footman that will be attacking
-     * @return The enemy footman ID this unit should attack
+     * @return The enemy footman ID this unit should attack	
      */
     public int selectAction(StateView stateView, HistoryView historyView, int attackerId) {
-        return -1;
+    	// Returns a random enemy to attack with probability epsilon
+        if (random.nextDouble() < epsilon) {
+        	return enemyFootmen.get((int) random.nextDouble() * enemyFootmen.size());
+        }
+        
+        // Otherwise returns the enemy that maximizes the Q value
+        int bestEnemy = -1;
+        double bestQ = Double.NEGATIVE_INFINITY;
+        
+        for (int enemy : enemyFootmen) {
+        	double temp = calcQValue(stateView, historyView, attackerId, enemy);
+        	if (temp > bestQ) {
+        		bestQ = temp;
+        		bestEnemy = enemy;
+        	}
+        }
+        
+        return bestEnemy;
     }
 
     /**
@@ -326,6 +352,7 @@ public class RLAgent extends Agent {
     			Math.abs(a.getYPosition() - b.getYPosition()));
     }
 
+
     /**
      * Calculate the Q-Value for a given state action pair. The state in this scenario is the current
      * state view and the history of this episode. The action is the attacker and the enemy pair for the
@@ -359,6 +386,10 @@ public class RLAgent extends Agent {
      * Given a state and action calculate your features here. Please include a comment explaining what features
      * you chose and why you chose them.
      *
+     * Features Included:
+     * 1. Attacking the closest enemy - generally speaking the best unit to attack is probably the closest one
+     * 2.
+     *
      * All of your feature functions should evaluate to a double. Collect all of these into an array. You will
      * take a dot product of this array with the weights array to get a Q-value for a given state action.
      *
@@ -386,8 +417,6 @@ public class RLAgent extends Agent {
     	// TODO : consider if linear functions are more or less appropriate here
     	features[CLOSEST_ENEMY_FEATURE] = getNormalizedDistance(attacker, target, targets);
     	features[WEAKEST_ENEMY_FEATURE] = getNormalizedWeakness(target, targets);
-    	
-    	// TODO : more of this
     	
         return features;
     }
