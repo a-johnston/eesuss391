@@ -18,7 +18,15 @@ public class RLAgent extends Agent {
 
 	private static final long serialVersionUID = 1L;
 
-	/**
+    /**
+     * These variables and constants are generally useful for house keeping
+     */
+    private static final int TURNS_BETWEEN_TESTING = 10;
+    private static final int NUMBER_OF_TEST_RUNS = 5;
+    private int episodeNumber = 0;
+    private int testsCompleted = 0;
+
+    /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
      * When starting an episode. If the count is greater than this value print a message
      * and call sys.exit(0)
@@ -47,6 +55,7 @@ public class RLAgent extends Agent {
     
     public static final int CLOSEST_ENEMY_FEATURE = 0;
     public static final int WEAKEST_ENEMY_FEATURE = 1;
+
 
     /** Use this random number generator for your epsilon exploration. When you submit we will
      * change this seed so make sure that your agent works for more than the default seed.
@@ -107,7 +116,14 @@ public class RLAgent extends Agent {
     public Map<Integer, Action> initialStep(StateView stateView, HistoryView historyView) {
 
         // You will need to add code to check if you are in a testing or learning episode
-
+        if(episodeNumber % TURNS_BETWEEN_TESTING == 0 && NUMBER_OF_TEST_RUNS > testsCompleted) {
+            // Do testing episode
+            testsCompleted ++;
+        } else {
+            // Do learning episode
+            testsCompleted = 0; 
+            episodeNumber++;
+        }
         // Find all of your unit IDs
         myFootmen = stateView.getUnits(playernum).stream()
         				.filter(unit -> unit.getTemplateView().getName().toLowerCase().equals("footman"))
@@ -152,7 +168,7 @@ public class RLAgent extends Agent {
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
-        if (stateView.getTurnNumber() == 1 || updateUnitLists(historyView, stateView) || actionCompleted(historyView, stateView)) {
+        if (stateView.getTurnNumber() == 0 || updateUnitLists(historyView, stateView) || actionCompleted(historyView, stateView)) {
             for (int unit : myFootmen) {
             	int enemy = selectAction(stateView, historyView, unit);
             	
@@ -173,8 +189,8 @@ public class RLAgent extends Agent {
     }
 
     private boolean actionCompleted(History.HistoryView historyView, State.StateView stateView) {
-        for(Entry<Integer, ActionResult> result : historyView.getCommandFeedback(0, stateView.getTurnNumber() - 1).entrySet()) {
-        	// TODO : do something with result
+        for(Entry<Integer, ActionResult> result : historyView.getCommandFeedback(this.getPlayerNumber(), stateView.getTurnNumber() - 1).entrySet()) {
+
         }
         
         return false;
@@ -212,9 +228,9 @@ public class RLAgent extends Agent {
         double[] newWeights = new double[oldWeights.length];
         for (int i = 0; i < oldWeights.length; i++) {
             newWeights[i] = oldWeights[i];
-            newWeights[i] += learningRate * oldFeatures[i] * calculateReward(stateView, historyView, footmanId);
-            newWeights[i] += learningRate * oldFeatures[i] * gamma * getBestQValue(stateView, historyView, footmanId);
-            newWeights[i] -= learningRate * oldFeatures[i] * dotProduct(oldFeatures, oldWeights);
+            newWeights[i] += learningRate * oldFeatures[i] * calculateReward(stateView, historyView, footmanId); // Reward addition
+            newWeights[i] += learningRate * oldFeatures[i] * gamma * getBestQValue(stateView, historyView, footmanId); // Best next reward addition
+            newWeights[i] -= learningRate * oldFeatures[i] * dotProduct(oldFeatures, oldWeights); // Current value
          }
 
         return newWeights;
