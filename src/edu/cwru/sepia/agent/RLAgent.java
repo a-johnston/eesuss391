@@ -207,8 +207,31 @@ public class RLAgent extends Agent {
      * @return The updated weight vector.
      */
     public double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, StateView stateView, HistoryView historyView, int footmanId) {
-    	// TODO : this
-        return null;
+        // TODO : Why is there a totalRewards input to this function?
+
+        double[] newWeights = new double[oldWeights.length];
+        for (int i = 0; i < oldWeights.length; i++) {
+            newWeights[i] = oldWeights[i];
+            newWeights[i] += learningRate * oldFeatures[i] * calculateReward(stateView, historyView, footmanId);
+            newWeights[i] += learningRate * oldFeatures[i] * gamma * getBestQValue(stateView, historyView, footmanId);
+            newWeights[i] -= learningRate * oldFeatures[i] * dotProduct(oldFeatures, oldWeights);
+         }
+
+        return newWeights;
+    }
+
+    public double dotProduct(double[] array1, double[] array2) {
+        double sum = 0.0;
+        for(int i = 0; i < array1.length; i ++) {
+            sum += array1[i] * array2[i];
+        }
+
+        return sum;
+    }
+
+    public double getBestQValue(StateView stateView, HistoryView historyView, int footmanId) {
+        int bestEnemy = selectAction(stateView, historyView, footmanId);
+        return calcQValue(stateView, historyView, footmanId, bestEnemy);
     }
 
     /**
@@ -269,6 +292,10 @@ public class RLAgent extends Agent {
      *     System.out.println("Unit " + commandEntry.getKey() + " was command to " + commandEntry.getValue().toString);
      * }
      *
+     * The reward function should be defined as follows:
+     * each action costs -.1
+     * +d for each damage the unit dealt
+     * -d for each damage the unit took
      * @param stateView The current state of the game.
      * @param historyView History of the episode up until this turn.
      * @param footmanId The footman ID you are looking for the reward from.
@@ -276,7 +303,7 @@ public class RLAgent extends Agent {
      */
     public double calculateReward(StateView stateView, HistoryView historyView, int footmanId) {
 
-    	double reward = 0.0; 
+    	double reward = 0.0;
     	if (stateView.getUnit(footmanId) == null) {
     		return -UNIT_BONUS;
     	}
@@ -299,8 +326,8 @@ public class RLAgent extends Agent {
     /**
      * Returns the respective UnitViews for a given side for a given stateView
      * @param stateView
-     * @param ourUnits if true, returns player units, else enemy units
-     * @return
+     * @param unitIds
+     * @return if true, returns player units, else enemy units
      */
     private List<UnitView> getUnitViews(StateView stateView, List<Integer> unitIds) {
     	return unitIds.stream()
