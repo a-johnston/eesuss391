@@ -2,6 +2,7 @@ package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionResult;
+import edu.cwru.sepia.environment.model.history.DamageLog;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
@@ -12,7 +13,6 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class RLAgent extends Agent {
 
@@ -70,8 +70,6 @@ public class RLAgent extends Agent {
     private final double UNIT_BONUS = 100.0;
     private final double HP_BONUS = 1.0;
     private final double TURN_PENALTY = 0.1;
-    
-    private double sumReward = 0.0; // used to store the summed reward of the current/previous step
 
     public RLAgent(int playernum, String[] args) {
         super(playernum);
@@ -277,23 +275,25 @@ public class RLAgent extends Agent {
      * @return The current reward
      */
     public double calculateReward(StateView stateView, HistoryView historyView, int footmanId) {
-    	double newSumReward = 0.0;
-    	
-    	// TODO : confirm that this is correct
-        // TODO: Are we supposed to implement the reward spec'd in the assignment?!?!
 
-    	for (UnitView unit : getUnitViews(stateView, myFootmen)) {
-    		newSumReward += UNIT_BONUS + HP_BONUS * unit.getHP();
+    	double reward = 0.0; 
+    	if (stateView.getUnit(footmanId) == null) {
+    		return -UNIT_BONUS;
     	}
     	
-    	for (UnitView unit : getUnitViews(stateView, enemyFootmen)) {
-    		newSumReward -= UNIT_BONUS + HP_BONUS * unit.getHP();
+    	for (DamageLog log : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
+    		if (log.getAttackerID() == footmanId) {
+    			reward += log.getDamage() * HP_BONUS;
+    			
+    			if (stateView.getUnit(log.getDefenderID()) == null) {
+    				reward += UNIT_BONUS;
+    			}
+    		} else if (log.getDefenderID() == footmanId) {
+    			reward -= log.getDamage() * HP_BONUS;
+    		}
     	}
     	
-    	double delta = newSumReward - sumReward;
-    	sumReward = newSumReward;
-    	
-        return TURN_PENALTY + delta;
+    	return reward;
     }
     
     /**
