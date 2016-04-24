@@ -173,12 +173,13 @@ public class RLAgent extends Agent {
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
         double stateReward = 0.0;
-        boolean unitDidDie = updateUnitLists(historyView, stateView);
         //System.out.println(enemyFootmen.size());
         // Calculate the reward of this state.
         for (int friendlyUnit : myFootmen) {
             stateReward += calculateReward(stateView, historyView, friendlyUnit);
         }
+        
+        boolean unitDidDie = updateUnitLists(historyView, stateView); // Important to check this after we calculate the state reward.
         // System.out.println(stateReward);
         // TODO: Probably add more feature vectors here.
         if(stateView.getTurnNumber() == 0 || unitDidDie || actionCompleted(historyView, stateView)) {
@@ -354,7 +355,7 @@ public class RLAgent extends Agent {
     		reward -= UNIT_BONUS;
     	}
 
-        // Check the damage logs to figure out if anyone died/was injured 
+        // Check the damage logs to figure out if anyone died/was injured
     	for (DamageLog log : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
     		if (log.getAttackerID() == footmanId) {
     			reward += log.getDamage() * HP_BONUS;
