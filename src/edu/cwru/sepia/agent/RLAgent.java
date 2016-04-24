@@ -78,7 +78,7 @@ public class RLAgent extends Agent {
     
     private final double UNIT_BONUS = 100.0;
     private final double HP_BONUS = 1.0;
-    private final double TURN_PENALTY = 0.1;
+    private final double TURN_PENALTY = 0.1; // TODO: Why is this not used?
 
     public RLAgent(int playernum, String[] args) {
         super(playernum);
@@ -123,6 +123,10 @@ public class RLAgent extends Agent {
             // Do learning episode
             testsCompleted = 0;
             episodeNumber++;
+        }
+
+        if (episodeNumber > numEpisodes) {
+
         }
         // Find all of your unit IDs
         myFootmen = stateView.getUnits(playernum).stream()
@@ -175,7 +179,7 @@ public class RLAgent extends Agent {
         for (int friendlyUnit : myFootmen) {
             stateReward += calculateReward(stateView, historyView, friendlyUnit);
         }
-        System.out.println(stateReward); 
+        // System.out.println(stateReward);
         // TODO: Probably add more feature vectors here.
         if(stateView.getTurnNumber() == 0 || unitDidDie || actionCompleted(historyView, stateView)) {
             // Update the weights of our feature vectors
@@ -223,7 +227,7 @@ public class RLAgent extends Agent {
     public void terminalStep(StateView stateView, HistoryView historyView) {
 
         // MAKE SURE YOU CALL printTestData after you finish a test episode.
-
+        System.out.println(episodeNumber);
         // Save your weights
         saveWeights(weights);
 
@@ -245,7 +249,7 @@ public class RLAgent extends Agent {
         double[] newWeights = new double[oldWeights.length];
         for (int i = 0; i < oldWeights.length; i++) {
             newWeights[i] = oldWeights[i];
-            newWeights[i] += learningRate * oldFeatures[i] * calculateReward(stateView, historyView, footmanId); // Reward addition
+            newWeights[i] += learningRate * oldFeatures[i] * totalReward; // Reward addition
             newWeights[i] += learningRate * oldFeatures[i] * gamma * getBestQValue(stateView, historyView, footmanId); // Best next reward addition
             newWeights[i] -= learningRate * oldFeatures[i] * dotProduct(oldFeatures, oldWeights); // Current value
          }
@@ -336,6 +340,8 @@ public class RLAgent extends Agent {
      * each action costs -.1
      * +d for each damage the unit dealt
      * -d for each damage the unit took
+     * +100 if an enemy dies
+     * -100 if a friendly dies
      * @param stateView The current state of the game.
      * @param historyView History of the episode up until this turn.
      * @param footmanId The footman ID you are looking for the reward from.
@@ -343,11 +349,12 @@ public class RLAgent extends Agent {
      */
     public double calculateReward(StateView stateView, HistoryView historyView, int footmanId) {
 
-    	double reward = 0.0;
+    	double reward = TURN_PENALTY;
     	if (stateView.getUnit(footmanId) == null) {
-    		return -UNIT_BONUS;
+    		reward -= UNIT_BONUS;
     	}
-    	
+
+        // Check the damage logs to figure out if anyone died/was injured 
     	for (DamageLog log : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
     		if (log.getAttackerID() == footmanId) {
     			reward += log.getDamage() * HP_BONUS;
