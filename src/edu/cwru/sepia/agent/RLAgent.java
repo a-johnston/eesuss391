@@ -170,7 +170,7 @@ public class RLAgent extends Agent {
         Map<Integer, Action> actionMap = new HashMap<>();
         double stateReward = 0.0;
         boolean unitDidDie = updateUnitLists(historyView, stateView);
-        System.out.println(enemyFootmen.size());
+        //System.out.println(enemyFootmen.size());
         // Calculate the reward of this state.
         for (int friendlyUnit : myFootmen) {
             stateReward += calculateReward(stateView, historyView, friendlyUnit);
@@ -256,9 +256,10 @@ public class RLAgent extends Agent {
     public double dotProduct(double[] array1, double[] array2) {
         double sum = 0.0;
         for(int i = 0; i < array1.length; i ++) {
+            System.out.println(array1[i] * array2[i]);
             sum += array1[i] * array2[i];
         }
-
+        //System.out.println(sum);
         return sum;
     }
 
@@ -291,13 +292,16 @@ public class RLAgent extends Agent {
         double bestQ = Double.NEGATIVE_INFINITY;
 
         for (int enemy : enemyFootmen) {
+            //System.out.println("Executing loop");
             double temp = calcQValue(stateView, historyView, attackerId, enemy);
+            //System.out.println(temp);
             if (temp > bestQ) {
                 bestQ = temp;
                 bestEnemy = enemy;
             }
         }
-
+        //System.out.println("Best enemy");
+        //System.out.println(bestEnemy);
         return bestEnemy;
     }
     /**
@@ -403,6 +407,7 @@ public class RLAgent extends Agent {
      */
     private double getNormalizedWeakness(UnitView target, List<UnitView> units) {
     	// TODO : does default of MAX_VALUE and 0 make sense here? only hit when units is empty, so should be ok?
+
     	double weakest   = units.stream().mapToInt(UnitView::getHP).min().orElse(Integer.MAX_VALUE);
     	double strongest = units.stream().mapToInt(UnitView::getHP).max().orElse(0);
     	
@@ -437,7 +442,7 @@ public class RLAgent extends Agent {
     	
     	double q = 0.0;
     	double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
-    	
+
         return dotProduct(weights, features);
     }
 
@@ -474,12 +479,49 @@ public class RLAgent extends Agent {
     	List<UnitView> targets = getUnitViews(stateView, enemyFootmen);
     	
     	// TODO : consider if linear functions are more or less appropriate here
-    	features[CLOSEST_ENEMY_FEATURE] = getNormalizedDistance(attacker, target, targets);
-    	features[WEAKEST_ENEMY_FEATURE] = getNormalizedWeakness(target, targets);
-    	
+    	// TODO: These do not work.
+        //features[CLOSEST_ENEMY_FEATURE] = getNormalizedDistance(attacker, target, targets);
+    	//features[WEAKEST_ENEMY_FEATURE] = getNormalizedWeakness(target, targets);
+    	// Closest unit
+
+        if (defenderId == getClosestEnemy(stateView, attackerId)) {
+            features[CLOSEST_ENEMY_FEATURE] = 1;
+        } else {
+            features[CLOSEST_ENEMY_FEATURE] = 0;
+        }
+
+        if (defenderId == getWeakestEnemy(stateView)) {
+            features[WEAKEST_ENEMY_FEATURE] = 1;
+        } else {
+            features[WEAKEST_ENEMY_FEATURE] = 0;
+        }
         return features;
     }
 
+    public int getClosestEnemy(StateView stateView, int attackerId) {
+        int id = enemyFootmen.get(0);
+        int distance = Integer.MAX_VALUE;
+        UnitView attacker = stateView.getUnit(attackerId);
+        for (int enemy: enemyFootmen) {
+            if (distance > getDistance(attacker, stateView.getUnit(enemy))) {
+                id = enemy;
+                distance = getDistance(attacker, stateView.getUnit(enemy));
+            }
+        }
+        return id;
+    }
+
+    public int getWeakestEnemy(StateView stateView) {
+        int id = enemyFootmen.get(0);
+        int health = Integer.MAX_VALUE;
+        for (int enemy: enemyFootmen) {
+            if (health > stateView.getUnit(enemy).getHP()) {
+                id = enemy;
+                health = stateView.getUnit(enemy).getHP();
+            }
+        }
+        return id;
+    }
     /**
      * DO NOT CHANGE THIS!
      *
