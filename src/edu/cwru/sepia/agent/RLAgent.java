@@ -13,6 +13,7 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 public class RLAgent extends Agent {
 
@@ -25,6 +26,15 @@ public class RLAgent extends Agent {
     private static final int NUMBER_OF_TEST_RUNS = 5;
     private int episodeNumber = 0;
     private int testsCompleted = 0;
+    private boolean testingEpisode = false;
+    private List<Double> averageRewards = new ArrayList<>();
+    private double cumulativeReward = 0;
+
+    /**
+     * Cached values from the last execution to use this turn when updating the weights function
+     */
+    private Map<Integer, Double> lastReward = new HashMap<>();
+    private Map<Integer, double[]> lastFeatureVector = new HashMap<>();
 
     /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
@@ -115,19 +125,6 @@ public class RLAgent extends Agent {
     @Override
     public Map<Integer, Action> initialStep(StateView stateView, HistoryView historyView) {
 
-        // You will need to add code to check if you are in a testing or learning episode
-        if(episodeNumber % TURNS_BETWEEN_TESTING == 0 && NUMBER_OF_TEST_RUNS > testsCompleted) {
-            // Do testing episode
-            testsCompleted ++;
-        } else {
-            // Do learning episode
-            testsCompleted = 0;
-            episodeNumber++;
-        }
-
-        if (episodeNumber > numEpisodes) {
-
-        }
         // Find all of your unit IDs
         myFootmen = stateView.getUnits(playernum).stream()
         				.filter(unit -> unit.getTemplateView().getName().toLowerCase().equals("footman"))
@@ -139,6 +136,8 @@ public class RLAgent extends Agent {
 				.filter(unit -> unit.getTemplateView().getName().toLowerCase().equals("footman"))
 				.map(unit -> unit.getID())
 				.collect(Collectors.toList());
+
+        cumulativeReward = 0.0;
 
         return middleStep(stateView, historyView);
     }
@@ -173,24 +172,37 @@ public class RLAgent extends Agent {
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
         double stateReward = 0.0;
-        //System.out.println(enemyFootmen.size());
+        boolean unitDidDie = updateUnitLists(historyView, stateView); // Important to check this after we calculate the state reward.
+
+        Map<Integer, Double> nextLastReward = new HashMap<>();
         // Calculate the reward of this state.
         for (int friendlyUnit : myFootmen) {
             stateReward += calculateReward(stateView, historyView, friendlyUnit);
+            nextLastReward.put(friendlyUnit, calculateReward(stateView, historyView, friendlyUnit));
         }
-        
-        boolean unitDidDie = updateUnitLists(historyView, stateView); // Important to check this after we calculate the state reward.
-        // System.out.println(stateReward);
+
+        // Update the weights for this turn if the units received feedback and we're not testing.
+        double[] oldWeights = weights.clone();
+        for(int friendlyUnit: myFootmen) {
+            if (stateView.getTurnNumber() != 0 && !testingEpisode && actionCompleted(historyView, stateView)) {
+                weights = updateWeights(oldWeights, lastFeatureVector.get(friendlyUnit), lastReward.get(friendlyUnit), stateView, historyView, friendlyUnit);
+            }
+        }
+
+        lastReward = nextLastReward;
+
+        // Issue new commands if a significant event occured
         // TODO: Probably add more feature vectors here.
         if(stateView.getTurnNumber() == 0 || unitDidDie || actionCompleted(historyView, stateView)) {
             // Update the weights of our feature vectors
             for (int friendlyUnit : myFootmen) {
                 int enemyTarget = selectAction(stateView, historyView, friendlyUnit);
-                double[] featureVector = calculateFeatureVector(stateView, historyView, friendlyUnit, enemyTarget);
-                weights = updateWeights(weights, featureVector, stateReward, stateView, historyView, friendlyUnit);
+                lastFeatureVector.put(friendlyUnit, calculateFeatureVector(stateView, historyView, friendlyUnit, enemyTarget));
                 actionMap.put(friendlyUnit, Action.createCompoundAttack(friendlyUnit, enemyTarget));
             }
         }
+
+        cumulativeReward += stateReward;
 
         return actionMap;
     }
@@ -227,8 +239,32 @@ public class RLAgent extends Agent {
     @Override
     public void terminalStep(StateView stateView, HistoryView historyView) {
 
-        // MAKE SURE YOU CALL printTestData after you finish a test episode.
-        System.out.println(episodeNumber);
+        // You will need to add code to check if you are in a testing or learning episode
+        if(episodeNumber % TURNS_BETWEEN_TESTING == 0 && NUMBER_OF_TEST_RUNS > testsCompleted) {
+            // Do testing episode
+            testsCompleted ++;
+            testingEpisode = true;
+            int arrayIndex = episodeNumber/TURNS_BETWEEN_TESTING;
+            double currentValue;
+            try {
+                currentValue = averageRewards.get(arrayIndex);
+            } catch(Exception e) {
+                currentValue = 0.0;
+                averageRewards.add(arrayIndex, currentValue);
+            }
+            System.out.println(arrayIndex);
+            averageRewards.set(arrayIndex, currentValue + cumulativeReward * .2);
+        } else {
+            testingEpisode = false;
+            // Do learning episode
+            testsCompleted = 0;
+            episodeNumber++;
+        }
+
+        if (episodeNumber >= 10000) {
+            printTestData(averageRewards);
+            System.exit(0);
+        }
         // Save your weights
         saveWeights(weights);
 
@@ -261,10 +297,8 @@ public class RLAgent extends Agent {
     public double dotProduct(double[] array1, double[] array2) {
         double sum = 0.0;
         for(int i = 0; i < array1.length; i ++) {
-            //System.out.println(array1[i] * array2[i]);
             sum += array1[i] * array2[i];
         }
-        //System.out.println(sum);
         return sum;
     }
 
@@ -297,18 +331,15 @@ public class RLAgent extends Agent {
         double bestQ = Double.NEGATIVE_INFINITY;
 
         for (int enemy : enemyFootmen) {
-            //System.out.println("Executing loop");
             double temp = calcQValue(stateView, historyView, attackerId, enemy);
-            //System.out.println(temp);
             if (temp > bestQ) {
                 bestQ = temp;
                 bestEnemy = enemy;
             }
         }
-        //System.out.println("Best enemy");
-        //System.out.println(bestEnemy);
         return bestEnemy;
     }
+
     /**
      * Given the current state and the footman in question calculate the reward received on the last turn.
      * This is where you will check for things like Did this footman take or give damage? Did this footman die
@@ -367,7 +398,6 @@ public class RLAgent extends Agent {
     			reward -= log.getDamage() * HP_BONUS;
     		}
     	}
-    	
     	return reward;
     }
     
@@ -447,10 +477,7 @@ public class RLAgent extends Agent {
                              HistoryView historyView,
                              int attackerId,
                              int defenderId) {
-    	
-    	double q = 0.0;
-    	double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
-
+        double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
         return dotProduct(weights, features);
     }
 
