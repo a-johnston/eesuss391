@@ -175,7 +175,7 @@ public class RLAgent extends Agent {
         for (int friendlyUnit : myFootmen) {
             stateReward += calculateReward(stateView, historyView, friendlyUnit);
         }
-
+        System.out.println(stateReward); 
         // TODO: Probably add more feature vectors here.
         if(stateView.getTurnNumber() == 0 || unitDidDie || actionCompleted(historyView, stateView)) {
             // Update the weights of our feature vectors
@@ -256,7 +256,7 @@ public class RLAgent extends Agent {
     public double dotProduct(double[] array1, double[] array2) {
         double sum = 0.0;
         for(int i = 0; i < array1.length; i ++) {
-            System.out.println(array1[i] * array2[i]);
+            //System.out.println(array1[i] * array2[i]);
             sum += array1[i] * array2[i];
         }
         //System.out.println(sum);
@@ -407,7 +407,7 @@ public class RLAgent extends Agent {
      */
     private double getNormalizedWeakness(UnitView target, List<UnitView> units) {
     	// TODO : does default of MAX_VALUE and 0 make sense here? only hit when units is empty, so should be ok?
-
+        // TODO: If we want to use this, we will need to have it handle the case where all enemy units have the same health.
     	double weakest   = units.stream().mapToInt(UnitView::getHP).min().orElse(Integer.MAX_VALUE);
     	double strongest = units.stream().mapToInt(UnitView::getHP).max().orElse(0);
     	
