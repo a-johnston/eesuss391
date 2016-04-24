@@ -121,7 +121,7 @@ public class RLAgent extends Agent {
             testsCompleted ++;
         } else {
             // Do learning episode
-            testsCompleted = 0; 
+            testsCompleted = 0;
             episodeNumber++;
         }
         // Find all of your unit IDs
@@ -168,32 +168,49 @@ public class RLAgent extends Agent {
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
-        if (stateView.getTurnNumber() == 0 || updateUnitLists(historyView, stateView) || actionCompleted(historyView, stateView)) {
-            for (int unit : myFootmen) {
-            	int enemy = selectAction(stateView, historyView, unit);
-            	
-            	if (enemy != -1) {
-            		actionMap.put(unit, Action.createCompoundAttack(unit, enemy));
-            	}
+        double stateReward = 0.0;
+        boolean unitDidDie = updateUnitLists(historyView, stateView);
+        System.out.println(enemyFootmen.size());
+        // Calculate the reward of this state.
+        for (int friendlyUnit : myFootmen) {
+            stateReward += calculateReward(stateView, historyView, friendlyUnit);
+        }
+
+        // TODO: Probably add more feature vectors here.
+        if(stateView.getTurnNumber() == 0 || unitDidDie || actionCompleted(historyView, stateView)) {
+            // Update the weights of our feature vectors
+            for (int friendlyUnit : myFootmen) {
+                int enemyTarget = selectAction(stateView, historyView, friendlyUnit);
+                double[] featureVector = calculateFeatureVector(stateView, historyView, friendlyUnit, enemyTarget);
+                weights = updateWeights(weights, featureVector, stateReward, stateView, historyView, friendlyUnit);
+                actionMap.put(friendlyUnit, Action.createCompoundAttack(friendlyUnit, enemyTarget));
             }
         }
+
         return actionMap;
     }
 
 
+    /**
+     *
+     * @param historyView
+     * @param stateView
+     * @return true if a unit died, else false.
+     */
     private boolean updateUnitLists(History.HistoryView historyView, State.StateView stateView) {
     	myFootmen = myFootmen.stream().filter(unit -> stateView.getUnit(unit) != null).collect(Collectors.toList());
     	enemyFootmen = enemyFootmen.stream().filter(unit -> stateView.getUnit(unit) != null).collect(Collectors.toList());
-    	
+
+
         return historyView.getDeathLogs(stateView.getTurnNumber() - 1).size() > 0;
     }
 
     private boolean actionCompleted(History.HistoryView historyView, State.StateView stateView) {
-        for(Entry<Integer, ActionResult> result : historyView.getCommandFeedback(this.getPlayerNumber(), stateView.getTurnNumber() - 1).entrySet()) {
+        //for(Entry<Integer, ActionResult> result : historyView.getCommandFeedback(this.getPlayerNumber(), stateView.getTurnNumber() - 1).entrySet()) {
 
-        }
+        // }
         
-        return false;
+        return historyView.getCommandFeedback(this.getPlayerNumber(), stateView.getTurnNumber() -1).size() > 0;
     }
 
     /**
