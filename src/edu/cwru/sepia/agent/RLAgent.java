@@ -25,6 +25,7 @@ public class RLAgent extends Agent {
     private static final int TURNS_BETWEEN_TESTING = 10;
     private static final int NUMBER_OF_TEST_RUNS = 5;
     private int episodeNumber = 0;
+    private int totalEpisodes = 0;
     private int testsCompleted = 0;
     private boolean testingEpisode = false;
     private List<Double> averageRewards = new ArrayList<>();
@@ -42,6 +43,8 @@ public class RLAgent extends Agent {
      * and call sys.exit(0)
      */
     public final int numEpisodes;
+    private int wins = 0;
+    private int losses = 0;
 
     /**
      * List of your footmen and your enemies footmen
@@ -61,16 +64,18 @@ public class RLAgent extends Agent {
      * Attacking the closest unit
      * Attacking the lowest health unit
      */
-    public static final int NUM_FEATURES = 2;
-    
+    public static final int NUM_FEATURES = 5;
+
     public static final int CLOSEST_ENEMY_FEATURE = 0;
     public static final int WEAKEST_ENEMY_FEATURE = 1;
-
+    public static final int FRIENDLY_UNIT_HEALTH_FEATURE = 2;
+    public static final int NUMBER_OF_ENEMIES_FEATURE = 3;
+    public static final int NUMBER_OF_FRIENDS_FEATURE = 4;
 
     /** Use this random number generator for your epsilon exploration. When you submit we will
      * change this seed so make sure that your agent works for more than the default seed.
      */
-    public final Random random = new Random(12345);
+    public final Random random = new Random(10000);
 
     /**
      * Your Q-function weights.
@@ -238,7 +243,7 @@ public class RLAgent extends Agent {
      */
     @Override
     public void terminalStep(StateView stateView, HistoryView historyView) {
-
+        totalEpisodes++;
         // You will need to add code to check if you are in a testing or learning episode
         if(episodeNumber % TURNS_BETWEEN_TESTING == 0 && NUMBER_OF_TEST_RUNS > testsCompleted) {
             // Do testing episode
@@ -252,7 +257,6 @@ public class RLAgent extends Agent {
                 currentValue = 0.0;
                 averageRewards.add(arrayIndex, currentValue);
             }
-            System.out.println(arrayIndex);
             averageRewards.set(arrayIndex, currentValue + cumulativeReward * .2);
         } else {
             testingEpisode = false;
@@ -261,7 +265,16 @@ public class RLAgent extends Agent {
             episodeNumber++;
         }
 
-        if (episodeNumber >= 10000) {
+        if(stateView.getUnits(ENEMY_PLAYERNUM).size() == 0) {
+            wins ++;
+        } else {
+            losses ++;
+        }
+        if (totalEpisodes >= numEpisodes) {
+            System.out.println("Wins: ");
+            System.out.println(wins);
+            System.out.println("Losses: ");
+            System.out.println(losses);
             printTestData(averageRewards);
             System.exit(0);
         }
@@ -507,7 +520,7 @@ public class RLAgent extends Agent {
                                            int attackerId,
                                            int defenderId) {
     	double[] features = new double[NUM_FEATURES];
-    	
+    	// TODO: Investigate why the target is sometimes null
     	UnitView attacker = stateView.getUnit(attackerId);
     	UnitView target = stateView.getUnit(defenderId);
     	
@@ -515,8 +528,8 @@ public class RLAgent extends Agent {
     	
     	// TODO : consider if linear functions are more or less appropriate here
     	// TODO: These do not work.
-        //features[CLOSEST_ENEMY_FEATURE] = getNormalizedDistance(attacker, target, targets);
-    	//features[WEAKEST_ENEMY_FEATURE] = getNormalizedWeakness(target, targets);
+//      features[CLOSEST_ENEMY_FEATURE] = getNormalizedDistance(attacker, target, targets);
+//    	features[WEAKEST_ENEMY_FEATURE] = getNormalizedWeakness(target, targets);
     	// Closest unit
 
         if (defenderId == getClosestEnemy(stateView, attackerId)) {
@@ -528,8 +541,13 @@ public class RLAgent extends Agent {
         if (defenderId == getWeakestEnemy(stateView)) {
             features[WEAKEST_ENEMY_FEATURE] = 1;
         } else {
+
             features[WEAKEST_ENEMY_FEATURE] = 0;
         }
+
+        features[FRIENDLY_UNIT_HEALTH_FEATURE] = stateView.getUnit(attackerId).getHP();
+        features[NUMBER_OF_ENEMIES_FEATURE] = enemyFootmen.size();
+        features[NUMBER_OF_FRIENDS_FEATURE] = myFootmen.size();
         return features;
     }
 
