@@ -142,32 +142,15 @@ public class RLAgent extends Agent {
 
 		return middleStep(stateView, historyView);
 	}
-
+	
 	/**
-	 * You will need to calculate the reward at each step and update your totals. You will also need to
-	 * check if an event has occurred. If it has then you will need to update your weights and select a new action.
-	 *
-	 * If you are using the footmen vectors you will also need to remove killed units. To do so use the historyView
-	 * to get a DeathLog. Each DeathLog tells you which player's unit died and the unit ID of the dead unit. To get
-	 * the deaths from the last turn do something similar to the following snippet. Please be aware that on the first
-	 * turn you should not call this as you will get nothing back.
-	 *
-	 * for(DeathLog deathLog : historyView.getDeathLogs(stateView.getTurnNumber() -1)) {
-	 *     System.out.println("Player: " + deathLog.getController() + " unit: " + deathLog.getDeadUnitID());
-	 * }
-	 *
-	 * You should also check for completed actions using the history view. Obviously you never want a footman just
-	 * sitting around doing nothing (the enemy certainly isn't going to stop attacking). So at the minimum you will
-	 * have an even whenever one your footmen's targets is killed or an action fails. Actions may fail if the target
-	 * is surrounded or the unit cannot find a path to the unit. To get the action results from the previous turn
-	 * you can do something similar to the following. Please be aware that on the first turn you should not call this
-	 *
-	 * Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, stateView.getTurnNumber() - 1);
-	 * for(ActionResult result : actionResults.values()) {
-	 *     System.out.println(result.toString());
-	 * }
-	 *
-	 * @return New actions to execute or nothing if an event has not occurred.
+	 * Computes the rewards and updates the actions when necessary. Checks if units have been killed or freed up for new
+	 * actions and if so determines the best action as per the current strategy and assigns the unit that action. New
+	 * actions are returned in the Sepia action map.
+	 * 
+	 * @param stateView
+	 * @param historyView
+	 * @return
 	 */
 	@Override
 	public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
@@ -190,7 +173,7 @@ public class RLAgent extends Agent {
 			}
 		}
 
-		lastReward = nextLastReward;
+		lastReward = nextLastReward; // store for posterity
 
 		// Issue new commands if a significant event occurred
 		// TODO: Probably add more feature vectors here.
@@ -210,6 +193,7 @@ public class RLAgent extends Agent {
 
 
 	/**
+	 * Quickly corrects the unit lists for any newly dead and returns if any units have died.
 	 *
 	 * @param historyView
 	 * @param stateView
@@ -223,6 +207,13 @@ public class RLAgent extends Agent {
 		return historyView.getDeathLogs(stateView.getTurnNumber() - 1).size() > 0;
 	}
 
+	/**
+	 * Returns if any of our units took damage in the previous turn.
+	 * 
+	 * @param historyView
+	 * @param stateView
+	 * @return
+	 */
 	private boolean friendlyDamageTaken(History.HistoryView historyView, State.StateView stateView) {
 		// Check the damage logs to figure out if anyone died/was injured
 		for (DamageLog log : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
@@ -234,15 +225,23 @@ public class RLAgent extends Agent {
 		return false;
 	}
 
+	/**
+	 * Helper to determine if an action was completed on the last turn,
+	 * indicating that units can be reallocated for new actions.
+	 * 
+	 * @param historyView
+	 * @param stateView
+	 * @return
+	 */
 	private boolean actionCompleted(History.HistoryView historyView, State.StateView stateView) {
 		return historyView.getCommandFeedback(this.getPlayerNumber(), stateView.getTurnNumber() -1).size() > 0;
 	}
 
 	/**
-	 * Here you will calculate the cumulative average rewards for your testing episodes. If you have just
-	 * finished a set of test episodes you will call out testEpisode.
-	 *
-	 * It is also a good idea to save your weights with the saveWeights function.
+	 * Computes the cumulative average rewards for testing episodes. Additionally, saveWeights is called.
+	 * 
+	 * @param stateView
+	 * @param historyView
 	 */
 	@Override
 	public void terminalStep(StateView stateView, HistoryView historyView) {
@@ -277,6 +276,7 @@ public class RLAgent extends Agent {
 
 		// Save your weights
 		saveWeights(weights);
+		
 		if (totalEpisodes >= 1000) {
 			System.out.println("Wins: ");
 			System.out.println(wins);
@@ -289,7 +289,9 @@ public class RLAgent extends Agent {
 	}
 
 	/**
-	 * Calculate the updated weights for this agent. 
+	 * Calculate the updated weights for this agent.
+	 * Applies the Q-learning weight algorithm previewed in the slides.
+	 * 
 	 * @param oldWeights Weights prior to update
 	 * @param oldFeatures Features from (s,a)
 	 * @param totalReward Cumulative discounted reward for this footman.
@@ -312,6 +314,13 @@ public class RLAgent extends Agent {
 		return newWeights;
 	}
 
+	/**
+	 * Computes the dot product (standard inner product) of two vectors represented as arrays.
+	 * 
+	 * @param array1
+	 * @param array2
+	 * @return
+	 */
 	public double dotProduct(double[] array1, double[] array2) {
 		double sum = 0.0;
 		for(int i = 0; i < array1.length; i ++) {
@@ -320,6 +329,14 @@ public class RLAgent extends Agent {
 		return sum;
 	}
 
+	/**
+	 * Returns the best possible Q-Value for a given footman in a known state.
+	 * 
+	 * @param stateView
+	 * @param historyView
+	 * @param footmanId
+	 * @return
+	 */
 	public double getBestQValue(StateView stateView, HistoryView historyView, int footmanId) {
 		int bestEnemy = selectBestEnemy(stateView, historyView, footmanId);
 		return calcQValue(stateView, historyView, footmanId, bestEnemy);
@@ -344,6 +361,14 @@ public class RLAgent extends Agent {
 		return selectBestEnemy(stateView, historyView, attackerId);
 	}
 
+	/**
+	 * Finds the enemy with the highest Q value given an attacking unit and a state.
+	 * 
+	 * @param stateView
+	 * @param historyView
+	 * @param attackerId
+	 * @return
+	 */
 	public int selectBestEnemy(StateView stateView, HistoryView historyView, int attackerId) {
 		int bestEnemy = -1;
 		double bestQ = Double.NEGATIVE_INFINITY;
@@ -359,43 +384,14 @@ public class RLAgent extends Agent {
 	}
 
 	/**
-	 * Given the current state and the footman in question calculate the reward received on the last turn.
-	 * This is where you will check for things like Did this footman take or give damage? Did this footman die
-	 * or kill its enemy. Did this footman start an action on the last turn? See the assignment description
-	 * for the full list of rewards.
-	 *
-	 * Remember that you will need to discount this reward based on the timestep it is received on. See
-	 * the assignment description for more details.
-	 *
-	 * As part of the reward you will need to calculate if any of the units have taken damage. You can use
-	 * the history view to get a list of damages dealt in the previous turn. Use something like the following.
-	 *
-	 * for(DamageLog damageLogs : historyView.getDamageLogs(lastTurnNumber)) {
-	 *     System.out.println("Defending player: " + damageLog.getDefenderController() + " defending unit: " + \
-	 *     damageLog.getDefenderID() + " attacking player: " + damageLog.getAttackerController() + \
-	 *     "attacking unit: " + damageLog.getAttackerID());
-	 * }
-	 *
-	 * You will do something similar for the deaths. See the middle step documentation for a snippet
-	 * showing how to use the deathLogs.
-	 *
-	 * To see if a command was issued you can check the commands issued log.
-	 *
-	 * Map<Integer, Action> commandsIssued = historyView.getCommandsIssued(playernum, lastTurnNumber);
-	 * for (Map.Entry<Integer, Action> commandEntry : commandsIssued.entrySet()) {
-	 *     System.out.println("Unit " + commandEntry.getKey() + " was command to " + commandEntry.getValue().toString);
-	 * }
-	 *
-	 * The reward function should be defined as follows:
-	 * each action costs -.1
-	 * +d for each damage the unit dealt
-	 * -d for each damage the unit took
-	 * +100 if an enemy dies
-	 * -100 if a friendly dies
-	 * @param stateView The current state of the game.
-	 * @param historyView History of the episode up until this turn.
-	 * @param footmanId The footman ID you are looking for the reward from.
-	 * @return The current reward
+	 * Computes the reward for an individual footman. Reward is alloted as
+	 * +damage dealt, -damage taken, +100 enemy killed, -100 us killed.
+	 * Additionally, there is a penalty each turn, discouraging idleness.
+	 * 
+	 * @param stateView
+	 * @param historyView
+	 * @param footmanId
+	 * @return
 	 */
 	public double calculateReward(StateView stateView, HistoryView historyView, int footmanId) {
 
@@ -419,20 +415,10 @@ public class RLAgent extends Agent {
 		return reward;
 	}
 
-	private int getDistance(UnitView a, UnitView b) {
-		return Math.min(
-				Math.abs(a.getXPosition() - b.getXPosition()),
-				Math.abs(a.getYPosition() - b.getYPosition()));
-	}
-
 
 	/**
-	 * Calculate the Q-Value for a given state action pair. The state in this scenario is the current
-	 * state view and the history of this episode. The action is the attacker and the enemy pair for the
-	 * SEPIA attack action.
-	 *
-	 * This returns the Q-value according to your feature approximation. This is where you will calculate
-	 * your features and multiply them by your current weights to get the approximate Q-value.
+	 * Calculates the Q-Value for a given attacker/defender pair as the inner
+	 * product of the feature vector and the weight vector.
 	 *
 	 * @param stateView Current SEPIA state
 	 * @param historyView Episode history up to this point in the game
@@ -449,25 +435,17 @@ public class RLAgent extends Agent {
 	}
 
 	/**
-	 * Given a state and action calculate your features here. Please include a comment explaining what features
-	 * you chose and why you chose them.
-	 *
-	 * Features Included:
-	 * 1. Attacking the closest enemy - generally speaking the best unit to attack is probably the closest one
-	 * 2.
-	 *
-	 * All of your feature functions should evaluate to a double. Collect all of these into an array. You will
-	 * take a dot product of this array with the weights array to get a Q-value for a given state action.
-	 *
-	 * It is a good idea to make the first value in your array a constant. This just helps remove any offset
-	 * from 0 in the Q-function. The other features are up to you. Many are suggested in the assignment
-	 * description.
-	 *
-	 * @param stateView Current state of the SEPIA game
-	 * @param historyView History of the game up until this turn
-	 * @param attackerId Your footman. The one doing the attacking.
-	 * @param defenderId An enemy footman. The one you are considering attacking.
-	 * @return The array of feature function outputs.
+	 * Computes the feature vector for a given attacker/defender pair.
+	 * 
+	 * Included features prioritize the closest enemy, the weakest enemy, the
+	 * respective sizes of each side, and a naive target to the first known
+	 * enemy to encourage some amount of grouping.
+	 * 
+	 * @param stateView
+	 * @param historyView
+	 * @param attackerId
+	 * @param defenderId
+	 * @return
 	 */
 	public double[] calculateFeatureVector(StateView stateView,
 			HistoryView historyView,
@@ -494,6 +472,14 @@ public class RLAgent extends Agent {
 		return features;
 	}
 
+	/**
+	 * Helper method to prioritize attacking the closest enemy. Computes the
+	 * closest enemy to a given attacker and returns its id.
+	 * 
+	 * @param stateView
+	 * @param attackerId
+	 * @return
+	 */
 	public int getClosestEnemy(StateView stateView, int attackerId) {
 		int id = enemyFootmen.get(0);
 		int distance = Integer.MAX_VALUE;
@@ -506,11 +492,29 @@ public class RLAgent extends Agent {
 		}
 		return id;
 	}
+	
+	/**
+	 * Returns the Chebyschev distance between two UnitView instances.
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	private int getDistance(UnitView a, UnitView b) {
+		return Math.min(
+				Math.abs(a.getXPosition() - b.getXPosition()),
+				Math.abs(a.getYPosition() - b.getYPosition()));
+	}
 
+	/**
+	 * Finds the weakest enemy currently alive and returns its id.
+	 * 
+	 * @param stateView
+	 * @return
+	 */
 	public int getWeakestEnemy(StateView stateView) {
 		int id = enemyFootmen.get(0);
 		int health = Integer.MAX_VALUE;
-		for (int enemy: enemyFootmen) {
+		for (int enemy : enemyFootmen) {
 			if (health > stateView.getUnit(enemy).getHP()) {
 				id = enemy;
 				health = stateView.getUnit(enemy).getHP();
@@ -519,6 +523,10 @@ public class RLAgent extends Agent {
 		return id;
 	}
 
+	/**
+	 * Writes data to CSV file with comma seperated values.
+	 * @param averageRewards
+	 */
 	public void outputCSV(List<Double> averageRewards) {
 		File path = new File("agent_weights/data.txt");
 		// create the directories if they do not already exist
@@ -613,12 +621,8 @@ public class RLAgent extends Agent {
 	}
 
 	@Override
-	public void savePlayerData(OutputStream outputStream) {
-
-	}
+	public void savePlayerData(OutputStream outputStream) {}
 
 	@Override
-	public void loadPlayerData(InputStream inputStream) {
-
-	}
+	public void loadPlayerData(InputStream inputStream) {}
 }
