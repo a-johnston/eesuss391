@@ -270,17 +270,18 @@ public class RLAgent extends Agent {
         } else {
             losses ++;
         }
+
+        // Save your weights
+        saveWeights(weights);
         if (totalEpisodes >= numEpisodes) {
             System.out.println("Wins: ");
             System.out.println(wins);
             System.out.println("Losses: ");
             System.out.println(losses);
+            outputCSV(averageRewards);
             printTestData(averageRewards);
             System.exit(0);
         }
-        // Save your weights
-        saveWeights(weights);
-
     }
 
     /**
@@ -574,6 +575,21 @@ public class RLAgent extends Agent {
             }
         }
         return id;
+    }
+
+    public void outputCSV(List<Double> averageRewards) {
+        File path = new File("agent_weights/data.txt");
+        // create the directories if they do not already exist
+        path.getAbsoluteFile().getParentFile().mkdirs();
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path, false))) {
+            for (int i = 0; i < averageRewards.size(); i++) {
+                writer.write(String.format("%d, %f\n", i*10, averageRewards.get(i)));
+            }
+            writer.flush();
+        } catch(IOException ex) {
+            System.err.println("Failed to write weights to file. Reason: " + ex.getMessage());
+        }
     }
     /**
      * DO NOT CHANGE THIS!
