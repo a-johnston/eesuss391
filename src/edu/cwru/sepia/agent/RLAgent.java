@@ -72,6 +72,7 @@ public class RLAgent extends Agent {
     public static final int NUMBER_OF_ENEMIES_FEATURE = 3;
     public static final int NUMBER_OF_FRIENDS_FEATURE = 4;
 
+
     /** Use this random number generator for your epsilon exploration. When you submit we will
      * change this seed so make sure that your agent works for more than the default seed.
      */
@@ -178,7 +179,6 @@ public class RLAgent extends Agent {
         Map<Integer, Action> actionMap = new HashMap<>();
         double stateReward = 0.0;
         boolean unitDidDie = updateUnitLists(historyView, stateView); // Important to check this after we calculate the state reward.
-
         Map<Integer, Double> nextLastReward = new HashMap<>();
         // Calculate the reward of this state.
         for (int friendlyUnit : myFootmen) {
@@ -198,7 +198,7 @@ public class RLAgent extends Agent {
 
         // Issue new commands if a significant event occured
         // TODO: Probably add more feature vectors here.
-        if(stateView.getTurnNumber() == 0 || unitDidDie || actionCompleted(historyView, stateView)) {
+        if(stateView.getTurnNumber() == 0 || unitDidDie || actionCompleted(historyView, stateView) || friendlyDamageTaken(historyView, stateView)) {
             // Update the weights of our feature vectors
             for (int friendlyUnit : myFootmen) {
                 int enemyTarget = selectAction(stateView, historyView, friendlyUnit);
@@ -225,6 +225,17 @@ public class RLAgent extends Agent {
 
 
         return historyView.getDeathLogs(stateView.getTurnNumber() - 1).size() > 0;
+    }
+
+    private boolean friendlyDamageTaken(History.HistoryView historyView, State.StateView stateView) {
+        // Check the damage logs to figure out if anyone died/was injured
+        for (DamageLog log : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
+            if (myFootmen.contains(log.getDefenderID())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean actionCompleted(History.HistoryView historyView, State.StateView stateView) {
@@ -273,7 +284,7 @@ public class RLAgent extends Agent {
 
         // Save your weights
         saveWeights(weights);
-        if (totalEpisodes >= numEpisodes) {
+        if (totalEpisodes >= 1000) {
             System.out.println("Wins: ");
             System.out.println(wins);
             System.out.println("Losses: ");
