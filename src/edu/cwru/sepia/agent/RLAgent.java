@@ -61,13 +61,14 @@ public class RLAgent extends Agent {
 	 * Attacking the closest unit
 	 * Attacking the lowest health unit
 	 */
-	public static final int NUM_FEATURES = 5;
+	public static final int NUM_FEATURES = 6;
 
 	public static final int CLOSEST_ENEMY_FEATURE = 0;
 	public static final int WEAKEST_ENEMY_FEATURE = 1;
 	public static final int FRIENDLY_UNIT_HEALTH_FEATURE = 2;
 	public static final int NUMBER_OF_ENEMIES_FEATURE = 3;
 	public static final int NUMBER_OF_FRIENDS_FEATURE = 4;
+	public static final int FIRST_ENEMY_FEATURE = 5;
 
 
 	public final Random random = new Random();
@@ -489,6 +490,7 @@ public class RLAgent extends Agent {
 		features[FRIENDLY_UNIT_HEALTH_FEATURE] = stateView.getUnit(attackerId).getHP();
 		features[NUMBER_OF_ENEMIES_FEATURE] = enemyFootmen.size();
 		features[NUMBER_OF_FRIENDS_FEATURE] = myFootmen.size();
+		features[FIRST_ENEMY_FEATURE] = (enemyFootmen == null || defenderId == enemyFootmen.get(0)) ? 1.0 : 0.0;
 		return features;
 	}
 
