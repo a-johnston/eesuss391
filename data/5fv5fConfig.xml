@@ -13,13 +13,21 @@
 	<!-- When you have your agent working, you can do the learning without the visual agent.
 	This means you won't have to click start at the end of each episode and things will run a lot faster.
 	To comment it out just wrap the <Player></Player> tags in XML comments -->
+<<<<<<< Updated upstream
 	<!--<Player Id="0">
+=======
+	<Player Id="0">
+>>>>>>> Stashed changes
 		<AgentClass>
 			<ClassName>edu.cwru.sepia.agent.visual.VisualAgent</ClassName>
 			<Argument>true</Argument>
 			<Argument>false</Argument>
 		</AgentClass>
+<<<<<<< Updated upstream
 	</Player> -->
+=======
+	</Player>
+>>>>>>> Stashed changes
 
 
 	<Player Id="1">
@@ -36,7 +44,11 @@
 	</ModelParameters>
 	<Runner>
 		<RunnerClass>edu.cwru.sepia.experiment.SimpleModelEpisodicRunner</RunnerClass>
+<<<<<<< Updated upstream
 		<Parameter Name="experiment.NumEpisodes" Value="30000"/>
+=======
+		<Parameter Name="experiment.NumEpisodes" Value="1000"/>
+>>>>>>> Stashed changes
 		<Parameter Name="experiment.EpisodesPerSave" Value="1"/>
 		<Parameter Name="experiment.SaveAgents" Value="false"/>
 		<Parameter Name="experiment.episodesperagentsave" Value="4" />
