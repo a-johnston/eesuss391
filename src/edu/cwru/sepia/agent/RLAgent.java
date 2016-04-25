@@ -72,7 +72,6 @@ public class RLAgent extends Agent {
     public static final int NUMBER_OF_ENEMIES_FEATURE = 3;
     public static final int NUMBER_OF_FRIENDS_FEATURE = 4;
 
-
     /** Use this random number generator for your epsilon exploration. When you submit we will
      * change this seed so make sure that your agent works for more than the default seed.
      */
