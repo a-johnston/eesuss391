@@ -277,7 +277,7 @@ public class RLAgent extends Agent {
 		// Save your weights
 		saveWeights(weights);
 		
-		if (totalEpisodes >= 1000) {
+		if (totalEpisodes >= 10001) {
 			System.out.println("Wins: ");
 			System.out.println(wins);
 			System.out.println("Losses: ");
